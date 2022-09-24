@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".HomeActivity">
+    tools:context=".ProfileActivity">
 
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appBarLayout"
@@ -14,7 +14,7 @@
         android:layout_alignParentTop="true">
 
         <androidx.appcompat.widget.Toolbar
-            android:id="@+id/toolbarHome"
+            android:id="@+id/toolbarProfile"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:background="?attr/colorPrimary"
@@ -30,4 +30,5 @@
         app:itemTextColor="@drawable/selector"
         android:layout_alignParentBottom="true"
         app:itemIconTint="@drawable/selector"/>
+
 </RelativeLayout>
