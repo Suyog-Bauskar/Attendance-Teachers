@@ -36,7 +36,7 @@
         app:layout_constraintVertical_bias="0.567" />
 
     <EditText
-        android:id="@+id/loginUsernameField"
+        android:id="@+id/loginEmailField"
         android:layout_width="wrap_content"
         android:layout_height="50dp"
         android:padding="10dp"
@@ -44,8 +44,9 @@
         android:background="#323232"
         android:ems="10"
         android:fontFamily="sans-serif-medium"
-        android:hint="@string/username"
+        android:hint="@string/email"
         android:inputType="textPersonName"
+        android:importantForAutofill="no"
         android:textColor="#FFFFFF"
         android:textColorHint="#FFFFFF"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -65,13 +66,14 @@
         android:fontFamily="sans-serif-medium"
         android:hint="@string/password"
         android:inputType="textPassword"
+        android:importantForAutofill="no"
         android:padding="10dp"
         android:textColor="#FFFFFF"
         android:textColorHint="#FFFFFF"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="@+id/loginUsernameField"
+        app:layout_constraintEnd_toEndOf="@+id/loginEmailField"
         app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="@+id/loginUsernameField"
+        app:layout_constraintStart_toStartOf="@+id/loginEmailField"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.499" />
 

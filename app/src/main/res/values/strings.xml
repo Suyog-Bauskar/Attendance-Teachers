@@ -2,6 +2,6 @@
     <string name="app_name">Atten Teachers</string>
     <string name="login">Login</string>
     <string name="forgot_password">Forgot Password</string>
-    <string name="username">Username</string>
+    <string name="email">Email</string>
     <string name="password">Password</string>
 </resources>
