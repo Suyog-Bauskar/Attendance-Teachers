@@ -1,18 +1,21 @@
 package com.suyogbauskar.attenteachers;
 
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.widget.Toolbar;
 
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.os.Bundle;
+import android.text.InputType;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.Toast;
 
@@ -26,10 +29,12 @@ import com.google.firebase.firestore.FirebaseFirestore;
 public class SettingsActivity extends AppCompatActivity implements View.OnClickListener {
 
     private BottomNavigationView bottomNav;
-    private Button signOutBtn, changeDetailsBtn;
+    private Button signOutBtn, changeDetailsBtn, changeTimerTimeBtn;
     private Spinner themeSpinner;
     private FirebaseUser user;
-    private AlertDialog.Builder builder;
+    private LinearLayout.LayoutParams params;
+    private AlertDialog.Builder alert;
+    private LinearLayout layout;
     private FirebaseFirestore db;
 
     @Override
@@ -47,6 +52,7 @@ public class SettingsActivity extends AppCompatActivity implements View.OnClickL
         bottomNav = findViewById(R.id.bottomNavigationView);
         signOutBtn = findViewById(R.id.signOutBtn);
         changeDetailsBtn = findViewById(R.id.changeDetailsBtn);
+        changeTimerTimeBtn = findViewById(R.id.changeTimerTimeBtn);
 
         bottomNav.setSelectedItemId(R.id.settings);
         bottomNav.setOnItemSelectedListener(item -> {
@@ -70,6 +76,7 @@ public class SettingsActivity extends AppCompatActivity implements View.OnClickL
 
         signOutBtn.setOnClickListener(this);
         changeDetailsBtn.setOnClickListener(this);
+        changeTimerTimeBtn.setOnClickListener(this);
 
         SharedPreferences sharedPreferences = getSharedPreferences("themePref", MODE_PRIVATE);
         final SharedPreferences.Editor editor = sharedPreferences.edit();
@@ -116,6 +123,9 @@ public class SettingsActivity extends AppCompatActivity implements View.OnClickL
 
             }
         });
+
+        params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        params.setMargins((int) (15 * getResources().getDisplayMetrics().density + 0.5f), (int) (15 * getResources().getDisplayMetrics().density + 0.5f), (int) (15 * getResources().getDisplayMetrics().density + 0.5f), 0);
     }
 
     private void signOut() {
@@ -137,6 +147,37 @@ public class SettingsActivity extends AppCompatActivity implements View.OnClickL
 
             case R.id.changeDetailsBtn:
                 startActivity(new Intent(getApplicationContext(), ChangeDetailsActivity.class));
+                break;
+
+            case R.id.changeTimerTimeBtn:
+                alert = new android.app.AlertDialog.Builder(SettingsActivity.this);
+                alert.setTitle("Change Time");
+
+                layout = new LinearLayout(getApplicationContext());
+                layout.setOrientation(LinearLayout.VERTICAL);
+
+                final EditText newTime = new EditText(getApplicationContext());
+                newTime.setHint("New Time in Seconds");
+                newTime.setLayoutParams(params);
+                newTime.setInputType(InputType.TYPE_CLASS_NUMBER);
+                layout.addView(newTime);
+
+                alert.setView(layout);
+
+                alert.setPositiveButton("Save", (dialog, whichButton) -> {
+                    int timeInt = Integer.parseInt(newTime.getText().toString());
+
+                    if (timeInt >= 30 && timeInt <= 300) {
+                        db.collection("teachers_data").document(user.getUid()).update("timerTime", timeInt);
+                        Toast.makeText(getApplicationContext(), "Time Saved", Toast.LENGTH_LONG).show();
+                    } else {
+                        Toast.makeText(getApplicationContext(), "Time must be between 30 and 300 seconds", Toast.LENGTH_LONG).show();
+                    }
+                });
+
+                alert.setNegativeButton("Cancel", (dialog, whichButton) -> dialog.dismiss());
+
+                alert.show();
                 break;
 
         }

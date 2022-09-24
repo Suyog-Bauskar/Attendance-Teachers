@@ -70,11 +70,10 @@ public class ChangeDetailsActivity extends AppCompatActivity implements View.OnC
                 alert.setView(layout);
 
                 alert.setPositiveButton("Save", (dialog, whichButton) -> {
-                    String firstname = newFirstname.getText().toString();
+                    String firstname = newFirstname.getText().toString().trim();
 
-                    if (!firstname.trim().isEmpty() && firstname.chars().allMatch(Character::isLetter)) {
-                        firstname = firstname.trim();
-                        db.collection("data").document(user.getUid()).update("firstname", firstname);
+                    if (!firstname.isEmpty()) {
+                        db.collection("teachers_data").document(user.getUid()).update("firstname", firstname);
                         Toast.makeText(getApplicationContext(), "Firstname Saved", Toast.LENGTH_LONG).show();
                     } else {
                         Toast.makeText(getApplicationContext(), "Invalid firstname", Toast.LENGTH_LONG).show();
@@ -108,10 +107,9 @@ public class ChangeDetailsActivity extends AppCompatActivity implements View.OnC
                 alert.setView(layout);
 
                 alert.setPositiveButton("Save", (dialog, whichButton) -> {
-                    String lastname = newLastname.getText().toString();
-                    if (!lastname.trim().isEmpty() && lastname.chars().allMatch(Character::isLetter)) {
-                        lastname = lastname.trim();
-                        db.collection("data").document(user.getUid()).update("lastname", lastname);
+                    String lastname = newLastname.getText().toString().trim();
+                    if (!lastname.isEmpty()) {
+                        db.collection("teachers_data").document(user.getUid()).update("lastname", lastname);
                         Toast.makeText(getApplicationContext(), "Lastname Saved", Toast.LENGTH_LONG).show();
                     } else {
                         Toast.makeText(getApplicationContext(), "Invalid lastname", Toast.LENGTH_LONG).show();
