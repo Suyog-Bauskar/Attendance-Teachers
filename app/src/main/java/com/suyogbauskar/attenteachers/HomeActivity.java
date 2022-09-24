@@ -7,16 +7,25 @@ import androidx.appcompat.widget.Toolbar;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.view.View;
+import android.os.CountDownTimer;
 import android.widget.Button;
+import android.widget.TextView;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.firebase.auth.FirebaseAuth;
+
+import java.util.Locale;
 
 public class HomeActivity extends AppCompatActivity {
 
     private BottomNavigationView bottomNav;
     public static int theme;
+
+    private static final long START_TIME_IN_MILLIS = 6000;
+    private TextView mTextViewCountDown;
+    private Button mButtonStartStop;
+    private CountDownTimer mCountDownTimer;
+    private boolean mTimerRunning;
+    private long mTimeLeftInMillis = START_TIME_IN_MILLIS;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,6 +37,10 @@ public class HomeActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         bottomNav = findViewById(R.id.bottomNavigationView);
+
+        mTextViewCountDown = findViewById(R.id.text_view_countdown);
+        mButtonStartStop = findViewById(R.id.button_start_stop);
+
         bottomNav.setOnItemSelectedListener(item -> {
             switch (item.getItemId()) {
                 case R.id.home:
@@ -57,6 +70,54 @@ public class HomeActivity extends AppCompatActivity {
         } else if (theme == 2) {
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
         }
+
+        mButtonStartStop.setOnClickListener(v -> {
+            if (mTimerRunning) {
+                stopTimer();
+            } else {
+                startTimer();
+            }
+        });
+
+        updateCountDownText();
+    }
+
+    private void startTimer() {
+        mCountDownTimer = new CountDownTimer(mTimeLeftInMillis, 1000) {
+            @Override
+            public void onTick(long millisUntilFinished) {
+                mTimeLeftInMillis = millisUntilFinished;
+                updateCountDownText();
+            }
+
+            @Override
+            public void onFinish() {
+                mTimeLeftInMillis = START_TIME_IN_MILLIS;
+                updateCountDownText();
+                mTimerRunning = false;
+                mButtonStartStop.setText("Start");
+            }
+        }.start();
+
+        mTimerRunning = true;
+        mButtonStartStop.setText("Stop");
+    }
+
+    private void stopTimer() {
+        mCountDownTimer.cancel();
+        mTimeLeftInMillis = START_TIME_IN_MILLIS;
+        updateCountDownText();
+        mTimerRunning = false;
+        mButtonStartStop.setText("Start");
+    }
+
+    private void updateCountDownText() {
+        int minutes = (int) (mTimeLeftInMillis / 1000) / 60;
+        int seconds = (int) (mTimeLeftInMillis / 1000) % 60;
+
+        String timeLeftFormatted = String.format(Locale.getDefault(), "%02d:%02d", minutes, seconds);
+
+        mTextViewCountDown.setText(timeLeftFormatted);
     }
 
     @Override
