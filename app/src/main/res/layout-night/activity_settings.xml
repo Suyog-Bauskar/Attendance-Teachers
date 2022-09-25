@@ -72,19 +72,6 @@
             android:textSize="18sp" />
 
         <android.widget.Button
-            android:id="@+id/changeTimerTimeBtn"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="10dp"
-            android:layout_marginTop="15dp"
-            android:background="@drawable/dark_borders"
-            android:paddingStart="5dp"
-            android:text="Change Timer Time"
-            android:textAlignment="textStart"
-            android:textAllCaps="false"
-            android:textSize="18sp" />
-
-        <android.widget.Button
             android:id="@+id/signOutBtn"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

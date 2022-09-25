@@ -29,11 +29,10 @@ import com.google.firebase.firestore.FirebaseFirestore;
 public class SettingsActivity extends AppCompatActivity implements View.OnClickListener {
 
     private BottomNavigationView bottomNav;
-    private Button signOutBtn, changeDetailsBtn, changeTimerTimeBtn;
+    private Button signOutBtn, changeDetailsBtn;
     private Spinner themeSpinner;
     private FirebaseUser user;
     private LinearLayout.LayoutParams params;
-    private AlertDialog.Builder alert;
     private LinearLayout layout;
     private FirebaseFirestore db;
 
@@ -52,7 +51,6 @@ public class SettingsActivity extends AppCompatActivity implements View.OnClickL
         bottomNav = findViewById(R.id.bottomNavigationView);
         signOutBtn = findViewById(R.id.signOutBtn);
         changeDetailsBtn = findViewById(R.id.changeDetailsBtn);
-        changeTimerTimeBtn = findViewById(R.id.changeTimerTimeBtn);
 
         bottomNav.setSelectedItemId(R.id.settings);
         bottomNav.setOnItemSelectedListener(item -> {
@@ -76,7 +74,6 @@ public class SettingsActivity extends AppCompatActivity implements View.OnClickL
 
         signOutBtn.setOnClickListener(this);
         changeDetailsBtn.setOnClickListener(this);
-        changeTimerTimeBtn.setOnClickListener(this);
 
         SharedPreferences sharedPreferences = getSharedPreferences("themePref", MODE_PRIVATE);
         final SharedPreferences.Editor editor = sharedPreferences.edit();
@@ -148,38 +145,6 @@ public class SettingsActivity extends AppCompatActivity implements View.OnClickL
             case R.id.changeDetailsBtn:
                 startActivity(new Intent(getApplicationContext(), ChangeDetailsActivity.class));
                 break;
-
-            case R.id.changeTimerTimeBtn:
-                alert = new android.app.AlertDialog.Builder(SettingsActivity.this);
-                alert.setTitle("Change Time");
-
-                layout = new LinearLayout(getApplicationContext());
-                layout.setOrientation(LinearLayout.VERTICAL);
-
-                final EditText newTime = new EditText(getApplicationContext());
-                newTime.setHint("New Time in Seconds");
-                newTime.setLayoutParams(params);
-                newTime.setInputType(InputType.TYPE_CLASS_NUMBER);
-                layout.addView(newTime);
-
-                alert.setView(layout);
-
-                alert.setPositiveButton("Save", (dialog, whichButton) -> {
-                    int timeInt = Integer.parseInt(newTime.getText().toString());
-
-                    if (timeInt >= 30 && timeInt <= 300) {
-                        db.collection("teachers_data").document(user.getUid()).update("timerTime", timeInt);
-                        Toast.makeText(getApplicationContext(), "Time Saved", Toast.LENGTH_LONG).show();
-                    } else {
-                        Toast.makeText(getApplicationContext(), "Time must be between 30 and 300 seconds", Toast.LENGTH_LONG).show();
-                    }
-                });
-
-                alert.setNegativeButton("Cancel", (dialog, whichButton) -> dialog.dismiss());
-
-                alert.show();
-                break;
-
         }
     }
 }
