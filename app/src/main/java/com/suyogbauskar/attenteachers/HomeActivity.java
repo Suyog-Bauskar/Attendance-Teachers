@@ -1,25 +1,24 @@
 package com.suyogbauskar.attenteachers;
 
-import static androidx.constraintlayout.helper.widget.MotionEffect.TAG;
-
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.app.AppCompatDelegate;
-import androidx.appcompat.widget.Toolbar;
-
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.CountDownTimer;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
+import androidx.appcompat.widget.Toolbar;
+
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.Locale;
@@ -27,9 +26,9 @@ import java.util.Random;
 
 public class HomeActivity extends AppCompatActivity implements View.OnClickListener {
 
+    private String firstnameDB, lastnameDB, subjectCodeDB, subjectNameDB;
     private BottomNavigationView bottomNav;
     public static int theme;
-
     private static final long START_TIME_IN_MILLIS = 180000;
     private final int minValue = 10000;
     private final int maxValue = 99999;
@@ -43,6 +42,7 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
     private FirebaseFirestore db;
     private FirebaseUser user;
     private SharedPreferences prefs;
+    private DocumentReference docRef;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,6 +51,19 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
 
         user = FirebaseAuth.getInstance().getCurrentUser();
         db = FirebaseFirestore.getInstance();
+        docRef = db.collection("teachers_data").document(user.getUid());
+
+        docRef.get().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                DocumentSnapshot document = task.getResult();
+                if (document.exists()) {
+                    firstnameDB = document.getString("firstname");
+                    lastnameDB = document.getString("lastname");
+                    subjectCodeDB = document.getString("subject_code");
+                    subjectNameDB = document.getString("subject_name");
+                }
+            }
+        });
 
         prefs = getSharedPreferences("timerPref", MODE_PRIVATE);
 
@@ -103,7 +116,7 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
 
         mButtonStop.setOnClickListener(v -> {
             stopTimer();
-            db.collection("teachers_data").document(user.getUid()).update("code", 0);
+            onAttendanceStop();
         });
 
         rand = new Random();
@@ -121,7 +134,7 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onFinish() {
                 stopAttendance();
-                db.collection("teachers_data").document(user.getUid()).update("code", 0);
+                onAttendanceStop();
             }
         }.start();
 
@@ -186,9 +199,8 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
             mButtonStop.setVisibility(View.VISIBLE);
 
             if (mTimeLeftInMillis < 0) {
-                mTimeLeftInMillis = 0;
-                mTimerRunning = false;
-                updateCountDownText();
+                stopAttendance();
+                onAttendanceStop();
             } else {
                 startTimer();
             }
@@ -205,7 +217,7 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
         switch (v.getId()) {
             case R.id.generateCodeBtn:
                 randomNo = rand.nextInt((maxValue - minValue) + 1) + minValue;
-                db.collection("teachers_data").document(user.getUid()).update("code", randomNo);
+                onAttendanceStart();
                 codeView.setText("Code - " + randomNo);
                 generateCodeBtn.setVisibility(View.GONE);
                 mButtonStop.setVisibility(View.VISIBLE);
@@ -213,5 +225,25 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
                 startTimer();
                 break;
         }
+    }
+
+    private void onAttendanceStart() {
+        db.collection("teachers_data").document("active_attendance").update("code", randomNo);
+        db.collection("teachers_data").document("active_attendance").update("isAttendanceRunning", "true");
+        db.collection("teachers_data").document("active_attendance").update("firstname", firstnameDB);
+        db.collection("teachers_data").document("active_attendance").update("lastname", lastnameDB);
+        db.collection("teachers_data").document("active_attendance").update("subject_code", subjectCodeDB);
+        db.collection("teachers_data").document("active_attendance").update("subject_name", subjectNameDB);
+        db.collection("teachers_data").document("active_attendance").update("uid", user.getUid());
+    }
+
+    private void onAttendanceStop() {
+        db.collection("teachers_data").document("active_attendance").update("code", 0);
+        db.collection("teachers_data").document("active_attendance").update("isAttendanceRunning", "false");
+        db.collection("teachers_data").document("active_attendance").update("firstname", "0");
+        db.collection("teachers_data").document("active_attendance").update("lastname", "0");
+        db.collection("teachers_data").document("active_attendance").update("subject_code", "0");
+        db.collection("teachers_data").document("active_attendance").update("subject_name", "0");
+        db.collection("teachers_data").document("active_attendance").update("uid", "0");
     }
 }

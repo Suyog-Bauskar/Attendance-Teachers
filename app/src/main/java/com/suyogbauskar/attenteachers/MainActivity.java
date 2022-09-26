@@ -1,27 +1,21 @@
 package com.suyogbauskar.attenteachers;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.app.AlertDialog;
-import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
-import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.auth.AuthResult;
+import androidx.appcompat.app.AppCompatActivity;
+
 import com.google.firebase.auth.FirebaseAuth;
+
+import cn.pedant.SweetAlert.SweetAlertDialog;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -33,7 +27,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private LinearLayout.LayoutParams params;
     private AlertDialog.Builder alert;
     private LinearLayout layout;
-    private ProgressBar progressBar;
+    private SweetAlertDialog pDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,7 +44,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         passwordField = findViewById(R.id.loginPasswordField);
         forgotPassword = findViewById(R.id.loginForgotButton);
         loginBtn = findViewById(R.id.loginLoginButton);
-        progressBar = findViewById(R.id.progressBar);
 
         forgotPassword.setOnClickListener(this);
         loginBtn.setOnClickListener(this);
@@ -82,7 +75,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     String resetEmail = email.getText().toString().trim();
 
                     if (!resetEmail.isEmpty()) {
-                        //Implement
                         mAuth.sendPasswordResetEmail(resetEmail)
                                 .addOnSuccessListener(unused -> Toast.makeText(MainActivity.this, "Reset Link Sent To Your Email.", Toast.LENGTH_SHORT).show())
                                 .addOnFailureListener(e -> Toast.makeText(MainActivity.this, "Error ! Reset Link is Not Sent", Toast.LENGTH_SHORT).show());
@@ -129,13 +121,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void showProgressDialog() {
-        progressBar.setVisibility(View.VISIBLE);
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+        pDialog = new SweetAlertDialog(MainActivity.this, SweetAlertDialog.PROGRESS_TYPE);
+        pDialog.getProgressHelper().setBarColor(Color.parseColor("#A5DC86"));
+        pDialog.setTitleText("Loading");
+        pDialog.setCancelable(false);
+        pDialog.show();
     }
 
     private void hideProgressDialog() {
-        progressBar.setVisibility(View.GONE);
-        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+        pDialog.dismiss();
     }
 
     @Override
