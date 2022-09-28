@@ -228,22 +228,22 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void onAttendanceStart() {
-        db.collection("teachers_data").document("active_attendance").update("code", randomNo);
-        db.collection("teachers_data").document("active_attendance").update("isAttendanceRunning", "true");
-        db.collection("teachers_data").document("active_attendance").update("firstname", firstnameDB);
-        db.collection("teachers_data").document("active_attendance").update("lastname", lastnameDB);
-        db.collection("teachers_data").document("active_attendance").update("subject_code", subjectCodeDB);
-        db.collection("teachers_data").document("active_attendance").update("subject_name", subjectNameDB);
-        db.collection("teachers_data").document("active_attendance").update("uid", user.getUid());
+        db.collection("attendance").document("active_attendance").update("code", randomNo);
+        db.collection("attendance").document("active_attendance").update("isAttendanceRunning", "true");
+        db.collection("attendance").document("active_attendance").update("firstname", firstnameDB);
+        db.collection("attendance").document("active_attendance").update("lastname", lastnameDB);
+        db.collection("attendance").document("active_attendance").update("subject_code", subjectCodeDB);
+        db.collection("attendance").document("active_attendance").update("subject_name", subjectNameDB);
+        db.collection("attendance").document("active_attendance").update("uid", user.getUid());
     }
 
     private void onAttendanceStop() {
-        db.collection("teachers_data").document("active_attendance").update("code", 0);
-        db.collection("teachers_data").document("active_attendance").update("isAttendanceRunning", "false");
-        db.collection("teachers_data").document("active_attendance").update("firstname", "0");
-        db.collection("teachers_data").document("active_attendance").update("lastname", "0");
-        db.collection("teachers_data").document("active_attendance").update("subject_code", "0");
-        db.collection("teachers_data").document("active_attendance").update("subject_name", "0");
-        db.collection("teachers_data").document("active_attendance").update("uid", "0");
+        db.collection("attendance").document("active_attendance").update("code", 0);
+        db.collection("attendance").document("active_attendance").update("isAttendanceRunning", "false");
+        db.collection("attendance").document("active_attendance").update("firstname", "0");
+        db.collection("attendance").document("active_attendance").update("lastname", "0");
+        db.collection("attendance").document("active_attendance").update("subject_code", "0");
+        db.collection("attendance").document("active_attendance").update("subject_name", "0");
+        db.collection("attendance").document("active_attendance").update("uid", "0");
     }
 }
