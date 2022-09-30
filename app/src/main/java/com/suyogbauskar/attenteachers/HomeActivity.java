@@ -20,8 +20,13 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
 
+import java.text.SimpleDateFormat;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Random;
 
 public class HomeActivity extends AppCompatActivity implements View.OnClickListener {
@@ -235,6 +240,25 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
         db.collection("attendance").document("active_attendance").update("subject_code", subjectCodeDB);
         db.collection("attendance").document("active_attendance").update("subject_name", subjectNameDB);
         db.collection("attendance").document("active_attendance").update("uid", user.getUid());
+
+        long currentDate = System.currentTimeMillis();
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy/HH/mm/ss/MMMM", Locale.getDefault());
+        String dateStr = dateFormat.format(currentDate);
+        String[] dateArr = dateStr.split("/");
+        int date = Integer.parseInt(dateArr[0]);
+        int month = Integer.parseInt(dateArr[1]);
+        int year = Integer.parseInt(dateArr[2]);
+        int hour = Integer.parseInt(dateArr[3]);
+        int minute = Integer.parseInt(dateArr[4]);
+        int second = Integer.parseInt(dateArr[5]);
+        String monthStr = dateArr[6];
+        String dayAndTime = date + "-" + hour;
+
+        Map<String, Object> attendance = new HashMap<>();
+        attendance.put(dayAndTime, Collections.emptyList());
+
+        DocumentReference todayAttendance = db.collection("attendance").document(subjectCodeDB).collection(String.valueOf(year)).document(monthStr);
+        todayAttendance.set(attendance, SetOptions.merge());
     }
 
     private void onAttendanceStop() {
