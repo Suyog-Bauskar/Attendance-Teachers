@@ -53,8 +53,8 @@ public class SettingsActivity extends AppCompatActivity implements View.OnClickL
                     overridePendingTransition(0, 0);
                     return true;
 
-                case R.id.profile:
-                    startActivity(new Intent(getApplicationContext(), ProfileActivity.class));
+                case R.id.statistics:
+                    startActivity(new Intent(getApplicationContext(), StatisticsActivity.class));
                     overridePendingTransition(0, 0);
                     return true;
 

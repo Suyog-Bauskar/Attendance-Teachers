@@ -34,7 +34,7 @@ import cn.pedant.SweetAlert.SweetAlertDialog;
 
 public class HomeActivity extends AppCompatActivity implements View.OnClickListener {
 
-    private String firstnameDB, lastnameDB, subjectCodeDB, subjectNameDB;
+    public static String firstnameDB, lastnameDB, subjectCodeDB, subjectNameDB;
     private BottomNavigationView bottomNav;
     public static int theme;
     private static final long START_TIME_IN_MILLIS = 180000;
@@ -101,8 +101,8 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
                 case R.id.home:
                     return true;
 
-                case R.id.profile:
-                    startActivity(new Intent(getApplicationContext(), ProfileActivity.class));
+                case R.id.statistics:
+                    startActivity(new Intent(getApplicationContext(), StatisticsActivity.class));
                     overridePendingTransition(0, 0);
                     return true;
 
