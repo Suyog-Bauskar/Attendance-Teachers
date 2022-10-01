@@ -34,12 +34,12 @@
 
     <Button
         android:layout_marginTop="30dp"
-        android:id="@+id/button_stop"
+        android:id="@+id/stopBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@+id/text_view_countdown"
         android:layout_centerHorizontal="true"
-        android:text="start"
+        android:text="stop"
         android:visibility="gone"
         tools:visibility="visible"/>
 
@@ -72,4 +72,15 @@
         app:itemTextColor="@drawable/selector"
         android:layout_alignParentBottom="true"
         app:itemIconTint="@drawable/selector"/>
+
+    <Button
+        android:id="@+id/deleteBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@id/text_view_countdown"
+        android:layout_marginTop="108dp"
+        android:text="Delete"
+        android:visibility="gone"
+        tools:visibility="visible"/>
 </RelativeLayout>

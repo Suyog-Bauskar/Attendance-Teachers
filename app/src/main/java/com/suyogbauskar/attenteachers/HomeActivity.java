@@ -9,6 +9,7 @@ import android.os.CountDownTimer;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
@@ -29,6 +30,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
+import cn.pedant.SweetAlert.SweetAlertDialog;
+
 public class HomeActivity extends AppCompatActivity implements View.OnClickListener {
 
     private String firstnameDB, lastnameDB, subjectCodeDB, subjectNameDB;
@@ -38,7 +41,7 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
     private final int minValue = 10000;
     private final int maxValue = 99999;
     private TextView mTextViewCountDown, codeView;
-    private Button mButtonStop, generateCodeBtn;
+    private Button mButtonStop, generateCodeBtn, deleteBtn;
     private CountDownTimer mCountDownTimer;
     private boolean mTimerRunning;
     private long mTimeLeftInMillis, mEndTime;
@@ -48,6 +51,7 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
     private FirebaseUser user;
     private SharedPreferences prefs;
     private DocumentReference docRef;
+    private SweetAlertDialog pDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,16 +82,19 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
 
         bottomNav = findViewById(R.id.bottomNavigationView);
         mTextViewCountDown = findViewById(R.id.text_view_countdown);
-        mButtonStop = findViewById(R.id.button_stop);
+        mButtonStop = findViewById(R.id.stopBtn);
         generateCodeBtn = findViewById(R.id.generateCodeBtn);
         codeView = findViewById(R.id.codeView);
+        deleteBtn = findViewById(R.id.deleteBtn);
 
         nightModeFlags = getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
         if (nightModeFlags == Configuration.UI_MODE_NIGHT_YES) {
             codeView.setTextColor(Color.WHITE);
             mTextViewCountDown.setTextColor(Color.WHITE);
         }
+
         generateCodeBtn.setOnClickListener(this);
+        deleteBtn.setOnClickListener(this);
 
         bottomNav.setOnItemSelectedListener(item -> {
             switch (item.getItemId()) {
@@ -119,10 +126,7 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
         }
 
-        mButtonStop.setOnClickListener(v -> {
-            stopTimer();
-            onAttendanceStop();
-        });
+        mButtonStop.setOnClickListener(this);
 
         rand = new Random();
     }
@@ -226,8 +230,40 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
                 codeView.setText("Code - " + randomNo);
                 generateCodeBtn.setVisibility(View.GONE);
                 mButtonStop.setVisibility(View.VISIBLE);
+                deleteBtn.setVisibility(View.VISIBLE);
 
                 startTimer();
+                break;
+
+            case R.id.stopBtn:
+                stopTimer();
+                onAttendanceStop();
+                break;
+
+            case R.id.deleteBtn:
+                pDialog = new SweetAlertDialog(HomeActivity.this, SweetAlertDialog.WARNING_TYPE);
+                pDialog.setTitleText("Delete Attendance?");
+                pDialog.setContentText("Currently started attendance will be deleted");
+                pDialog.setConfirmText("Delete");
+                pDialog.setConfirmClickListener(sDialog -> {
+                    sDialog.dismissWithAnimation();
+                    long currentDate = System.currentTimeMillis();
+                    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MMMM", Locale.getDefault());
+                    String dateStr = dateFormat.format(currentDate);
+                    String[] dateArr = dateStr.split("/");
+                    int year = Integer.parseInt(dateArr[0]);
+                    String monthStr = dateArr[1];
+
+                    db.collection("attendance").document(subjectCodeDB).collection(String.valueOf(year)).document(monthStr).delete()
+                            .addOnSuccessListener(unused -> Toast.makeText(getApplicationContext(), "Attendance deleted", Toast.LENGTH_SHORT).show())
+                            .addOnFailureListener(e -> Toast.makeText(getApplicationContext(), "Couldn't delete attendance", Toast.LENGTH_SHORT).show());
+
+                    stopTimer();
+                    onAttendanceStop();
+                });
+                pDialog.setCancelButton("No", SweetAlertDialog::dismissWithAnimation);
+
+                pDialog.show();
                 break;
         }
     }
