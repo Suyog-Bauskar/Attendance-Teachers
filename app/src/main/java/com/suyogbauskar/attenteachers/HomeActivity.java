@@ -22,6 +22,7 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.text.SimpleDateFormat;
 import java.util.Collections;
@@ -240,6 +241,7 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
                 onAttendanceStop();
                 break;
 
+                //TODO : Test delete functionality
             case R.id.deleteBtn:
                 pDialog = new SweetAlertDialog(HomeActivity.this, SweetAlertDialog.WARNING_TYPE);
                 pDialog.setTitleText("Delete Attendance?");
@@ -248,15 +250,32 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
                 pDialog.setConfirmClickListener(sDialog -> {
                     sDialog.dismissWithAnimation();
                     long currentDate = System.currentTimeMillis();
-                    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MMMM", Locale.getDefault());
+                    SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy/HH/mm/ss/MMMM", Locale.getDefault());
                     String dateStr = dateFormat.format(currentDate);
                     String[] dateArr = dateStr.split("/");
-                    int year = Integer.parseInt(dateArr[0]);
-                    String monthStr = dateArr[1];
+                    int date = Integer.parseInt(dateArr[0]);
+                    int month = Integer.parseInt(dateArr[1]);
+                    int year = Integer.parseInt(dateArr[2]);
+                    int hour = Integer.parseInt(dateArr[3]);
+                    int minute = Integer.parseInt(dateArr[4]);
+                    int second = Integer.parseInt(dateArr[5]);
+                    String monthStr = dateArr[6];
+                    String dayAndTime = date + "-" + hour;
 
-                    db.collection("attendance").document(subjectCodeDB).collection(String.valueOf(year)).document(monthStr).delete()
-                            .addOnSuccessListener(unused -> Toast.makeText(getApplicationContext(), "Attendance deleted", Toast.LENGTH_SHORT).show())
-                            .addOnFailureListener(e -> Toast.makeText(getApplicationContext(), "Couldn't delete attendance", Toast.LENGTH_SHORT).show());
+                    db.collection("attendance")
+                            .document(subjectCodeDB)
+                            .collection(String.valueOf(year))
+                            .document(monthStr)
+                            .collection(dayAndTime)
+                            .get()
+                            .addOnCompleteListener(task -> {
+                                if (task.isSuccessful()) {
+                                    for (QueryDocumentSnapshot document : task.getResult()) {
+                                        document.getReference().delete();
+                                    }
+                                    Toast.makeText(getApplicationContext(), "Attendance deleted", Toast.LENGTH_SHORT).show();
+                                }
+                            });
 
                     stopTimer();
                     onAttendanceStop();

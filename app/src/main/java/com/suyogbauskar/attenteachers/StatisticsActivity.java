@@ -1,13 +1,15 @@
 package com.suyogbauskar.attenteachers;
 
+import static androidx.constraintlayout.helper.widget.MotionEffect.TAG;
+
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Environment;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -15,10 +17,15 @@ import androidx.core.app.ActivityCompat;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
@@ -28,6 +35,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -36,8 +44,8 @@ public class StatisticsActivity extends AppCompatActivity implements View.OnClic
     private BottomNavigationView bottomNav;
     private Button excelBtn;
     private FirebaseFirestore db;
-    private List<String> subCollectionsName = new ArrayList<>();
     private Map<String, List<String>> monthsAndSubCollectionsName = new HashMap<>();
+    private List<Student> allStudents = new ArrayList<>(100);
     private File filePath;
     private CollectionReference yearRef;
     private Query rollNoQuery;
@@ -85,12 +93,13 @@ public class StatisticsActivity extends AppCompatActivity implements View.OnClic
 
         yearRef = db.collection("attendance").document(HomeActivity.subjectCodeDB).collection("2022");
 
+        getAllStudentsData();
+
         //TODO : Year is hardcoded, change it to take input from user
         yearRef.get()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         for (QueryDocumentSnapshot document : task.getResult()) {
-                            Map<String, Object> documentData = document.getData();
                             List<String> tempList = (List<String>) document.get("sub_collections_name");
                             monthsAndSubCollectionsName.put(document.getId(), tempList);
                         }
@@ -111,45 +120,120 @@ public class StatisticsActivity extends AppCompatActivity implements View.OnClic
 //                });
     }
 
-    public void createExcelFile() {
+    private void autoSizeAllColumns(Workbook workbook) {
+        int numberOfSheets = workbook.getNumberOfSheets();
+        for (int i = 0; i < numberOfSheets; i++) {
+            Sheet sheet = workbook.getSheetAt(i);
+            if (sheet.getPhysicalNumberOfRows() > 0) {
+                Row row = sheet.getRow(sheet.getFirstRowNum());
+                Iterator<Cell> cellIterator = row.cellIterator();
+                while (cellIterator.hasNext()) {
+                    Cell cell = cellIterator.next();
+                    int columnIndex = cell.getColumnIndex();
+                    if (columnIndex == 1) {
+                        sheet.setColumnWidth(columnIndex, 5000);
+                    } else {
+                        sheet.setColumnWidth(columnIndex, 2000);
+                    }
+                }
+            }
+        }
+    }
+
+    private void getAllStudentsData() {
+        CollectionReference dataCollRef = db.collection("data");
+        Query sortedAllRollNo = dataCollRef.orderBy("rollNo");
+
+        sortedAllRollNo.get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<DocumentSnapshot> snapshotList = queryDocumentSnapshots.getDocuments();
+                    for (DocumentSnapshot snapshot : snapshotList) {
+                        String firstname = snapshot.getString("firstname");
+                        String lastname = snapshot.getString("lastname");
+                        String enrollNo = snapshot.getString("enrollNo");
+                        String uid = snapshot.getString("uid");
+                        int rollNo = Integer.parseInt(String.valueOf(snapshot.get("rollNo")));
+
+                        allStudents.add(new Student(firstname, lastname, enrollNo, uid, rollNo));
+                    }
+                });
+    }
+
+    private void createExcelFile() {
 
         String filename;
-        int rowNo = 0, columnNo = 0;
+        int rowNo, columnNo;
         XSSFWorkbook xssfWorkbook = new XSSFWorkbook();
         XSSFSheet xssfSheet;
         XSSFRow xssfRow;
         XSSFCell xssfCell;
 
-        //TODO : Year is hardcoded, change it to take input from user
-        filename = HomeActivity.subjectNameDB + " Attendance 2022";
-        filePath = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/" + filename + ".xlsx");
+        for (Student s: allStudents) {
+            Log.d(TAG, "rollNo: " + s.getRollNo());
+        }
+        //Months
+        for (Map.Entry<String, List<String>> entry : monthsAndSubCollectionsName.entrySet()) {
 
-        for (Map.Entry<String, Map<String, Object>> entry : attendanceCompleteData.entrySet()) {
-
+            rowNo = 0;
+            columnNo = 0;
             xssfSheet = xssfWorkbook.createSheet(entry.getKey());
 
-            if (rowNo == 0) {
+            xssfRow = xssfSheet.createRow(rowNo);
+
+            xssfCell = xssfRow.createCell(columnNo);
+            xssfCell.setCellValue("Roll No");
+
+            columnNo++;
+
+            xssfCell = xssfRow.createCell(columnNo);
+            xssfCell.setCellValue("Name");
+
+            columnNo++;
+
+            for (String daysStr : entry.getValue()) {
+                xssfCell = xssfRow.createCell(columnNo);
+                xssfCell.setCellValue(daysStr);
+
+                columnNo++;
+            }
+
+            //Filling All Students Data
+            for (Student student : allStudents) {
+                rowNo++;
+                columnNo = 0;
+
                 xssfRow = xssfSheet.createRow(rowNo);
 
                 xssfCell = xssfRow.createCell(columnNo);
-                xssfCell.setCellValue("Roll No");
-
+                xssfCell.setCellValue(student.getRollNo());
                 columnNo++;
 
                 xssfCell = xssfRow.createCell(columnNo);
-                xssfCell.setCellValue("Name");
-
-                columnNo++;
-
-                for (String s : entry.getValue().keySet()) {
-                    xssfCell = xssfRow.createCell(columnNo);
-                    xssfCell.setCellValue(s);
-                    columnNo++;
-                }
+                xssfCell.setCellValue(student.getFirstname() + " " + student.getLastname());
             }
 
-            columnNo = 0;
+//            for (String s : entry.getValue()) {
+//                rollNoQuery = yearRef.document(entry.getKey()).collection(s).orderBy("rollNo");
+//
+//                rollNoQuery.get()
+//                        .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+//                            @Override
+//                            public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+//                                List<DocumentSnapshot> snapshotList = queryDocumentSnapshots.getDocuments();
+//                                for (DocumentSnapshot snapshot : snapshotList) {
+//                                    StudentDataAttendance studentDataAttendance = snapshot.toObject(StudentDataAttendance.class);
+//                                    Log.d(TAG, "Log: " + entry.getKey() + " = Roll no - " + studentDataAttendance.getRollNo());
+//                                }
+//                            }
+//                        });
+//            }
         }
+
+        autoSizeAllColumns(xssfWorkbook);
+
+        //TODO : Year is hardcoded, change it to take input from user
+        filename = HomeActivity.subjectNameDB + " Attendance 2022";
+        filePath = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/" + filename + ".xlsx");
 
         try {
 
