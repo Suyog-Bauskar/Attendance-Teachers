@@ -14,7 +14,9 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import org.apache.poi.xssf.usermodel.XSSFCell;
@@ -24,7 +26,9 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class StatisticsActivity extends AppCompatActivity implements View.OnClickListener {
@@ -32,8 +36,11 @@ public class StatisticsActivity extends AppCompatActivity implements View.OnClic
     private BottomNavigationView bottomNav;
     private Button excelBtn;
     private FirebaseFirestore db;
-    private Map<String, Map<String, Object>> attendanceCompleteData = new HashMap<>();
+    private List<String> subCollectionsName = new ArrayList<>();
+    private Map<String, List<String>> monthsAndSubCollectionsName = new HashMap<>();
     private File filePath;
+    private CollectionReference yearRef;
+    private Query rollNoQuery;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,16 +83,32 @@ public class StatisticsActivity extends AppCompatActivity implements View.OnClic
     protected void onStart() {
         super.onStart();
 
+        yearRef = db.collection("attendance").document(HomeActivity.subjectCodeDB).collection("2022");
+
         //TODO : Year is hardcoded, change it to take input from user
-        db.collection("attendance").document(HomeActivity.subjectCodeDB).collection("2022").get()
+        yearRef.get()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         for (QueryDocumentSnapshot document : task.getResult()) {
                             Map<String, Object> documentData = document.getData();
-                            attendanceCompleteData.put(document.getId(), documentData);
+                            List<String> tempList = (List<String>) document.get("sub_collections_name");
+                            monthsAndSubCollectionsName.put(document.getId(), tempList);
                         }
                     }
                 });
+
+//        rollNoQuery = yearRef.orderBy("rollNo");
+//
+//        rollNoQuery.get()
+//                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+//                    @Override
+//                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+//                        List<DocumentSnapshot> snapshotList = queryDocumentSnapshots.getDocuments();
+//                        for (DocumentSnapshot snapshot: snapshotList) {
+//                            Log.d(TAG, "onSuccess: " + snapshot.get("rollNo"));
+//                        }
+//                    }
+//                });
     }
 
     public void createExcelFile() {
@@ -97,19 +120,11 @@ public class StatisticsActivity extends AppCompatActivity implements View.OnClic
         XSSFRow xssfRow;
         XSSFCell xssfCell;
 
-        if (attendanceCompleteData.isEmpty()) {
-            Toast.makeText(getApplicationContext(), "No data found", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
         //TODO : Year is hardcoded, change it to take input from user
         filename = HomeActivity.subjectNameDB + " Attendance 2022";
         filePath = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/" + filename + ".xlsx");
 
         for (Map.Entry<String, Map<String, Object>> entry : attendanceCompleteData.entrySet()) {
-
-//            Log.d(TAG, "Log Month: " + entry.getKey());
-//            Log.d(TAG, "Log Value: " + entry.getValue());
 
             xssfSheet = xssfWorkbook.createSheet(entry.getKey());
 

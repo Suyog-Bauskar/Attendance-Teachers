@@ -20,8 +20,8 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.SetOptions;
 
 import java.text.SimpleDateFormat;
 import java.util.Collections;
@@ -294,7 +294,7 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
         attendance.put(dayAndTime, Collections.emptyList());
 
         DocumentReference todayAttendance = db.collection("attendance").document(subjectCodeDB).collection(String.valueOf(year)).document(monthStr);
-        todayAttendance.set(attendance, SetOptions.merge());
+        todayAttendance.update("sub_collections_name", FieldValue.arrayUnion(dayAndTime));
     }
 
     private void onAttendanceStop() {
