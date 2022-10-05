@@ -1,14 +1,11 @@
 package com.suyogbauskar.attenteachers;
 
-import static androidx.constraintlayout.helper.widget.MotionEffect.TAG;
-
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
@@ -16,14 +13,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
-import com.google.firebase.firestore.QuerySnapshot;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -58,8 +53,9 @@ public class StatisticsActivity extends AppCompatActivity implements View.OnClic
     private XSSFSheet xssfSheet;
     private XSSFRow xssfRow;
     private XSSFCell xssfCell;
-    private int rowNo, columnNo, listIndex;
+    private int rowNo, columnNo;
     private String filename;
+    private boolean toAdd;
 
     //New
     private Map<String, List<StudentDataAttendance>> tempMap;
@@ -110,20 +106,6 @@ public class StatisticsActivity extends AppCompatActivity implements View.OnClic
         AfterStarting afterStarting = new AfterStarting();
         afterStarting.execute();
 
-//        yearRef = db.collection("attendance").document(HomeActivity.subjectCodeDB).collection("2022");
-//
-//        getAllStudentsData();
-//
-//        //TODO : Year is hardcoded, change it to take input from user
-//        yearRef.get()
-//                .addOnCompleteListener(task -> {
-//                    if (task.isSuccessful()) {
-//                        for (QueryDocumentSnapshot document : task.getResult()) {
-//                            List<String> tempList = (List<String>) document.get("sub_collections_name");
-//                            monthsAndSubCollectionsName.put(document.getId(), tempList);
-//                        }
-//                    }
-//                });
     }
 
     private void autoSizeAllColumns(Workbook workbook) {
@@ -210,116 +192,12 @@ public class StatisticsActivity extends AppCompatActivity implements View.OnClic
             }
     }
 
-//    private void createExcelFile() {
-//
-//        xssfWorkbook = new XSSFWorkbook();
-//
-//        //Months
-//        for (Map.Entry<String, List<String>> entry : monthsAndSubCollectionsName.entrySet()) {
-//
-//            //Headers
-//            rowNo = 0;
-//            columnNo = 0;
-//            xssfSheet = xssfWorkbook.createSheet(entry.getKey());
-//
-//            xssfRow = xssfSheet.createRow(rowNo);
-//
-//            xssfCell = xssfRow.createCell(columnNo);
-//            xssfCell.setCellValue("Roll No");
-//
-//            columnNo++;
-//
-//            xssfCell = xssfRow.createCell(columnNo);
-//            xssfCell.setCellValue("Name");
-//
-//            columnNo++;
-//
-//            for (String daysStr : entry.getValue()) {
-//                xssfCell = xssfRow.createCell(columnNo);
-//                xssfCell.setCellValue(daysStr);
-//
-//                columnNo++;
-//            }
-//
-//            //Filling All Students Data
-//            for (Student student : allStudents) {
-//                rowNo++;
-//                columnNo = 0;
-//
-//                xssfRow = xssfSheet.createRow(rowNo);
-//
-//                xssfCell = xssfRow.createCell(columnNo);
-//                xssfCell.setCellValue(student.getRollNo());
-//                columnNo++;
-//
-//                xssfCell = xssfRow.createCell(columnNo);
-//                xssfCell.setCellValue(student.getFirstname() + " " + student.getLastname());
-//            }
-//
-//            columnNo = 2;
-//
-//            for (String daysStr : entry.getValue()) {
-//                rollNoQuery = yearRef.document(entry.getKey()).collection(daysStr).orderBy("rollNo");
-//
-//                rollNoQuery.get()
-//                        .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-//                            @Override
-//                            public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-//                                List<DocumentSnapshot> snapshotList = queryDocumentSnapshots.getDocuments();
-//                                for (DocumentSnapshot snapshot : snapshotList) {
-//                                    StudentDataAttendance studentDataAttendance = snapshot.toObject(StudentDataAttendance.class);
-//
-//                                    particularDayPresentStudents.add(studentDataAttendance);
-//                                }
-//
-//                                listIndex = 0;
-//
-//                                for (int rowNo = 1; rowNo < xssfSheet.getLastRowNum() + 1; rowNo++) {
-//                                    xssfRow = xssfSheet.getRow(rowNo);
-//                                    xssfCell = xssfRow.getCell(0);
-//
-//                                    int checkingRollNo = (int) xssfCell.getNumericCellValue();
-//
-//                                    if ((listIndex < particularDayPresentStudents.size()) && (checkingRollNo == particularDayPresentStudents.get(listIndex).getRollNo())) {
-//                                        xssfCell = xssfRow.createCell(columnNo);
-//                                        xssfCell.setCellValue("True");
-//                                    }
-//                                    listIndex++;
-//                                }
-//                            }
-//                        });
-//                columnNo++;
-//            }
-//
-//        }
-//
-//        autoSizeAllColumns(xssfWorkbook);
-//
-//        //TODO : Year is hardcoded, change it to take input from user
-//        filename = HomeActivity.subjectNameDB + " Attendance 2022";
-//        filePath = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/" + filename + ".xlsx");
-//
-//        try {
-//
-//            filePath.createNewFile();
-//
-//            FileOutputStream outputStream = new FileOutputStream(filePath);
-//            xssfWorkbook.write(outputStream);
-//            outputStream.flush();
-//            outputStream.close();
-//
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//    }
-
     @Override
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.excelBtn:
                 CreateExcelFile createExcelFile = new CreateExcelFile();
                 createExcelFile.execute();
-//                createExcelFile();
                 break;
         }
     }
@@ -353,47 +231,46 @@ public class StatisticsActivity extends AppCompatActivity implements View.OnClic
                                     rollNoQuery = yearRef.document(entry.getKey()).collection(daysName).orderBy("rollNo");
 
                                     rollNoQuery.get()
-                                            .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                                                @Override
-                                                public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-                                                    List<DocumentSnapshot> snapshotList = queryDocumentSnapshots.getDocuments();
-                                                    for (DocumentSnapshot snapshot : snapshotList) {
-                                                        StudentDataAttendance studentDataAttendance = snapshot.toObject(StudentDataAttendance.class);
+                                            .addOnSuccessListener(queryDocumentSnapshots -> {
+                                                List<DocumentSnapshot> snapshotList = queryDocumentSnapshots.getDocuments();
+                                                for (DocumentSnapshot snapshot : snapshotList) {
+                                                    StudentDataAttendance studentDataAttendance = snapshot.toObject(StudentDataAttendance.class);
 
-                                                        presentStudentsList.add(studentDataAttendance);
+                                                    presentStudentsList.add(studentDataAttendance);
+                                                }
+
+                                                tempMap = new HashMap<>();
+                                                toAdd = true;
+
+                                                List<StudentDataAttendance> tempStudentList = new ArrayList<>();
+
+                                                for (StudentDataAttendance s: presentStudentsList) {
+                                                    tempStudentList.add(new StudentDataAttendance(s.getRollNo(), s.getFirstname(), s.getLastname()));
+                                                }
+
+                                                tempMap.put(daysName, tempStudentList);
+
+                                                if (presentStudentsList != null) {
+                                                    presentStudentsList.clear();
+                                                }
+
+                                                tempListForMap = new ArrayList<>();
+                                                tempListForMap.add(tempMap);
+
+
+                                                presentStudents = new MonthsSubCollPresentStudents(monthName, tempListForMap);
+
+                                                for (int i = 0; i < monthsSubCollPresentStudentsList.size(); i++) {
+                                                    if (monthsSubCollPresentStudentsList.get(i).getMonthName().equals(monthName)) {
+                                                        monthsSubCollPresentStudentsList.get(i).addDayNameAndPresentStudent(tempMap);
+                                                        toAdd = false;
                                                     }
-
-                                                    tempMap = new HashMap<>();
-
-                                                    List<StudentDataAttendance> tempStudentList = new ArrayList<>();
-
-                                                    for (StudentDataAttendance s: presentStudentsList) {
-                                                        tempStudentList.add(new StudentDataAttendance(s.getRollNo(), s.getFirstname(), s.getLastname()));
-                                                    }
-
-                                                    tempMap.put(daysName, tempStudentList);
-
-                                                    if (presentStudentsList != null) {
-                                                        presentStudentsList.clear();
-                                                    }
-
-                                                    tempListForMap = new ArrayList<>();
-                                                    tempListForMap.add(tempMap);
-
-
-                                                    presentStudents = new MonthsSubCollPresentStudents(monthName, tempListForMap);
-
-                                                    //TODO : Add day to this month
-                                                    for (int i = 0; i < monthsSubCollPresentStudentsList.size(); i++) {
-                                                        if (monthsSubCollPresentStudentsList.get(i).getMonthName() == monthName) {
-                                                            monthsSubCollPresentStudentsList.remove(i);
-                                                        }
-                                                    }
+                                                }
+                                                if (toAdd) {
                                                     monthsSubCollPresentStudentsList.add(presentStudents);
                                                 }
                                             });
                                 }
-                                //
                             }
                         }
                     });
@@ -423,24 +300,32 @@ public class StatisticsActivity extends AppCompatActivity implements View.OnClic
 
             int excelRollNo, rollNoFromList, listRollNoIndex, totalRows;
             List<StudentDataAttendance> tempListForStudentAttendance;
+            String excelDayName;
 
-            Log.d(TAG, "doInBackground: " + monthsSubCollPresentStudentsList);
-
+            //Get months name
             for (MonthsSubCollPresentStudents students: monthsSubCollPresentStudentsList) {
-//                Log.d(TAG, "Month: " + students.getMonthName());
 
                 xssfSheet = xssfWorkbook.getSheet(students.getMonthName());
 
                 columnNo = 2;
                 totalRows = xssfSheet.getLastRowNum();
 
+                //Get day names
                 for (Map<String, List<StudentDataAttendance>> list: students.getDayNameAndPresentStudents()) {
                     for (Map.Entry<String, List<StudentDataAttendance>> map: list.entrySet()) {
-//                        Log.d(TAG, "Day Name: " + map.getKey());
 
                         tempListForStudentAttendance = map.getValue();
-                        rollNoFromList = 0;
                         listRollNoIndex = 0;
+
+                        //Get column index to write based on day name
+                        xssfRow = xssfSheet.getRow(0);
+                        for (int i = 0; i < xssfRow.getLastCellNum(); i++) {
+                            xssfCell = xssfRow.getCell(i);
+                            excelDayName = xssfCell.getStringCellValue();
+                            if (excelDayName.equals(map.getKey())) {
+                                columnNo = i;
+                            }
+                        }
 
                         for (rowNo = 1; rowNo < totalRows + 1; rowNo++) {
                             try {
@@ -449,8 +334,6 @@ public class StatisticsActivity extends AppCompatActivity implements View.OnClic
                                 excelRollNo = (int) xssfCell.getNumericCellValue();
                                 rollNoFromList = tempListForStudentAttendance.get(listRollNoIndex).getRollNo();
 
-//                                Log.d(TAG, "excelRollNo: " + excelRollNo);
-//                                Log.d(TAG, "rollNoFromList: " + rollNoFromList);
                                 if (excelRollNo == rollNoFromList) {
                                     xssfCell = xssfRow.createCell(columnNo);
                                     xssfCell.setCellValue("P");

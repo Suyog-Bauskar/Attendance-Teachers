@@ -22,4 +22,8 @@ public class MonthsSubCollPresentStudents {
     public List<Map<String, List<StudentDataAttendance>>> getDayNameAndPresentStudents() {
         return dayNameAndPresentStudents;
     }
+
+    public void addDayNameAndPresentStudent(Map<String, List<StudentDataAttendance>> dayNameAndPresentStudent) {
+        dayNameAndPresentStudents.add(dayNameAndPresentStudent);
+    }
 }
