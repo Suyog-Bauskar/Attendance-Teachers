@@ -6,81 +6,19 @@
     android:layout_height="match_parent"
     tools:context=".HomeActivity">
 
-    <com.google.android.material.appbar.AppBarLayout
-        android:id="@+id/appBarLayout"
+    <FrameLayout
+        android:id="@+id/frameLayout"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:theme="@style/Theme.AttenTeachers"
-        android:layout_alignParentTop="true">
+        android:layout_height="match_parent"
+        android:layout_above="@id/bottomNav_view">
 
-        <androidx.appcompat.widget.Toolbar
-            android:id="@+id/toolbarHome"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            android:background="?attr/colorPrimary"
-            android:popupTheme="@style/ThemeOverlay.AppCompat.Light"
-            android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar" />
-    </com.google.android.material.appbar.AppBarLayout>
-
-    <TextView
-        android:id="@+id/text_view_countdown"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true"
-        android:text="00:00"
-        android:textColor="@android:color/black"
-        android:textSize="60sp"/>
-
-    <Button
-        android:layout_marginTop="30dp"
-        android:id="@+id/stopBtn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/text_view_countdown"
-        android:layout_centerHorizontal="true"
-        android:text="stop"
-        android:visibility="gone"
-        tools:visibility="visible"/>
-
-    <Button
-        android:id="@+id/generateCodeBtn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:layout_below="@+id/text_view_countdown"
-        android:text="Generate"
-        android:layout_marginTop="30dp"/>
-
-    <TextView
-        android:id="@+id/codeView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="120dp"
-        android:text="Generate\nCode"
-        android:textAlignment="center"
-        android:textColor="@color/black"
-        android:textSize="40sp" />
+    </FrameLayout>
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/bottomNavigationView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:menu="@menu/bottom_nav_menu"
-        app:itemTextColor="@drawable/selector"
-        android:layout_alignParentBottom="true"
-        app:itemIconTint="@drawable/selector"/>
+    android:id="@+id/bottomNav_view"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:menu="@menu/bottom_nav_menu"
+    android:layout_alignParentBottom="true"/>
 
-    <Button
-        android:id="@+id/deleteBtn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:layout_below="@id/text_view_countdown"
-        android:layout_marginTop="108dp"
-        android:text="Delete"
-        android:visibility="gone"
-        tools:visibility="visible"/>
 </RelativeLayout>
