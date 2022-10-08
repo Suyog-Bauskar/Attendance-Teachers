@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "773498850587",
+    "firebase_url": "https://attendance-8b04a-default-rtdb.asia-southeast1.firebasedatabase.app",
     "project_id": "attendance-8b04a",
     "storage_bucket": "attendance-8b04a.appspot.com"
   },
@@ -19,6 +20,14 @@
           "android_info": {
             "package_name": "com.suyogbauskar.atten",
             "certificate_hash": "780c5ea5d1650b688b4b58748bc974b946884548"
+          }
+        },
+        {
+          "client_id": "773498850587-m1b22mjj5ccrnj8f7kp10dok98jl8i57.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.suyogbauskar.atten",
+            "certificate_hash": "9f55e441df791a222df2210bfa31f191b91227b9"
           }
         },
         {
@@ -56,6 +65,22 @@
           "android_info": {
             "package_name": "com.suyogbauskar.attenteachers",
             "certificate_hash": "780c5ea5d1650b688b4b58748bc974b946884548"
+          }
+        },
+        {
+          "client_id": "773498850587-hi7j4d53uknf9rkhjb74bq82of580gi5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.suyogbauskar.attenteachers",
+            "certificate_hash": "6a5357adfdcec87e77c7a2ad8bfb0403e5372e1d"
+          }
+        },
+        {
+          "client_id": "773498850587-noti52i4lhsfm5jrqrgvbdcmcmj43nsh.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.suyogbauskar.attenteachers",
+            "certificate_hash": "9f55e441df791a222df2210bfa31f191b91227b9"
           }
         },
         {

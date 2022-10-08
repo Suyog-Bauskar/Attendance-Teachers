@@ -12,18 +12,15 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.fragment.app.Fragment;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FieldValue;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 import java.text.SimpleDateFormat;
 import java.util.Collections;
@@ -46,7 +43,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
     private boolean mTimerRunning;
     private long mTimeLeftInMillis, mEndTime;
     private int randomNo;
-    private FirebaseFirestore db;
     private FirebaseUser user;
 
     public HomeFragment() {
@@ -68,20 +64,15 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
 
     private void fetchDataFromDatabase() {
         user = FirebaseAuth.getInstance().getCurrentUser();
-        db = FirebaseFirestore.getInstance();
-        db.collection("teachers_data")
-                .document(user.getUid())
-                .get().addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        DocumentSnapshot document = task.getResult();
-                        if (document.exists()) {
-                            firstnameDB = document.getString("firstname");
-                            lastnameDB = document.getString("lastname");
-                            subjectCodeDB = document.getString("subject_code");
-                            subjectNameDB = document.getString("subject_name");
-                        }
-                    }
-                });
+        DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid());
+
+        databaseRef.get().addOnCompleteListener(task -> {
+            DataSnapshot document = task.getResult();
+            firstnameDB = document.child("firstname").getValue().toString();
+            lastnameDB = document.child("lastname").getValue().toString();
+            subjectNameDB = document.child("subject_name").getValue().toString();
+            subjectCodeDB = document.child("subject_code").getValue().toString();
+        });
     }
 
     private void findAllViews(View view) {
@@ -163,13 +154,18 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
     }
 
     private void onAttendanceStart() {
-        db.collection("attendance").document("active_attendance").update("code", randomNo);
-        db.collection("attendance").document("active_attendance").update("isAttendanceRunning", "true");
-        db.collection("attendance").document("active_attendance").update("firstname", firstnameDB);
-        db.collection("attendance").document("active_attendance").update("lastname", lastnameDB);
-        db.collection("attendance").document("active_attendance").update("subject_code", subjectCodeDB);
-        db.collection("attendance").document("active_attendance").update("subject_name", subjectNameDB);
-        db.collection("attendance").document("active_attendance").update("uid", user.getUid());
+
+        DatabaseReference activeAttendanceRef = FirebaseDatabase.getInstance().getReference("attendance/active_attendance");
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("code", randomNo);
+        data.put("isAttendanceRunning", true);
+        data.put("firstname", firstnameDB);
+        data.put("lastname", lastnameDB);
+        data.put("subject_code", subjectCodeDB);
+        data.put("subject_name", subjectNameDB);
+
+        activeAttendanceRef.setValue(data);
 
         long currentDate = System.currentTimeMillis();
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy/HH/mm/ss/MMMM", Locale.getDefault());
@@ -187,18 +183,22 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
         Map<String, Object> attendance = new HashMap<>();
         attendance.put(dayAndTime, Collections.emptyList());
 
-        DocumentReference todayAttendance = db.collection("attendance").document(subjectCodeDB).collection(String.valueOf(year)).document(monthStr);
-        todayAttendance.update("sub_collections_name", FieldValue.arrayUnion(dayAndTime));
+//        DocumentReference todayAttendance = db.collection("attendance").document(subjectCodeDB).collection(String.valueOf(year)).document(monthStr);
+//        todayAttendance.update("sub_collections_name", FieldValue.arrayUnion(dayAndTime));
     }
 
     private void onAttendanceStop() {
-        db.collection("attendance").document("active_attendance").update("code", 0);
-        db.collection("attendance").document("active_attendance").update("isAttendanceRunning", "false");
-        db.collection("attendance").document("active_attendance").update("firstname", "0");
-        db.collection("attendance").document("active_attendance").update("lastname", "0");
-        db.collection("attendance").document("active_attendance").update("subject_code", "0");
-        db.collection("attendance").document("active_attendance").update("subject_name", "0");
-        db.collection("attendance").document("active_attendance").update("uid", "0");
+        DatabaseReference activeAttendanceRef = FirebaseDatabase.getInstance().getReference("attendance/active_attendance");
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("code", 0);
+        data.put("isAttendanceRunning", false);
+        data.put("firstname", "0");
+        data.put("lastname", "0");
+        data.put("subject_code", "0");
+        data.put("subject_name", "0");
+
+        activeAttendanceRef.setValue(data);
     }
 
     @Override
@@ -288,20 +288,23 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
                             String monthStr = dateArr[6];
                             String dayAndTime = date + "-" + hour;
 
-                            db.collection("attendance")
-                                    .document(subjectCodeDB)
-                                    .collection(String.valueOf(year))
-                                    .document(monthStr)
-                                    .collection(dayAndTime)
-                                    .get()
-                                    .addOnCompleteListener(task -> {
-                                        if (task.isSuccessful()) {
-                                            for (QueryDocumentSnapshot document : task.getResult()) {
-                                                document.getReference().delete();
-                                            }
-                                            Toast.makeText(getContext(), "Attendance deleted", Toast.LENGTH_SHORT).show();
-                                        }
-                                    });
+                            DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference("/attendance/" + subjectCodeDB + "/" +
+                                    year + "/" + monthStr + "/" +);
+
+//                            db.collection("attendance")
+//                                    .document(subjectCodeDB)
+//                                    .collection(String.valueOf(year))
+//                                    .document(monthStr)
+//                                    .collection(dayAndTime)
+//                                    .get()
+//                                    .addOnCompleteListener(task -> {
+//                                        if (task.isSuccessful()) {
+//                                            for (QueryDocumentSnapshot document : task.getResult()) {
+//                                                document.getReference().delete();
+//                                            }
+//                                            Toast.makeText(getContext(), "Attendance deleted", Toast.LENGTH_SHORT).show();
+//                                        }
+//                                    });
 
                             stopTimer();
                             onAttendanceStop();
