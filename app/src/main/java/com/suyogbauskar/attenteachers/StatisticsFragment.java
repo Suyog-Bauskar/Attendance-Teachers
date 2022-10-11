@@ -12,25 +12,39 @@ import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.MapperFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SequenceWriter;
+import com.fasterxml.jackson.dataformat.csv.CsvMapper;
+import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
+import com.suyogbauskar.attenteachers.pojos.Attendance;
 
 import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+import java.io.IOException;
+import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 public class StatisticsFragment extends Fragment implements View.OnClickListener {
-
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final CsvMapper CSV_MAPPER = new CsvMapper();
     private Button excelBtn;
     private List<Student> students = new ArrayList<>();
 
@@ -80,25 +94,6 @@ public class StatisticsFragment extends Fragment implements View.OnClickListener
         });
     }
 
-    private void getAllPresentStudentsData() {
-        Map<String, List<AttendanceStudent>> presentStudentsData = new HashMap<>();
-
-        //TODO : year is hardcoded, change it to take from teacher
-        DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference("/attendance/22517/2022");
-
-    }
-
-    private void createExcelFile() {
-        getAllPresentStudentsData();
-
-        XSSFWorkbook xssfWorkbook;
-        XSSFSheet xssfSheet;
-        XSSFRow xssfRow;
-        XSSFCell xssfCell;
-
-        int rowNo, columnNo;
-    }
-
     @Override
     public void onStart() {
         super.onStart();
@@ -112,5 +107,60 @@ public class StatisticsFragment extends Fragment implements View.OnClickListener
                 createExcelFile();
                 break;
         }
+    }
+
+    private void createExcelFile() {
+        //TODO : year is hardcoded, change it to take from teacher
+        getAllPresentStudentsData("22517", 2022);
+
+        XSSFWorkbook xssfWorkbook;
+        XSSFSheet xssfSheet;
+        XSSFRow xssfRow;
+        XSSFCell xssfCell;
+
+        int rowNo, columnNo;
+    }
+
+    private void getAllPresentStudentsData(String subjectCode, int year) {
+        Map<String, List<AttendanceStudent>> presentStudentsData = new HashMap<>();
+        fetchData(subjectCode, year, this::dataConsumer);
+    }
+
+    private void dataConsumer(Object data){
+        Attendance attendance = MAPPER.convertValue(data, Attendance.class);
+        Map<String, List<Map<String, Object>>> monthlyAttendance = attendance.getAll();
+        Map<String, Set<String>> monthlyColumns = attendance.getColumns();
+
+        Map<String, String> monthlyCsv= new HashMap<>();
+        monthlyAttendance.forEach( (month, entries) -> monthlyCsv.put(month,getCSV(entries,monthlyColumns.get(month))));
+        System.out.println(monthlyCsv);
+    }
+
+    private String getCSV(List<Map<String, Object>> entries, Set<String> columns) {
+        CsvSchema.Builder schema = CsvSchema.builder().setUseHeader(true);
+        columns.stream().sorted(Comparator.reverseOrder()).forEach(schema::addColumn);
+
+        try (StringWriter strW = new StringWriter()) {
+            SequenceWriter seqW = CSV_MAPPER.writer().withSchema(schema.build()).writeValues(strW);
+            for (Map<String, Object> entry : entries) seqW.write(entry);
+            seqW.close();
+            return strW.toString();
+        }catch (IOException e){
+            throw new RuntimeException("Failed while writing to csv", e);
+        }
+    }
+
+    private void fetchData(String subjectCode, int year, Consumer<Object> dataConsumer) {
+        DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference(String.format("/attendance/%s/%d", subjectCode, year));
+        databaseRef.addListenerForSingleValueEvent(new ValueEventListener(){
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                dataConsumer.accept(snapshot.getValue());
+            }
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                throw new RuntimeException("Event got canceled while waiting", error.toException());
+            }
+        });
     }
 }
