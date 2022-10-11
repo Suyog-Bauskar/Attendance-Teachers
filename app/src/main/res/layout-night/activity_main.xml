@@ -8,7 +8,6 @@
     android:background="@drawable/dark_login_screen">
 
     <TextView
-        android:id="@+id/loginLoginTextview"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:fontFamily="sans-serif-medium"
@@ -22,7 +21,7 @@
         app:layout_constraintVertical_bias="0.286" />
 
     <TextView
-        android:id="@+id/loginForgotButton"
+        android:id="@+id/forgotBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:fontFamily="sans-serif-medium"
@@ -36,7 +35,7 @@
         app:layout_constraintVertical_bias="0.567" />
 
     <EditText
-        android:id="@+id/loginEmailField"
+        android:id="@+id/emailField"
         android:layout_width="wrap_content"
         android:layout_height="50dp"
         android:padding="10dp"
@@ -57,7 +56,7 @@
         app:layout_constraintVertical_bias="0.37" />
 
     <EditText
-        android:id="@+id/loginPasswordField"
+        android:id="@+id/passwordField"
         android:layout_width="wrap_content"
         android:layout_height="50dp"
         android:width="350dp"
@@ -71,14 +70,14 @@
         android:textColor="#FFFFFF"
         android:textColorHint="#FFFFFF"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="@+id/loginEmailField"
+        app:layout_constraintEnd_toEndOf="@+id/emailField"
         app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="@+id/loginEmailField"
+        app:layout_constraintStart_toStartOf="@+id/emailField"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.499" />
 
     <android.widget.Button
-        android:id="@+id/loginLoginButton"
+        android:id="@+id/loginBtn"
         android:layout_width="290dp"
         android:layout_height="48dp"
         android:background="@color/transparent"

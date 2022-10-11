@@ -12,18 +12,22 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.fragment.app.Fragment;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
+import com.google.firebase.database.ValueEventListener;
 
 import java.text.SimpleDateFormat;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -51,7 +55,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_home, container, false);
-        getActivity().setTitle("Home");
+        getActivity().setTitle("Attendance");
 
         fetchDataFromDatabase();
         findAllViews(view);
@@ -166,25 +170,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
         data.put("subject_name", subjectNameDB);
 
         activeAttendanceRef.setValue(data);
-
-        long currentDate = System.currentTimeMillis();
-        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy/HH/mm/ss/MMMM", Locale.getDefault());
-        String dateStr = dateFormat.format(currentDate);
-        String[] dateArr = dateStr.split("/");
-        int date = Integer.parseInt(dateArr[0]);
-        int month = Integer.parseInt(dateArr[1]);
-        int year = Integer.parseInt(dateArr[2]);
-        int hour = Integer.parseInt(dateArr[3]);
-        int minute = Integer.parseInt(dateArr[4]);
-        int second = Integer.parseInt(dateArr[5]);
-        String monthStr = dateArr[6];
-        String dayAndTime = date + "-" + hour;
-
-        Map<String, Object> attendance = new HashMap<>();
-        attendance.put(dayAndTime, Collections.emptyList());
-
-//        DocumentReference todayAttendance = db.collection("attendance").document(subjectCodeDB).collection(String.valueOf(year)).document(monthStr);
-//        todayAttendance.update("sub_collections_name", FieldValue.arrayUnion(dayAndTime));
     }
 
     private void onAttendanceStop() {
@@ -288,23 +273,24 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
                             String monthStr = dateArr[6];
                             String dayAndTime = date + "-" + hour;
 
+                            //TODO : Complete this database reference
                             DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference("/attendance/" + subjectCodeDB + "/" +
-                                    year + "/" + monthStr + "/" +);
+                                    year + "/" + monthStr);
+                            Query currentAttendanceQuery = databaseRef.orderByChild(dayAndTime).equalTo("P");
 
-//                            db.collection("attendance")
-//                                    .document(subjectCodeDB)
-//                                    .collection(String.valueOf(year))
-//                                    .document(monthStr)
-//                                    .collection(dayAndTime)
-//                                    .get()
-//                                    .addOnCompleteListener(task -> {
-//                                        if (task.isSuccessful()) {
-//                                            for (QueryDocumentSnapshot document : task.getResult()) {
-//                                                document.getReference().delete();
-//                                            }
-//                                            Toast.makeText(getContext(), "Attendance deleted", Toast.LENGTH_SHORT).show();
-//                                        }
-//                                    });
+                            currentAttendanceQuery.addListenerForSingleValueEvent(new ValueEventListener() {
+                                @Override
+                                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                    for (DataSnapshot dsp: snapshot.getChildren()) {
+                                        dsp.getRef().child(dayAndTime).removeValue();
+                                    }
+                                }
+
+                                @Override
+                                public void onCancelled(@NonNull DatabaseError error) {
+                                    Toast.makeText(getContext(), "Error, " + error.getMessage(), Toast.LENGTH_LONG).show();
+                                }
+                            });
 
                             stopTimer();
                             onAttendanceStop();
