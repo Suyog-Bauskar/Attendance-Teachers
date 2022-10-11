@@ -31,6 +31,7 @@ import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -41,6 +42,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public class StatisticsFragment extends Fragment implements View.OnClickListener {
     private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -113,8 +115,6 @@ public class StatisticsFragment extends Fragment implements View.OnClickListener
         //TODO : year is hardcoded, change it to take from teacher
         getAllPresentStudentsData("22517", 2022);
 
-        XSSFWorkbook xssfWorkbook;
-        XSSFSheet xssfSheet;
         XSSFRow xssfRow;
         XSSFCell xssfCell;
 
@@ -133,7 +133,18 @@ public class StatisticsFragment extends Fragment implements View.OnClickListener
 
         Map<String, String> monthlyCsv= new HashMap<>();
         monthlyAttendance.forEach( (month, entries) -> monthlyCsv.put(month,getCSV(entries,monthlyColumns.get(month))));
-        System.out.println(monthlyCsv);
+
+        XSSFWorkbook excelFile = new XSSFWorkbook();
+        Map<String, XSSFSheet> map = monthlyCsv.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> getSheet(e.getValue())));
+        excelFile.parseSheet(map,null);
+    }
+
+    private XSSFSheet getSheet(String csvData) {
+        try {
+            XSSFWorkbook workbook = new XSSFWorkbook(new ByteArrayInputStream(csvData.getBytes()));
+            return workbook.getSheetAt(0);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed while creating sheet", e);        }
     }
 
     private String getCSV(List<Map<String, Object>> entries, Set<String> columns) {
