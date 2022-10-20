@@ -12,7 +12,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatDelegate;
@@ -24,7 +23,7 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.Query;
+import com.google.firebase.database.ServerValue;
 import com.google.firebase.database.ValueEventListener;
 
 import java.text.SimpleDateFormat;
@@ -159,6 +158,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
 
     private void onAttendanceStart() {
 
+        FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/lectures_taken_today").setValue(ServerValue.increment(1));
         DatabaseReference activeAttendanceRef = FirebaseDatabase.getInstance().getReference("attendance/active_attendance");
 
         Map<String, Object> data = new HashMap<>();
@@ -168,6 +168,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
         data.put("lastname", lastnameDB);
         data.put("subject_code", subjectCodeDB);
         data.put("subject_name", subjectNameDB);
+        data.put("uid", user.getUid());
 
         activeAttendanceRef.setValue(data);
     }
@@ -182,8 +183,51 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
         data.put("lastname", "0");
         data.put("subject_code", "0");
         data.put("subject_name", "0");
+        data.put("uid", "0");
 
         activeAttendanceRef.setValue(data);
+    }
+
+    private void deleteCurrentAttendance() {
+        new SweetAlertDialog(getContext(), SweetAlertDialog.WARNING_TYPE)
+                .setTitleText("Delete Attendance?")
+                .setContentText("Currently started attendance will be deleted")
+                .setConfirmText("Delete")
+                .setConfirmClickListener(sDialog -> {
+                    sDialog.dismissWithAnimation();
+
+                    long currentDate = System.currentTimeMillis();
+                    SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy/HH/mm/ss/MMMM", Locale.getDefault());
+                    String dateStr = dateFormat.format(currentDate);
+                    String[] dateArr = dateStr.split("/");
+                    int date = Integer.parseInt(dateArr[0]);
+                    int year = Integer.parseInt(dateArr[2]);
+                    String monthStr = dateArr[6];
+
+                    FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/lectures_taken_today")
+                            .addListenerForSingleValueEvent(new ValueEventListener() {
+                                @Override
+                                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                    FirebaseDatabase.getInstance().getReference("/attendance/" + subjectCodeDB + "/" +
+                                            year + "/" + monthStr).child(date + "-" + snapshot.getValue(Integer.class)).removeValue();
+
+                                    FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/lectures_taken_today")
+                                            .setValue(ServerValue.increment(-1));
+                                }
+
+                                @Override
+                                public void onCancelled(@NonNull DatabaseError error) {
+
+                                }
+                            });
+
+
+
+                    stopTimer();
+                    onAttendanceStop();
+                })
+                .setCancelButton("No", SweetAlertDialog::dismissWithAnimation)
+                .show();
     }
 
     @Override
@@ -252,51 +296,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
                 onAttendanceStop();
                 break;
 
-            //TODO : Test delete functionality
             case R.id.deleteBtn:
-                new SweetAlertDialog(getContext(), SweetAlertDialog.WARNING_TYPE)
-                        .setTitleText("Delete Attendance?")
-                        .setContentText("Currently started attendance will be deleted")
-                        .setConfirmText("Delete")
-                        .setConfirmClickListener(sDialog -> {
-                            sDialog.dismissWithAnimation();
-                            long currentDate = System.currentTimeMillis();
-                            SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy/HH/mm/ss/MMMM", Locale.getDefault());
-                            String dateStr = dateFormat.format(currentDate);
-                            String[] dateArr = dateStr.split("/");
-                            int date = Integer.parseInt(dateArr[0]);
-                            int month = Integer.parseInt(dateArr[1]);
-                            int year = Integer.parseInt(dateArr[2]);
-                            int hour = Integer.parseInt(dateArr[3]);
-                            int minute = Integer.parseInt(dateArr[4]);
-                            int second = Integer.parseInt(dateArr[5]);
-                            String monthStr = dateArr[6];
-                            String dayAndTime = date + "-" + hour;
-
-                            //TODO : Complete this database reference
-                            DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference("/attendance/" + subjectCodeDB + "/" +
-                                    year + "/" + monthStr);
-                            Query currentAttendanceQuery = databaseRef.orderByChild(dayAndTime).equalTo("P");
-
-                            currentAttendanceQuery.addListenerForSingleValueEvent(new ValueEventListener() {
-                                @Override
-                                public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                    for (DataSnapshot dsp: snapshot.getChildren()) {
-                                        dsp.getRef().child(dayAndTime).removeValue();
-                                    }
-                                }
-
-                                @Override
-                                public void onCancelled(@NonNull DatabaseError error) {
-                                    Toast.makeText(getContext(), "Error, " + error.getMessage(), Toast.LENGTH_LONG).show();
-                                }
-                            });
-
-                            stopTimer();
-                            onAttendanceStop();
-                        })
-                        .setCancelButton("No", SweetAlertDialog::dismissWithAnimation)
-                        .show();
+                deleteCurrentAttendance();
                 break;
         }
     }
