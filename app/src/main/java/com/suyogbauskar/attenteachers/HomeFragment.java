@@ -1,7 +1,6 @@
 package com.suyogbauskar.attenteachers;
 
 import static android.content.Context.MODE_PRIVATE;
-
 import static androidx.constraintlayout.helper.widget.MotionEffect.TAG;
 
 import android.content.SharedPreferences;
@@ -162,19 +161,33 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
 
     private void onAttendanceStart() {
 
-        FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/lectures_taken_today").setValue(ServerValue.increment(1));
-        DatabaseReference activeAttendanceRef = FirebaseDatabase.getInstance().getReference("attendance/active_attendance");
+        FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/lectures_taken_today").setValue(ServerValue.increment(1))
+                .addOnSuccessListener(unused -> {
+                    DatabaseReference activeAttendanceRef = FirebaseDatabase.getInstance().getReference("attendance/active_attendance");
 
-        Map<String, Object> data = new HashMap<>();
-        data.put("code", randomNo);
-        data.put("isAttendanceRunning", true);
-        data.put("firstname", firstnameDB);
-        data.put("lastname", lastnameDB);
-        data.put("subject_code", subjectCodeDB);
-        data.put("subject_name", subjectNameDB);
-        data.put("uid", user.getUid());
+                    FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/lectures_taken_today")
+                            .addListenerForSingleValueEvent(new ValueEventListener() {
+                                @Override
+                                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                    Map<String, Object> data = new HashMap<>();
+                                    data.put("code", randomNo);
+                                    data.put("isAttendanceRunning", true);
+                                    data.put("firstname", firstnameDB);
+                                    data.put("lastname", lastnameDB);
+                                    data.put("subject_code", subjectCodeDB);
+                                    data.put("subject_name", subjectNameDB);
+                                    data.put("uid", user.getUid());
+                                    data.put("lectures_taken_today", snapshot.getValue(Integer.class));
 
-        activeAttendanceRef.setValue(data);
+                                    activeAttendanceRef.setValue(data);
+                                }
+
+                                @Override
+                                public void onCancelled(@NonNull DatabaseError error) {
+
+                                }
+                            });
+                });
     }
 
     private void onAttendanceStop() {
@@ -188,6 +201,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
         data.put("subject_code", "0");
         data.put("subject_name", "0");
         data.put("uid", "0");
+        data.put("lectures_taken_today", 0);
 
         activeAttendanceRef.setValue(data);
     }
