@@ -2,11 +2,14 @@ package com.suyogbauskar.attenteachers;
 
 import static android.content.Context.MODE_PRIVATE;
 
+import static androidx.constraintlayout.helper.widget.MotionEffect.TAG;
+
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,6 +30,7 @@ import com.google.firebase.database.ServerValue;
 import com.google.firebase.database.ValueEventListener;
 
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -46,7 +50,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
     private boolean mTimerRunning;
     private long mTimeLeftInMillis, mEndTime;
     private int randomNo;
-    private FirebaseUser user;
+    private final FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();;
 
     public HomeFragment() {
     }
@@ -59,6 +63,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
         fetchDataFromDatabase();
         findAllViews(view);
         changeUIForNight();
+        refreshDaily();
         setOnClickListeners();
         setUserDefinedTheme();
 
@@ -66,7 +71,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
     }
 
     private void fetchDataFromDatabase() {
-        user = FirebaseAuth.getInstance().getCurrentUser();
         DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid());
 
         databaseRef.get().addOnCompleteListener(task -> {
@@ -186,6 +190,25 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
         data.put("uid", "0");
 
         activeAttendanceRef.setValue(data);
+    }
+
+    private void refreshDaily() {
+        SharedPreferences sharedPreferences = getActivity().getSharedPreferences("dailyPref", MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+
+        String date = new SimpleDateFormat("dd-MMM-yyyy", Locale.getDefault()).format(new Date());
+
+        boolean hasDayChanged = !sharedPreferences.getString("date", "").equals(date);
+
+        editor.putString("date", date);
+        editor.apply();
+
+        if (hasDayChanged) {
+            Log.d(TAG, "hasDayChanged: True");
+            FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/lectures_taken_today").setValue(0);
+        } else {
+            Log.d(TAG, "hasDayChanged: False");
+        }
     }
 
     private void deleteCurrentAttendance() {
