@@ -1,17 +1,13 @@
-package com.suyogbauskar.attenteachers;
+package com.suyogbauskar.attenteachers.pojos;
 
-import java.util.List;
-
-public class AttendanceStudent {
+public class Student {
     private String firstname, lastname;
     private int rollNo;
-    private List<String> days;
 
-    public AttendanceStudent(String firstname, String lastname, int rollNo, List<String> days) {
+    public Student(String firstname, String lastname, int rollNo) {
         this.firstname = firstname;
         this.lastname = lastname;
         this.rollNo = rollNo;
-        this.days = days;
     }
 
     public String getFirstname() {
@@ -24,9 +20,5 @@ public class AttendanceStudent {
 
     public int getRollNo() {
         return rollNo;
-    }
-
-    public List<String> getDays() {
-        return days;
     }
 }

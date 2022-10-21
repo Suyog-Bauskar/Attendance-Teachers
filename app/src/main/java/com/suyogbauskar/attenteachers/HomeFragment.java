@@ -1,14 +1,12 @@
 package com.suyogbauskar.attenteachers;
 
 import static android.content.Context.MODE_PRIVATE;
-import static androidx.constraintlayout.helper.widget.MotionEffect.TAG;
 
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.CountDownTimer;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -218,10 +216,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
         editor.apply();
 
         if (hasDayChanged) {
-            Log.d(TAG, "hasDayChanged: True");
             FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/lectures_taken_today").setValue(0);
-        } else {
-            Log.d(TAG, "hasDayChanged: False");
         }
     }
 
