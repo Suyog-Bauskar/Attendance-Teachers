@@ -6,6 +6,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.suyogbauskar.attenteachers.fragments.HomeFragment;
+import com.suyogbauskar.attenteachers.fragments.SettingsFragmentNew;
+import com.suyogbauskar.attenteachers.fragments.StatisticsFragment;
 
 public class HomeActivity extends AppCompatActivity {
 

@@ -17,13 +17,15 @@ import com.google.firebase.auth.FirebaseAuth;
 
 import cn.pedant.SweetAlert.SweetAlertDialog;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+public class MainActivity extends AppCompatActivity {
 
     private FirebaseAuth mAuth;
     private EditText emailField, passwordField;
     private TextView forgotPassword;
     private Button loginBtn;
     private SweetAlertDialog pDialog;
+
+    private final SettingManager settingManager = new SettingManager();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,6 +38,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void init() {
+        settingManager.init(getApplication());
         if (getSupportActionBar() != null) {
             getSupportActionBar().hide();
         }
@@ -55,8 +58,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void setOnClickListeners() {
-        forgotPassword.setOnClickListener(this);
-        loginBtn.setOnClickListener(this);
+        forgotPassword.setOnClickListener(this::forgotButton);
+        loginBtn.setOnClickListener(this::loginButton);
     }
 
     private void showProgressDialog() {
@@ -71,7 +74,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         pDialog.dismiss();
     }
 
-    private void forgotButton() {
+    private void forgotButton(View view) {
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         params.setMargins((int) (15 * getResources().getDisplayMetrics().density + 0.5f), (int) (10 * getResources().getDisplayMetrics().density + 0.5f), (int) (15 * getResources().getDisplayMetrics().density + 0.5f), 0);
 
@@ -105,7 +108,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         alert.show();
     }
 
-    private void loginButton() {
+    private void loginButton(View view) {
         String emailStr = emailField.getText().toString().trim();
         String passwordStr = passwordField.getText().toString().trim();
 
@@ -134,19 +137,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 Toast.makeText(MainActivity.this, "Try again!", Toast.LENGTH_SHORT).show();
             }
         });
-    }
-
-    @Override
-    public void onClick(View v) {
-        switch (v.getId()) {
-            case R.id.forgotBtn:
-                forgotButton();
-                break;
-
-            case R.id.loginBtn:
-                loginButton();
-                break;
-        }
     }
 
     @Override

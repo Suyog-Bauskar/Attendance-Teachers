@@ -1,4 +1,4 @@
-package com.suyogbauskar.attenteachers;
+package com.suyogbauskar.attenteachers.fragments;
 
 import static android.content.Context.MODE_PRIVATE;
 
@@ -17,9 +17,12 @@ import android.widget.Spinner;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.fragment.app.Fragment;
 
+import com.suyogbauskar.attenteachers.R;
+import com.suyogbauskar.attenteachers.fragments.HomeFragment;
+
 import java.io.File;
 
-public class SettingsFragment extends Fragment implements View.OnClickListener {
+public class SettingsFragment extends Fragment {
 
     private Button signOutBtn;
 
@@ -42,7 +45,9 @@ public class SettingsFragment extends Fragment implements View.OnClickListener {
     }
 
     private void setOnClickListeners() {
-        signOutBtn.setOnClickListener(this);
+        signOutBtn.setOnClickListener(view -> {
+           // do something on sign out
+        });
     }
 
     private void UIModeConfiguration(View view) {
@@ -113,10 +118,5 @@ public class SettingsFragment extends Fragment implements View.OnClickListener {
         } else {
             return false;
         }
-    }
-
-    @Override
-    public void onClick(View view) {
-
     }
 }

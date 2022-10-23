@@ -1,4 +1,4 @@
-package com.suyogbauskar.attenteachers;
+package com.suyogbauskar.attenteachers.fragments;
 
 import static android.content.Context.MODE_PRIVATE;
 
@@ -25,6 +25,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ServerValue;
 import com.google.firebase.database.ValueEventListener;
+import com.suyogbauskar.attenteachers.R;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -62,7 +63,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
         changeUIForNight();
         refreshDaily();
         setOnClickListeners();
-        setUserDefinedTheme();
 
         return view;
     }
@@ -101,18 +101,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
         mButtonStop.setOnClickListener(this);
     }
 
-    private void setUserDefinedTheme() {
-        SharedPreferences sharedPreferences = getActivity().getSharedPreferences("sharedPrefs", MODE_PRIVATE);
-        theme = sharedPreferences.getInt("theme", 0);
-
-        if (theme == 0) {
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
-        } else if (theme == 1) {
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
-        } else if (theme == 2) {
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
-        }
-    }
 
     private void startTimer() {
         mEndTime = System.currentTimeMillis() + mTimeLeftInMillis;
