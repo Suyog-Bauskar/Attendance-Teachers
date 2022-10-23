@@ -178,6 +178,32 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
                                     data.put("lectures_taken_today", snapshot.getValue(Integer.class));
 
                                     activeAttendanceRef.setValue(data);
+
+                                    long currentDate = System.currentTimeMillis();
+                                    SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy/HH/mm/ss/MMMM", Locale.getDefault());
+                                    String dateStr = dateFormat.format(currentDate);
+                                    String[] dateArr = dateStr.split("/");
+                                    int date = Integer.parseInt(dateArr[0]);
+                                    int year = Integer.parseInt(dateArr[2]);
+                                    String monthStr = dateArr[6];
+
+                                    DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference("/attendance/" + subjectCodeDB + "/" +
+                                            year + "/" + monthStr);
+
+                                    FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/lectures_taken_today")
+                                            .addListenerForSingleValueEvent(new ValueEventListener() {
+                                                @Override
+                                                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                                    databaseRef.child(date + "-" + snapshot.getValue(Integer.class))
+                                                            .child("time")
+                                                            .setValue(ServerValue.TIMESTAMP);
+                                                }
+
+                                                @Override
+                                                public void onCancelled(@NonNull DatabaseError error) {
+
+                                                }
+                                            });
                                 }
 
                                 @Override
