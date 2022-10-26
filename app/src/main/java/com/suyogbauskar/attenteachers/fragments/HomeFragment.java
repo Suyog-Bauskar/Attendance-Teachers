@@ -12,9 +12,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatDelegate;
 import androidx.fragment.app.Fragment;
 
 import com.google.firebase.auth.FirebaseAuth;
@@ -36,7 +36,7 @@ import java.util.Random;
 
 import cn.pedant.SweetAlert.SweetAlertDialog;
 
-public class HomeFragment extends Fragment implements View.OnClickListener {
+public class HomeFragment extends Fragment {
 
     public static int theme;
 
@@ -48,7 +48,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
     private boolean mTimerRunning;
     private long mTimeLeftInMillis, mEndTime;
     private int randomNo;
-    private final FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();;
+    private FirebaseUser user;
 
     public HomeFragment() {
     }
@@ -58,8 +58,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
         View view = inflater.inflate(R.layout.fragment_home, container, false);
         getActivity().setTitle("Attendance");
 
+        init(view);
         fetchDataFromDatabase();
-        findAllViews(view);
         changeUIForNight();
         refreshDaily();
         setOnClickListeners();
@@ -67,16 +67,22 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
         return view;
     }
 
+    private void init(View view) {
+        user = FirebaseAuth.getInstance().getCurrentUser();
+        findAllViews(view);
+    }
+
     private void fetchDataFromDatabase() {
         DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid());
 
         databaseRef.get().addOnCompleteListener(task -> {
-            DataSnapshot document = task.getResult();
-            firstnameDB = document.child("firstname").getValue().toString();
-            lastnameDB = document.child("lastname").getValue().toString();
-            subjectNameDB = document.child("subject_name").getValue().toString();
-            subjectCodeDB = document.child("subject_code").getValue().toString();
-        });
+                    DataSnapshot document = task.getResult();
+                    firstnameDB = document.child("firstname").getValue(String.class);
+                    lastnameDB = document.child("lastname").getValue(String.class);
+                    subjectNameDB = document.child("subject_name").getValue(String.class);
+                    subjectCodeDB = String.valueOf(document.child("subject_code").getValue(Long.class));
+                })
+                .addOnFailureListener(e -> Toast.makeText(getContext(), e.getMessage(), Toast.LENGTH_LONG).show());
     }
 
     private void findAllViews(View view) {
@@ -96,11 +102,12 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
     }
 
     private void setOnClickListeners() {
-        generateCodeBtn.setOnClickListener(this);
-        deleteBtn.setOnClickListener(this);
-        mButtonStop.setOnClickListener(this);
-    }
+        generateCodeBtn.setOnClickListener(view -> generateCodeBtn());
 
+        mButtonStop.setOnClickListener(view -> stopAttendanceBtn());
+
+        deleteBtn.setOnClickListener(view -> deleteCurrentAttendanceBtn());
+    }
 
     private void startTimer() {
         mEndTime = System.currentTimeMillis() + mTimeLeftInMillis;
@@ -189,14 +196,14 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
 
                                                 @Override
                                                 public void onCancelled(@NonNull DatabaseError error) {
-
+                                                    Toast.makeText(getContext(), error.getMessage(), Toast.LENGTH_LONG).show();
                                                 }
                                             });
                                 }
 
                                 @Override
                                 public void onCancelled(@NonNull DatabaseError error) {
-
+                                    Toast.makeText(getContext(), error.getMessage(), Toast.LENGTH_LONG).show();
                                 }
                             });
                 });
@@ -234,7 +241,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
         }
     }
 
-    private void deleteCurrentAttendance() {
+    private void deleteCurrentAttendanceBtn() {
         new SweetAlertDialog(getContext(), SweetAlertDialog.WARNING_TYPE)
                 .setTitleText("Delete Attendance?")
                 .setContentText("Currently started attendance will be deleted")
@@ -263,10 +270,9 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
 
                                 @Override
                                 public void onCancelled(@NonNull DatabaseError error) {
-
+                                    Toast.makeText(getContext(), error.getMessage(), Toast.LENGTH_LONG).show();
                                 }
                             });
-
 
 
                     stopTimer();
@@ -321,30 +327,18 @@ public class HomeFragment extends Fragment implements View.OnClickListener {
         }
     }
 
-    @Override
-    public void onClick(View v) {
-        int minValue = 10000;
-        int maxValue = 99999;
-        switch (v.getId()) {
-            case R.id.generateCodeBtn:
-                randomNo = new Random().nextInt((maxValue - minValue) + 1) + minValue;
-                onAttendanceStart();
-                codeView.setText("Code - " + randomNo);
-                generateCodeBtn.setVisibility(View.GONE);
-                mButtonStop.setVisibility(View.VISIBLE);
-                deleteBtn.setVisibility(View.VISIBLE);
+    private void generateCodeBtn() {
+        randomNo = new Random().nextInt((99999 - 10000) + 1) + 10000;
+        onAttendanceStart();
+        codeView.setText("Code - " + randomNo);
+        generateCodeBtn.setVisibility(View.GONE);
+        mButtonStop.setVisibility(View.VISIBLE);
+        deleteBtn.setVisibility(View.VISIBLE);
+        startTimer();
+    }
 
-                startTimer();
-                break;
-
-            case R.id.stopBtn:
-                stopTimer();
-                onAttendanceStop();
-                break;
-
-            case R.id.deleteBtn:
-                deleteCurrentAttendance();
-                break;
-        }
+    private void stopAttendanceBtn() {
+        stopTimer();
+        onAttendanceStop();
     }
 }

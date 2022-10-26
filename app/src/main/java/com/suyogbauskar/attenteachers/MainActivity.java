@@ -2,7 +2,6 @@ package com.suyogbauskar.attenteachers;
 
 import android.app.AlertDialog;
 import android.content.Intent;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -14,8 +13,8 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.auth.FirebaseAuth;
-
-import cn.pedant.SweetAlert.SweetAlertDialog;
+import com.suyogbauskar.attenteachers.utils.ProgressDialog;
+import com.suyogbauskar.attenteachers.utils.SettingManager;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -23,9 +22,9 @@ public class MainActivity extends AppCompatActivity {
     private EditText emailField, passwordField;
     private TextView forgotPassword;
     private Button loginBtn;
-    private SweetAlertDialog pDialog;
 
     private final SettingManager settingManager = new SettingManager();
+    private final ProgressDialog progressDialog = new ProgressDialog();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,7 +32,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         init();
-        findAllViews();
         setOnClickListeners();
     }
 
@@ -48,6 +46,8 @@ public class MainActivity extends AppCompatActivity {
         if (mAuth.getCurrentUser() != null) {
             startActivity(new Intent(MainActivity.this, HomeActivity.class));
         }
+
+        findAllViews();
     }
 
     private void findAllViews() {
@@ -60,18 +60,6 @@ public class MainActivity extends AppCompatActivity {
     private void setOnClickListeners() {
         forgotPassword.setOnClickListener(this::forgotButton);
         loginBtn.setOnClickListener(this::loginButton);
-    }
-
-    private void showProgressDialog() {
-        pDialog = new SweetAlertDialog(MainActivity.this, SweetAlertDialog.PROGRESS_TYPE);
-        pDialog.getProgressHelper().setBarColor(Color.parseColor("#A5DC86"));
-        pDialog.setTitleText("Loading");
-        pDialog.setCancelable(false);
-        pDialog.show();
-    }
-
-    private void hideProgressDialog() {
-        pDialog.dismiss();
     }
 
     private void forgotButton(View view) {
@@ -98,7 +86,7 @@ public class MainActivity extends AppCompatActivity {
             if (!resetEmail.isEmpty()) {
                 mAuth.sendPasswordResetEmail(resetEmail)
                         .addOnSuccessListener(unused -> Toast.makeText(MainActivity.this, "Reset Link Sent To Your Email.", Toast.LENGTH_SHORT).show())
-                        .addOnFailureListener(e -> Toast.makeText(MainActivity.this, "Error ! Reset Link is Not Sent", Toast.LENGTH_SHORT).show());
+                        .addOnFailureListener(e -> Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show());
             } else {
                 Toast.makeText(getApplicationContext(), "Invalid email", Toast.LENGTH_LONG).show();
             }
@@ -127,16 +115,18 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        showProgressDialog();
+        progressDialog.show(MainActivity.this);
 
-        mAuth.signInWithEmailAndPassword(emailStr, passwordStr).addOnCompleteListener(task -> {
-            hideProgressDialog();
-            if (task.isSuccessful()) {
-                startActivity(new Intent(MainActivity.this, HomeActivity.class));
-            } else {
-                Toast.makeText(MainActivity.this, "Try again!", Toast.LENGTH_SHORT).show();
-            }
-        });
+        mAuth.signInWithEmailAndPassword(emailStr, passwordStr)
+                .addOnCompleteListener(task -> {
+                    progressDialog.hide();
+                    if (task.isSuccessful()) {
+                        startActivity(new Intent(MainActivity.this, HomeActivity.class));
+                    } else {
+                        Toast.makeText(MainActivity.this, "Try again!", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .addOnFailureListener(e -> Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show());
     }
 
     @Override
