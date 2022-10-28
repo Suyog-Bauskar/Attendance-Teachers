@@ -1,11 +1,16 @@
 package com.suyogbauskar.attenteachers;
 
+import static androidx.constraintlayout.helper.widget.MotionEffect.TAG;
+
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Environment;
 import android.os.IBinder;
+import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -35,6 +40,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -102,7 +108,7 @@ public class CreateExcelFileService extends Service {
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
                         //TODO : year is hardcoded, change it to take from teacher
                         DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference("attendance/" +
-                                snapshot.child("subject_code").getValue(Long.class) + "/2022");
+                                snapshot.child("subject_code").getValue(String.class) + "/2022");
 
                         dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
                             @Override
@@ -241,7 +247,14 @@ public class CreateExcelFileService extends Service {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
                         String filename = snapshot.child("subject_name").getValue(String.class) + " Attendance 2022";
-                        File filePath = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/" + filename + ".xlsx");
+
+                        try {
+                            File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/Atten Teachers");
+                            dir.mkdir();
+                        } catch (Exception e) {
+                            sendErrorNotification(e.getMessage());
+                        }
+                        File filePath = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/Atten Teachers/" + filename + ".xlsx");
 
                         try {
 
@@ -272,7 +285,12 @@ public class CreateExcelFileService extends Service {
             rowNo = 0;
             columnNo = 0;
 
-            xssfSheet = xssfWorkbook.createSheet(entry1.getKey());
+            try {
+                xssfSheet = xssfWorkbook.createSheet(entry1.getKey());
+            } catch (IllegalArgumentException e) {
+                sendErrorNotification(e.getMessage());
+                return;
+            }
 
             xssfRow = xssfSheet.createRow(rowNo);
 
@@ -286,13 +304,24 @@ public class CreateExcelFileService extends Service {
 
             columnNo++;
 
-            for (Map.Entry<String, Map<String, Map<String, Object>>> entry2 : entry1.getValue().entrySet()) {
+            float dayNameInFloat;
+            List<Float> dayNameFloatList = new ArrayList<>();
 
+            for (Map.Entry<String, Map<String, Map<String, Object>>> entry2 : entry1.getValue().entrySet()) {
+                dayNameInFloat = Float.parseFloat(entry2.getKey().replace("-", "."));
+                dayNameFloatList.add(dayNameInFloat);
+            }
+
+            Collections.sort(dayNameFloatList);
+
+            String dayNameInStr;
+            for (Float f: dayNameFloatList) {
+                dayNameInStr = f.toString().replace(".", "-");
+                Log.d(TAG, "Value: " + dayNameInStr);
                 xssfCell = xssfRow.createCell(columnNo);
-                xssfCell.setCellValue(entry2.getKey());
+                xssfCell.setCellValue(dayNameInStr);
 
                 columnNo++;
-
             }
 
             //Filling All Students Data
@@ -353,10 +382,18 @@ public class CreateExcelFileService extends Service {
     }
 
     private void sendNotificationOfExcelFileCreated() {
+        Uri selectedUri = Uri.parse(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/Atten Teachers");
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setDataAndType(selectedUri, "resource/folder");
+
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
+
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "File")
                 .setSmallIcon(R.drawable.raw_logo)
                 .setContentText("Excel file saved in downloads folder")
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setContentIntent(pendingIntent)
+                .setAutoCancel(true);
 
         NotificationManagerCompat.from(this).notify(0, builder.build());
     }
