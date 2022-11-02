@@ -7,7 +7,7 @@ import androidx.fragment.app.Fragment;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.suyogbauskar.attenteachers.fragments.HomeFragment;
-import com.suyogbauskar.attenteachers.fragments.SettingsFragmentNew;
+import com.suyogbauskar.attenteachers.fragments.SettingsFragment;
 import com.suyogbauskar.attenteachers.fragments.StatisticsFragment;
 
 public class HomeActivity extends AppCompatActivity {
@@ -31,7 +31,7 @@ public class HomeActivity extends AppCompatActivity {
                     break;
 
                 case R.id.settings:
-                    selectedFragment = new SettingsFragmentNew();
+                    selectedFragment = new SettingsFragment();
                     break;
             }
 

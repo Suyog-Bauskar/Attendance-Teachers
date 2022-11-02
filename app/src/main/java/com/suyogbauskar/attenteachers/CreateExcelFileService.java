@@ -1,7 +1,5 @@
 package com.suyogbauskar.attenteachers;
 
-import static androidx.constraintlayout.helper.widget.MotionEffect.TAG;
-
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -10,7 +8,6 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Environment;
 import android.os.IBinder;
-import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -317,7 +314,6 @@ public class CreateExcelFileService extends Service {
             String dayNameInStr;
             for (Float f: dayNameFloatList) {
                 dayNameInStr = f.toString().replace(".", "-");
-                Log.d(TAG, "Value: " + dayNameInStr);
                 xssfCell = xssfRow.createCell(columnNo);
                 xssfCell.setCellValue(dayNameInStr);
 
