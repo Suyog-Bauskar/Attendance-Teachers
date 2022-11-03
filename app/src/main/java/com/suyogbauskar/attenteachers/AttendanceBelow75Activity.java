@@ -1,7 +1,6 @@
 package com.suyogbauskar.attenteachers;
 
 import android.content.Intent;
-import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
@@ -59,6 +58,7 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
     }
 
     private void init() {
+
         user = FirebaseAuth.getInstance().getCurrentUser();
         studentsAttendance = new HashMap<>();
         allDataOfMonths = new HashMap<>();
@@ -468,7 +468,7 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
                     allStudents.put(dsp.getKey(), new Student(firstname, lastname, rollNo));
                 }
 
-                for (Map.Entry<String, Float> entry: studentsBelow75List.entrySet()) {
+                for (Map.Entry<String, Float> entry : studentsBelow75List.entrySet()) {
                     String firstname = allStudents.get(entry.getKey()).getFirstname();
                     String lastname = allStudents.get(entry.getKey()).getLastname();
                     int rollNo = allStudents.get(entry.getKey()).getRollNo();
@@ -511,26 +511,13 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
         tv1.setGravity(Gravity.CENTER);
         tv2.setGravity(Gravity.CENTER);
 
-        switch (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) {
-            case Configuration.UI_MODE_NIGHT_YES:
-                tv0.setTextColor(Color.WHITE);
-                tv1.setTextColor(Color.WHITE);
-                tv2.setTextColor(Color.WHITE);
+        tv0.setTextColor(Color.BLACK);
+        tv1.setTextColor(Color.BLACK);
+        tv2.setTextColor(Color.BLACK);
 
-                tv0.setBackgroundColor(getResources().getColor(R.color.transparent));
-                tv1.setBackgroundColor(getResources().getColor(R.color.transparent));
-                tv2.setBackgroundColor(getResources().getColor(R.color.transparent));
-                break;
-            case Configuration.UI_MODE_NIGHT_NO:
-                tv0.setTextColor(Color.BLACK);
-                tv1.setTextColor(Color.BLACK);
-                tv2.setTextColor(Color.BLACK);
-
-                tv0.setBackgroundColor(getResources().getColor(R.color.table_header));
-                tv1.setBackgroundColor(getResources().getColor(R.color.table_header));
-                tv2.setBackgroundColor(getResources().getColor(R.color.table_header));
-                break;
-        }
+        tv0.setBackgroundColor(getResources().getColor(R.color.table_header));
+        tv1.setBackgroundColor(getResources().getColor(R.color.table_header));
+        tv2.setBackgroundColor(getResources().getColor(R.color.table_header));
 
         tbRow.addView(tv0);
         tbRow.addView(tv1);
@@ -564,43 +551,24 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
         tv1.setGravity(Gravity.CENTER);
         tv2.setGravity(Gravity.CENTER);
 
-        switch (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) {
-            case Configuration.UI_MODE_NIGHT_YES:
-                tv0.setTextColor(Color.WHITE);
-                tv1.setTextColor(Color.WHITE);
-                tv2.setTextColor(Color.WHITE);
+        tv0.setBackgroundResource(R.drawable.borders);
+        tv1.setBackgroundResource(R.drawable.borders);
+        tv2.setBackgroundResource(R.drawable.borders);
 
-                if (isFirstRow) {
-                    tv0.setBackgroundColor(getResources().getColor(R.color.table_row_white_transparent));
-                    tv1.setBackgroundColor(getResources().getColor(R.color.table_row_white_transparent));
-                    tv2.setBackgroundColor(getResources().getColor(R.color.table_row_white_transparent));
-                    isFirstRow = false;
-                } else {
-                    isFirstRow = true;
-                }
-                break;
-            case Configuration.UI_MODE_NIGHT_NO:
+        tv0.setTextColor(Color.BLACK);
+        tv1.setTextColor(Color.BLACK);
+        tv2.setTextColor(Color.BLACK);
 
-                tv0.setBackgroundResource(R.drawable.borders);
-                tv1.setBackgroundResource(R.drawable.borders);
-                tv2.setBackgroundResource(R.drawable.borders);
-
-                tv0.setTextColor(Color.BLACK);
-                tv1.setTextColor(Color.BLACK);
-                tv2.setTextColor(Color.BLACK);
-
-                if (isFirstRow) {
-                    tv0.setBackgroundColor(getResources().getColor(R.color.white));
-                    tv1.setBackgroundColor(getResources().getColor(R.color.white));
-                    tv2.setBackgroundColor(getResources().getColor(R.color.white));
-                    isFirstRow = false;
-                } else {
-                    tv0.setBackgroundColor(getResources().getColor(R.color.light_gray));
-                    tv1.setBackgroundColor(getResources().getColor(R.color.light_gray));
-                    tv2.setBackgroundColor(getResources().getColor(R.color.light_gray));
-                    isFirstRow = true;
-                }
-                break;
+        if (isFirstRow) {
+            tv0.setBackgroundColor(getResources().getColor(R.color.white));
+            tv1.setBackgroundColor(getResources().getColor(R.color.white));
+            tv2.setBackgroundColor(getResources().getColor(R.color.white));
+            isFirstRow = false;
+        } else {
+            tv0.setBackgroundColor(getResources().getColor(R.color.light_gray));
+            tv1.setBackgroundColor(getResources().getColor(R.color.light_gray));
+            tv2.setBackgroundColor(getResources().getColor(R.color.light_gray));
+            isFirstRow = true;
         }
 
         tbRow.setOnLongClickListener(new View.OnLongClickListener() {

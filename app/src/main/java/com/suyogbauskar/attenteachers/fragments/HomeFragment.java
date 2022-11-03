@@ -3,8 +3,6 @@ package com.suyogbauskar.attenteachers.fragments;
 import static android.content.Context.MODE_PRIVATE;
 
 import android.content.SharedPreferences;
-import android.content.res.Configuration;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.view.LayoutInflater;
@@ -60,7 +58,6 @@ public class HomeFragment extends Fragment {
 
         init(view);
         fetchDataFromDatabase();
-        changeUIForNight();
         refreshDaily();
         setOnClickListeners();
 
@@ -91,14 +88,6 @@ public class HomeFragment extends Fragment {
         generateCodeBtn = view.findViewById(R.id.generateCodeBtn);
         codeView = view.findViewById(R.id.codeView);
         deleteBtn = view.findViewById(R.id.deleteBtn);
-    }
-
-    private void changeUIForNight() {
-        int nightModeFlags = getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
-        if (nightModeFlags == Configuration.UI_MODE_NIGHT_YES) {
-            codeView.setTextColor(Color.WHITE);
-            mTextViewCountDown.setTextColor(Color.WHITE);
-        }
     }
 
     private void setOnClickListeners() {
