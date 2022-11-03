@@ -27,6 +27,7 @@ import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 import com.kal.rackmonthpicker.RackMonthPicker;
 import com.suyogbauskar.attenteachers.pojos.Student;
+import com.suyogbauskar.attenteachers.utils.ProgressDialog;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -47,6 +48,7 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
     private String subjectCode;
     private Map<String, Float> studentsBelow75List;
     private Map<String, Student> allStudents;
+    private ProgressDialog progressDialog = new ProgressDialog();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -144,6 +146,7 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
     }
 
     private void mainCode() {
+        progressDialog.show(this);
         dbRef = FirebaseDatabase.getInstance().getReference("teachers_data").child(user.getUid()).child("subject_code");
         List<String> monthsName = new ArrayList<>();
 
@@ -232,11 +235,13 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
                             }
 
                             calculatePercentageAndCreateRows();
+                            progressDialog.hide();
                         }
 
                         @Override
                         public void onCancelled(@NonNull DatabaseError error) {
                             Toast.makeText(AttendanceBelow75Activity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                            progressDialog.hide();
                         }
                     });
                 }
@@ -244,6 +249,7 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
                 @Override
                 public void onCancelled(@NonNull DatabaseError error) {
                     Toast.makeText(AttendanceBelow75Activity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                    progressDialog.hide();
                 }
             });
         } else {
@@ -420,11 +426,13 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
                                     }
 
                                     calculatePercentageAndCreateRows();
+                                    progressDialog.hide();
                                 }
 
                                 @Override
                                 public void onCancelled(@NonNull DatabaseError error) {
                                     Toast.makeText(AttendanceBelow75Activity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                                    progressDialog.hide();
                                 }
                             });
                         }
@@ -432,6 +440,7 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
                         @Override
                         public void onCancelled(@NonNull DatabaseError error) {
                             Toast.makeText(AttendanceBelow75Activity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                            progressDialog.hide();
                         }
                     });
 
@@ -440,6 +449,7 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
                 @Override
                 public void onCancelled(@NonNull DatabaseError error) {
                     Toast.makeText(AttendanceBelow75Activity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                    progressDialog.hide();
                 }
             });
         }

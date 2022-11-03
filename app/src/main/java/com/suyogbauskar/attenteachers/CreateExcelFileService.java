@@ -39,6 +39,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -127,7 +128,6 @@ public class CreateExcelFileService extends Service {
 
                                 for (Map.Entry<String, Map<String, Map<String, Map<String, Object>>>> entry1 : allMonthsAndChildren.entrySet()) {
                                     //Month
-
                                     monthName = entry1.getKey();
 
                                     for (Map.Entry<String, Map<String, Map<String, Object>>> entry2 : entry1.getValue().entrySet()) {
@@ -163,6 +163,7 @@ public class CreateExcelFileService extends Service {
                                 }
                                 fillStaticData();
                                 fillAttendance();
+                                calculatePercentage();
                                 autoSizeAllColumns(xssfWorkbook);
                                 writeExcelDataToFile();
                                 sendNotificationOfExcelFileCreated();
@@ -184,20 +185,18 @@ public class CreateExcelFileService extends Service {
     }
 
     private void fillAttendance() {
-        int excelRollNo, rollNoFromList, listRollNoIndex = 0, totalRows, columnNo = 0, rowNo;
+        int excelRollNo, rollNoFromList, listRollNoIndex, totalRows, columnNo = 0, rowNo;
         String excelDayName;
         List<Student> tempStudentList = new ArrayList<>();
 
         for (Map.Entry<String, Map<String, List<Student>>> entry1: requiredPresentData.entrySet()) {
             //Month names
-
             xssfSheet = xssfWorkbook.getSheet(entry1.getKey());
 
             totalRows = xssfSheet.getLastRowNum();
 
             for (Map.Entry<String, List<Student>> entry2: entry1.getValue().entrySet()) {
                 //Day names
-
                 listRollNoIndex = 0;
 
                 //Get column index to write based on day name
@@ -207,6 +206,7 @@ public class CreateExcelFileService extends Service {
                     excelDayName = xssfCell.getStringCellValue();
                     if (excelDayName.equals(entry2.getKey())) {
                         columnNo = i;
+                        break;
                     }
                 }
 
@@ -214,6 +214,7 @@ public class CreateExcelFileService extends Service {
                     tempStudentList.clear();
                 }
                 tempStudentList.addAll(entry2.getValue());
+                tempStudentList.sort(Comparator.comparingInt(Student::getRollNo));
 
                 for (rowNo = 1; rowNo < totalRows + 1; rowNo++) {
                     try {
@@ -239,6 +240,43 @@ public class CreateExcelFileService extends Service {
             }
         }
 
+    }
+
+    private void calculatePercentage() {
+        int totalLectures, studentAttendance, totalRows, totalColumns, rowNo, columnNo;
+        float percentage;
+        String cellValue;
+
+        for (Map.Entry<String, Map<String, List<Student>>> entry1: requiredPresentData.entrySet()) {
+            //Month names
+            xssfSheet = xssfWorkbook.getSheet(entry1.getKey());
+
+            totalRows = xssfSheet.getLastRowNum() + 1;
+            xssfRow = xssfSheet.getRow(0);
+            totalColumns = xssfRow.getLastCellNum() - 1;
+            totalLectures = xssfRow.getLastCellNum() - 3;
+
+            for (rowNo = 1; rowNo < totalRows; rowNo++) {
+                xssfRow = xssfSheet.getRow(rowNo);
+                studentAttendance = 0;
+                for (columnNo = 2; columnNo < totalColumns; columnNo++) {
+                    xssfCell = xssfRow.getCell(columnNo);
+                    if (xssfCell != null) {
+                        cellValue = xssfCell.getStringCellValue();
+
+                        if (cellValue.equals("P")) {
+                            studentAttendance++;
+                        }
+                    }
+                }
+
+                percentage = studentAttendance / (float) totalLectures;
+                percentage *= 100;
+
+                xssfCell = xssfRow.createCell(columnNo);
+                xssfCell.setCellValue(percentage);
+            }
+        }
     }
 
     private void writeExcelDataToFile() {
@@ -324,6 +362,9 @@ public class CreateExcelFileService extends Service {
                 columnNo++;
             }
 
+            xssfCell = xssfRow.createCell(columnNo);
+            xssfCell.setCellValue("Percentage");
+
             //Filling All Students Data
             for (Student student : students) {
                 rowNo++;
@@ -351,10 +392,12 @@ public class CreateExcelFileService extends Service {
                 while (cellIterator.hasNext()) {
                     Cell cell = cellIterator.next();
                     int columnIndex = cell.getColumnIndex();
-                    if (columnIndex == 1) {
+                    if (columnIndex == 0) {
+                        sheet.setColumnWidth(columnIndex, 2000);
+                    } else if (columnIndex == 1) {
                         sheet.setColumnWidth(columnIndex, 5000);
                     } else {
-                        sheet.setColumnWidth(columnIndex, 2000);
+                        sheet.setColumnWidth(columnIndex, 3000);
                     }
                 }
             }

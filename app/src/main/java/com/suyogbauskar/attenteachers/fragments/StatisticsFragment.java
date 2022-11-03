@@ -3,7 +3,6 @@ package com.suyogbauskar.attenteachers.fragments;
 import static android.content.Context.MODE_PRIVATE;
 
 import android.Manifest;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -46,9 +45,7 @@ public class StatisticsFragment extends Fragment {
     }
 
     private void setOnClickListeners() {
-        excelBtn.setOnClickListener(view -> {
-            showYearPicker();
-        });
+        excelBtn.setOnClickListener(view -> showYearPicker());
 
         attendanceBelow75Btn.setOnClickListener(view -> startActivity(new Intent(getActivity(), AttendanceBelow75Activity.class)));
     }
@@ -58,32 +55,29 @@ public class StatisticsFragment extends Fragment {
         alertDialog.setTitle("Year");
         String[] items = {"2022", "2023", "2024", "2025", "2026"};
         int checkedItem = 0;
-        alertDialog.setSingleChoiceItems(items, checkedItem, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                SharedPreferences sharedPreferences = getActivity().getSharedPreferences("yearPref",MODE_PRIVATE);
-                SharedPreferences.Editor editor = sharedPreferences.edit();
-                switch (which) {
-                    case 0:
-                        editor.putString("year", items[0]);
-                        break;
-                    case 1:
-                        editor.putString("year", items[1]);
-                        break;
-                    case 2:
-                        editor.putString("year", items[2]);
-                        break;
-                    case 3:
-                        editor.putString("year", items[3]);
-                        break;
-                    case 4:
-                        editor.putString("year", items[4]);
-                        break;
-                }
-                dialog.dismiss();
-                editor.commit();
-                requireActivity().startService(new Intent(getContext(), CreateExcelFileService.class));
+        alertDialog.setSingleChoiceItems(items, checkedItem, (dialog, which) -> {
+            SharedPreferences sharedPreferences = getActivity().getSharedPreferences("yearPref",MODE_PRIVATE);
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            switch (which) {
+                case 0:
+                    editor.putString("year", items[0]);
+                    break;
+                case 1:
+                    editor.putString("year", items[1]);
+                    break;
+                case 2:
+                    editor.putString("year", items[2]);
+                    break;
+                case 3:
+                    editor.putString("year", items[3]);
+                    break;
+                case 4:
+                    editor.putString("year", items[4]);
+                    break;
             }
+            dialog.dismiss();
+            editor.commit();
+            requireActivity().startService(new Intent(getContext(), CreateExcelFileService.class));
         });
         AlertDialog alert = alertDialog.create();
         alert.show();
