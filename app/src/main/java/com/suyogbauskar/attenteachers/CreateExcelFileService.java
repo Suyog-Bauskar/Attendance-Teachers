@@ -5,6 +5,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Environment;
 import android.os.IBinder;
@@ -103,13 +104,19 @@ public class CreateExcelFileService extends Service {
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        //TODO : year is hardcoded, change it to take from teacher
+                        SharedPreferences sharedPreferences = getSharedPreferences("yearPref", MODE_PRIVATE);
+                        String year = sharedPreferences.getString("year", "");
+
                         DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference("attendance/" +
-                                snapshot.child("subject_code").getValue(String.class) + "/2022");
+                                snapshot.child("subject_code").getValue(String.class) + "/" + year);
 
                         dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
                             @Override
                             public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                if (!snapshot.exists()) {
+                                    sendErrorNotification("No attendance found for year " + year);
+                                    return;
+                                }
                                 int counter = 0;
                                 Map<String, List<Student>> tempMap = new HashMap<>();
                                 String monthName, firstname = "", lastname = "", dayName = "";
@@ -119,19 +126,18 @@ public class CreateExcelFileService extends Service {
                                 allMonthsAndChildren = (Map<String, Map<String, Map<String, Map<String, Object>>>>) snapshot.getValue();
 
                                 for (Map.Entry<String, Map<String, Map<String, Map<String, Object>>>> entry1 : allMonthsAndChildren.entrySet()) {
-//                                    Log.d(TAG, "Month: " + entry1.getKey());
+                                    //Month
 
                                     monthName = entry1.getKey();
 
                                     for (Map.Entry<String, Map<String, Map<String, Object>>> entry2 : entry1.getValue().entrySet()) {
-//                                        Log.d(TAG, "Day: " + entry2.getKey());
+                                        //Day
                                         dayName = entry2.getKey();
 
                                         for (Map.Entry<String, Map<String, Object>> entry3 : entry2.getValue().entrySet()) {
-//                                            Log.d(TAG, "UID: " + entry3.getKey());
+                                            //UID
 
                                             for (Map.Entry<String, Object> entry4 : entry3.getValue().entrySet()) {
-//                                                Log.d(TAG, entry4.getKey() + " - " + entry4.getValue());
                                                 if (entry4.getKey().equals("firstname")) {
                                                     firstname = entry4.getValue().toString();
                                                     counter++;
@@ -184,7 +190,6 @@ public class CreateExcelFileService extends Service {
 
         for (Map.Entry<String, Map<String, List<Student>>> entry1: requiredPresentData.entrySet()) {
             //Month names
-//            Log.d(TAG, "Month: " + entry1.getKey());
 
             xssfSheet = xssfWorkbook.getSheet(entry1.getKey());
 
@@ -192,7 +197,6 @@ public class CreateExcelFileService extends Service {
 
             for (Map.Entry<String, List<Student>> entry2: entry1.getValue().entrySet()) {
                 //Day names
-//                Log.d(TAG, "Day: " + entry2.getKey());
 
                 listRollNoIndex = 0;
 

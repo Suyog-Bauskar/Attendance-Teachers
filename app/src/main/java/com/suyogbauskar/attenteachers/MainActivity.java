@@ -14,7 +14,6 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.suyogbauskar.attenteachers.utils.ProgressDialog;
-import com.suyogbauskar.attenteachers.utils.SettingManager;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -23,7 +22,6 @@ public class MainActivity extends AppCompatActivity {
     private TextView forgotPassword;
     private Button loginBtn;
 
-    private final SettingManager settingManager = new SettingManager();
     private final ProgressDialog progressDialog = new ProgressDialog();
 
     @Override
@@ -36,7 +34,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void init() {
-        settingManager.init(getApplication());
         if (getSupportActionBar() != null) {
             getSupportActionBar().hide();
         }
