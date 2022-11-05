@@ -5,6 +5,8 @@ import static android.content.Context.MODE_PRIVATE;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -70,9 +72,8 @@ public class HomeFragment extends Fragment {
     }
 
     private void fetchDataFromDatabase() {
-        DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid());
-
-        databaseRef.get().addOnCompleteListener(task -> {
+        FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid())
+                .get().addOnCompleteListener(task -> {
                     DataSnapshot document = task.getResult();
                     firstnameDB = document.child("firstname").getValue(String.class);
                     lastnameDB = document.child("lastname").getValue(String.class);
@@ -139,8 +140,11 @@ public class HomeFragment extends Fragment {
         updateCountDownText();
         mTimerRunning = false;
         randomNo = 0;
-        getActivity().getSupportFragmentManager().beginTransaction().detach(this).commitNow();
-        getActivity().getSupportFragmentManager().beginTransaction().attach(this).commitNow();
+        Handler uiHandler = new Handler(Looper.getMainLooper());
+        uiHandler.post(() -> {
+            getActivity().getSupportFragmentManager().beginTransaction().detach(HomeFragment.this).commitNow();
+            getActivity().getSupportFragmentManager().beginTransaction().attach(HomeFragment.this).commitNow();
+        });
     }
 
     private void onAttendanceStart() {
@@ -265,6 +269,7 @@ public class HomeFragment extends Fragment {
             codeView.setText("Code - " + randomNo);
             generateCodeBtn.setVisibility(View.GONE);
             mButtonStop.setVisibility(View.VISIBLE);
+            deleteBtn.setVisibility(View.VISIBLE);
 
             if (mTimeLeftInMillis < 0) {
                 stopAttendance();

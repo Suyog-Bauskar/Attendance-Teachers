@@ -5,6 +5,10 @@
         android:icon="@drawable/ic_baseline_home_24"
         android:id="@+id/home"/>
 
+    <item android:title="Attendance"
+        android:icon="@drawable/pencil"
+        android:id="@+id/attendance"/>
+
     <item android:title="Statistics"
         android:icon="@drawable/ic_baseline_data_usage_24"
         android:id="@+id/statistics"/>

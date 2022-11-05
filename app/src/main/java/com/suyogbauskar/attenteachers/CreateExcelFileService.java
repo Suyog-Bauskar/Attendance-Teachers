@@ -165,7 +165,7 @@ public class CreateExcelFileService extends Service {
                                 fillAttendance();
                                 calculatePercentage();
                                 autoSizeAllColumns(xssfWorkbook);
-                                writeExcelDataToFile();
+                                writeExcelDataToFile(year);
                                 sendNotificationOfExcelFileCreated();
                                 stopService(new Intent(getApplicationContext(), CreateExcelFileService.class));
                             }
@@ -279,13 +279,12 @@ public class CreateExcelFileService extends Service {
         }
     }
 
-    private void writeExcelDataToFile() {
-        //TODO : Year is hardcoded, change it to take input from user
+    private void writeExcelDataToFile(String year) {
         FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid())
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        String filename = snapshot.child("subject_name").getValue(String.class) + " Attendance 2022";
+                        String filename = snapshot.child("subject_name").getValue(String.class) + " Attendance " + year;
 
                         try {
                             File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/Atten Teachers");
@@ -434,6 +433,8 @@ public class CreateExcelFileService extends Service {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "File")
                 .setSmallIcon(R.drawable.raw_logo)
                 .setContentText("Excel file saved in downloads folder")
+                .setStyle(new NotificationCompat.BigTextStyle()
+                        .bigText("Excel file saved in downloads folder"))
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setContentIntent(pendingIntent)
                 .setAutoCancel(true);
@@ -445,6 +446,8 @@ public class CreateExcelFileService extends Service {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "Error")
                 .setSmallIcon(R.drawable.raw_logo)
                 .setContentText(error)
+                .setStyle(new NotificationCompat.BigTextStyle()
+                        .bigText(error))
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT);
 
         NotificationManagerCompat.from(this).notify(0, builder.build());
