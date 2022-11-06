@@ -5,6 +5,10 @@
     <string name="email">Email</string>
     <string name="password">Password</string>
     <string name="hello_blank_fragment">Hello blank fragment</string>
+
+    <string name="start">Start</string>
+    <string name="close">Close</string>
+
     <!-- Preference Titles -->
     <string name="messages_header">Messages</string>
     <string name="sync_header">Sync</string>
