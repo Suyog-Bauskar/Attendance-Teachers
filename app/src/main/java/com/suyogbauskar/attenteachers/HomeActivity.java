@@ -6,6 +6,8 @@ import android.app.NotificationManager;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -21,6 +23,12 @@ import androidx.fragment.app.Fragment;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationView;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.suyogbauskar.attenteachers.fragments.AttendanceFragment;
 import com.suyogbauskar.attenteachers.fragments.HomeFragment;
 import com.suyogbauskar.attenteachers.fragments.SettingsFragment;
@@ -33,17 +41,39 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     private DrawerLayout drawerLayout;
     private ActionBarDrawerToggle toggle;
     private NavigationView navigationView;
+    private TextView nameView, emailView;
+    private FirebaseUser user;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
 
+        user = FirebaseAuth.getInstance().getCurrentUser();
+
         createNotificationChannelForError();
         requestStoragePermission();
 
         drawerLayout = findViewById(R.id.drawerLayout);
         navigationView = findViewById(R.id.navigation_view);
+
+        View header = navigationView.getHeaderView(0);
+        nameView = header.findViewById(R.id.nameView);
+        emailView = header.findViewById(R.id.emailView);
+
+        FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid())
+                        .addListenerForSingleValueEvent(new ValueEventListener() {
+                            @Override
+                            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                nameView.setText(snapshot.child("firstname").getValue(String.class) + " " + snapshot.child("lastname").getValue(String.class));
+                                emailView.setText(user.getEmail());
+                            }
+
+                            @Override
+                            public void onCancelled(@NonNull DatabaseError error) {
+
+                            }
+                        });
 
         toggle = new ActionBarDrawerToggle(this, drawerLayout, R.string.start, R.string.close);
         drawerLayout.addDrawerListener(toggle);
@@ -68,10 +98,6 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
 
                 case R.id.statistics:
                     selectedFragment = new StatisticsFragment();
-                    break;
-
-                case R.id.settings:
-                    selectedFragment = new SettingsFragment();
                     break;
             }
 
@@ -142,16 +168,18 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
 
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+        Fragment selectedFragment = null;
         switch (item.getItemId()) {
             case R.id.students:
                 Toast.makeText(this, "Students", Toast.LENGTH_SHORT).show();
                 break;
 
             case R.id.settings:
-                Toast.makeText(this, "Settings", Toast.LENGTH_SHORT).show();
+                selectedFragment = new SettingsFragment();
                 break;
         }
-
+        drawerLayout.closeDrawer(GravityCompat.START);
+        getSupportFragmentManager().beginTransaction().replace(R.id.frameLayout, selectedFragment).commit();
         return true;
     }
 }
