@@ -3,6 +3,7 @@ package com.suyogbauskar.attenteachers;
 import android.Manifest;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.view.MenuItem;
@@ -29,7 +30,6 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-import com.suyogbauskar.attenteachers.fragments.AttendanceFragment;
 import com.suyogbauskar.attenteachers.fragments.HomeFragment;
 import com.suyogbauskar.attenteachers.fragments.SettingsFragment;
 import com.suyogbauskar.attenteachers.fragments.StatisticsFragment;
@@ -93,8 +93,8 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                     break;
 
                 case R.id.attendance:
-                    selectedFragment = new AttendanceFragment();
-                    break;
+                    startActivity(new Intent(HomeActivity.this, LiveAttendanceActivity.class));
+                    return true;
 
                 case R.id.statistics:
                     selectedFragment = new StatisticsFragment();
