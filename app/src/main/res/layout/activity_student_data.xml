@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".LiveAttendanceActivity">
+    tools:context=".StudentDataActivity">
 
     <ScrollView
         android:id="@+id/scrollView"
@@ -12,7 +12,7 @@
         android:layout_height="wrap_content"
         android:background="@color/white"
         android:layout_alignParentTop="true"
-        android:layout_above="@+id/totalPresentStudentsView">
+        android:layout_alignParentBottom="true">
 
         <HorizontalScrollView
             android:layout_width="match_parent"
@@ -27,35 +27,14 @@
     </ScrollView>
 
     <TextView
-        android:id="@+id/noAttendanceStartedView"
+        android:id="@+id/noStudentsFoundView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
-        android:text="No attendance found"
+        android:text="No students found!"
         android:textColor="@color/black"
         android:textSize="19sp"
         android:visibility="gone"
         tools:visibility="visible" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/totalPresentStudentsView"
-        android:layout_alignParentBottom="true"
-        android:textColor="@color/black"
-        android:textSize="17sp"
-        android:layout_marginVertical="10dp"
-        android:layout_marginStart="20dp" />
-
-    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-        android:id="@+id/addStudentBtn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentEnd="true"
-        android:layout_margin="15dp"
-        app:icon="@drawable/ic_baseline_add_24"
-        android:visibility="gone"
-        tools:visibility="visible"/>
 
 </RelativeLayout>

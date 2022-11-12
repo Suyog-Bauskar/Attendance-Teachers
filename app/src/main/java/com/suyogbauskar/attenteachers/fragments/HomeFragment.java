@@ -38,8 +38,6 @@ import cn.pedant.SweetAlert.SweetAlertDialog;
 
 public class HomeFragment extends Fragment {
 
-    public static int theme;
-
     private String firstnameDB, lastnameDB, subjectCodeDB, subjectNameDB;
     private static final long START_TIME_IN_MILLIS = 180000;
     private TextView mTextViewCountDown, codeView;
@@ -92,9 +90,7 @@ public class HomeFragment extends Fragment {
     }
 
     private void setOnClickListeners() {
-        generateCodeBtn.setOnClickListener(view -> {
-            generateCodeBtn();
-        });
+        generateCodeBtn.setOnClickListener(view -> generateCodeBtn());
 
         mButtonStop.setOnClickListener(view -> stopAttendanceBtn());
 

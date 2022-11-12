@@ -5,6 +5,10 @@
         android:title="Students"
         android:icon="@drawable/ic_baseline_group_24" />
 
+    <item android:id="@+id/verification"
+        android:title="Verification"
+        android:icon="@drawable/ic_baseline_verified_24" />
+
     <item android:id="@+id/settings"
         android:title="Settings"
         android:icon="@drawable/ic_baseline_settings_24" />

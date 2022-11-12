@@ -53,6 +53,7 @@ public class LiveAttendanceActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_live_attendance);
         setTitle("Live Attendance");
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         init();
         checkForAttendance();
@@ -309,68 +310,65 @@ public class LiveAttendanceActivity extends AppCompatActivity {
             isFirstRow = true;
         }
 
-        tbRow.setOnLongClickListener(new View.OnLongClickListener() {
-            @Override
-            public boolean onLongClick(View view) {
-                new SweetAlertDialog(LiveAttendanceActivity.this, SweetAlertDialog.WARNING_TYPE)
-                        .setTitleText("Remove Attendance?")
-                        .setContentText("Roll no. " + tbRow.getTag().toString() + " attendance will be removed")
-                        .setConfirmText("Remove")
-                        .setConfirmClickListener(sDialog -> {
-                            sDialog.dismissWithAnimation();
+        tbRow.setOnLongClickListener(view -> {
+            new SweetAlertDialog(LiveAttendanceActivity.this, SweetAlertDialog.WARNING_TYPE)
+                    .setTitleText("Remove Attendance?")
+                    .setContentText("Roll no. " + tbRow.getTag().toString() + " attendance will be removed")
+                    .setConfirmText("Remove")
+                    .setConfirmClickListener(sDialog -> {
+                        sDialog.dismissWithAnimation();
 
-                            long currentDate = System.currentTimeMillis();
-                            SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy/HH/mm/ss/MMMM", Locale.getDefault());
-                            String dateStr = dateFormat.format(currentDate);
-                            String[] dateArr = dateStr.split("/");
-                            int date = Integer.parseInt(dateArr[0]);
-                            int year = Integer.parseInt(dateArr[2]);
-                            String monthStr = dateArr[6];
+                        long currentDate = System.currentTimeMillis();
+                        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy/HH/mm/ss/MMMM", Locale.getDefault());
+                        String dateStr = dateFormat.format(currentDate);
+                        String[] dateArr = dateStr.split("/");
+                        int date = Integer.parseInt(dateArr[0]);
+                        int year = Integer.parseInt(dateArr[2]);
+                        String monthStr = dateArr[6];
 
-                            FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid())
-                                    .addListenerForSingleValueEvent(new ValueEventListener() {
-                                        @Override
-                                        public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                            long currentDate = System.currentTimeMillis();
-                                            SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy/HH/mm/ss/MMMM", Locale.getDefault());
-                                            String dateStr = dateFormat.format(currentDate);
-                                            String[] dateArr = dateStr.split("/");
-                                            int date = Integer.parseInt(dateArr[0]);
-                                            int year = Integer.parseInt(dateArr[2]);
-                                            String monthStr = dateArr[6];
+                        FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid())
+                                .addListenerForSingleValueEvent(new ValueEventListener() {
+                                    @Override
+                                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                        long currentDate = System.currentTimeMillis();
+                                        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy/HH/mm/ss/MMMM", Locale.getDefault());
+                                        String dateStr = dateFormat.format(currentDate);
+                                        String[] dateArr = dateStr.split("/");
+                                        int date = Integer.parseInt(dateArr[0]);
+                                        int year = Integer.parseInt(dateArr[2]);
+                                        String monthStr = dateArr[6];
 
-                                            FirebaseDatabase.getInstance().getReference("/attendance/" + snapshot.child("subject_code").getValue(String.class) + "/" +
-                                                            year + "/" + monthStr).child(date + "-" + snapshot.child("lectures_taken_today").getValue(Integer.class))
-                                                    .orderByChild("rollNo")
-                                                    .equalTo(Integer.parseInt(tbRow.getTag().toString()))
-                                                    .addListenerForSingleValueEvent(new ValueEventListener() {
-                                                        @Override
-                                                        public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                                            for (DataSnapshot ds : snapshot.getChildren()) {
-                                                                ds.getRef()
-                                                                        .removeValue()
-                                                                        .addOnSuccessListener(unused -> Toast.makeText(LiveAttendanceActivity.this, "Roll no. " + rollNo + " removed", Toast.LENGTH_SHORT).show())
-                                                                        .addOnFailureListener(e -> Toast.makeText(LiveAttendanceActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show());
-                                                            }
+                                        FirebaseDatabase.getInstance().getReference("/attendance/" + snapshot.child("subject_code").getValue(String.class) + "/" +
+                                                        year + "/" + monthStr).child(date + "-" + snapshot.child("lectures_taken_today").getValue(Integer.class))
+                                                .orderByChild("rollNo")
+                                                .equalTo(Integer.parseInt(tbRow.getTag().toString()))
+                                                .addListenerForSingleValueEvent(new ValueEventListener() {
+                                                    @Override
+                                                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                                        for (DataSnapshot ds : snapshot.getChildren()) {
+                                                            ds.getRef()
+                                                                    .removeValue()
+                                                                    .addOnSuccessListener(unused -> Toast.makeText(LiveAttendanceActivity.this, "Roll no. " + rollNo + " removed", Toast.LENGTH_SHORT).show())
+                                                                    .addOnFailureListener(e -> Toast.makeText(LiveAttendanceActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show());
                                                         }
+                                                    }
 
-                                                        @Override
-                                                        public void onCancelled(@NonNull DatabaseError error) {
+                                                    @Override
+                                                    public void onCancelled(@NonNull DatabaseError error) {
 
-                                                        }
-                                                    });
-                                        }
+                                                    }
+                                                });
+                                    }
 
-                                        @Override
-                                        public void onCancelled(@NonNull DatabaseError error) {
-                                            Toast.makeText(LiveAttendanceActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
-                                        }
-                                    });
-                        })
-                        .setCancelButton("No", SweetAlertDialog::dismissWithAnimation)
-                        .show();
-                return true;
-            }
+                                    @Override
+                                    public void onCancelled(@NonNull DatabaseError error) {
+                                        Toast.makeText(LiveAttendanceActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                    })
+                    .setCancelButton("No", SweetAlertDialog::dismissWithAnimation)
+                    .show();
+            return true;
         });
 
         tbRow.addView(tv0);
@@ -383,5 +381,11 @@ public class LiveAttendanceActivity extends AppCompatActivity {
     @Override
     public void onBackPressed() {
         startActivity(new Intent(LiveAttendanceActivity.this, HomeActivity.class));
+    }
+
+    @Override
+    public boolean onSupportNavigateUp() {
+        onBackPressed();
+        return true;
     }
 }

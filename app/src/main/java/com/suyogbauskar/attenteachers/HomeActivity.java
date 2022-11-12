@@ -20,7 +20,6 @@ import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
-import androidx.fragment.app.Fragment;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationView;
@@ -71,7 +70,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
 
                             @Override
                             public void onCancelled(@NonNull DatabaseError error) {
-
+                                Toast.makeText(HomeActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
                             }
                         });
 
@@ -85,23 +84,19 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
 
         BottomNavigationView bottomNav = findViewById(R.id.bottomNav_view);
         bottomNav.setOnItemSelectedListener(item -> {
-            Fragment selectedFragment = null;
-
             switch (item.getItemId()) {
                 case R.id.home:
-                    selectedFragment = new HomeFragment();
+                    getSupportFragmentManager().beginTransaction().replace(R.id.frameLayout, new HomeFragment()).commit();
                     break;
 
                 case R.id.attendance:
                     startActivity(new Intent(HomeActivity.this, LiveAttendanceActivity.class));
-                    return true;
+                    break;
 
                 case R.id.statistics:
-                    selectedFragment = new StatisticsFragment();
+                    getSupportFragmentManager().beginTransaction().replace(R.id.frameLayout, new StatisticsFragment()).commit();
                     break;
             }
-
-            getSupportFragmentManager().beginTransaction().replace(R.id.frameLayout, selectedFragment).commit();
             return true;
         });
         getSupportFragmentManager().beginTransaction().replace(R.id.frameLayout, new HomeFragment()).commit();
@@ -168,18 +163,20 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
 
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-        Fragment selectedFragment = null;
         switch (item.getItemId()) {
             case R.id.students:
-                Toast.makeText(this, "Students", Toast.LENGTH_SHORT).show();
+                startActivity(new Intent(HomeActivity.this, StudentDataActivity.class));
+                break;
+
+            case R.id.verification:
+                startActivity(new Intent(HomeActivity.this, StudentVerificationActivity.class));
                 break;
 
             case R.id.settings:
-                selectedFragment = new SettingsFragment();
+                getSupportFragmentManager().beginTransaction().replace(R.id.frameLayout, new SettingsFragment()).commit();
                 break;
         }
         drawerLayout.closeDrawer(GravityCompat.START);
-        getSupportFragmentManager().beginTransaction().replace(R.id.frameLayout, selectedFragment).commit();
         return true;
     }
 }
