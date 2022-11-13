@@ -15,6 +15,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 
 import com.google.firebase.auth.FirebaseAuth;
@@ -38,7 +39,7 @@ import cn.pedant.SweetAlert.SweetAlertDialog;
 
 public class HomeFragment extends Fragment {
 
-    private String firstnameDB, lastnameDB, subjectCodeDB, subjectNameDB;
+    private String firstnameDB, lastnameDB, subjectCodeDB, subjectNameDB, attendanceOf = "";
     private static final long START_TIME_IN_MILLIS = 180000;
     private TextView mTextViewCountDown, codeView;
     private Button mButtonStop, generateCodeBtn, deleteBtn;
@@ -47,6 +48,7 @@ public class HomeFragment extends Fragment {
     private long mTimeLeftInMillis, mEndTime;
     private int randomNo;
     private FirebaseUser user;
+    private static final String LECTURE_CO5I_A = "CO5I-A Lecture", LECTURE_CO5I_B = "CO5I-B Lecture", CO5I_1 = "CO5I-1 Practical", CO5I_2 = "CO5I-2 Practical", CO5I_3 = "CO5I-3 Practical", CO5I_4 = "CO5I-4 Practical", CO5I_5 = "CO5I-5 Practical";
 
     public HomeFragment() {
     }
@@ -143,7 +145,28 @@ public class HomeFragment extends Fragment {
         });
     }
 
-    private void onAttendanceStart() {
+    private void onAttendanceStart(String attendanceOf) {
+
+        switch (attendanceOf) {
+            case :
+
+                break;
+            case "CO5I-1":
+
+                break;
+            case "CO5I-2":
+
+                break;
+            case "CO5I-3":
+
+                break;
+            case "CO5I-4":
+
+                break;
+            case "CO5I-5":
+
+                break;
+        }
 
         FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/lectures_taken_today").setValue(ServerValue.increment(1))
                 .addOnSuccessListener(unused -> {
@@ -204,6 +227,11 @@ public class HomeFragment extends Fragment {
 
         if (hasDayChanged) {
             FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/lectures_taken_today").setValue(0);
+            FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/CO5I-1_practicals_taken_today").setValue(0);
+            FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/CO5I-2_practicals_taken_today").setValue(0);
+            FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/CO5I-3_practicals_taken_today").setValue(0);
+            FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/CO5I-4_practicals_taken_today").setValue(0);
+            FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/CO5I-5_practicals_taken_today").setValue(0);
         }
     }
 
@@ -296,12 +324,45 @@ public class HomeFragment extends Fragment {
 
     private void generateCodeBtn() {
         randomNo = new Random().nextInt((99999 - 10000) + 1) + 10000;
-        onAttendanceStart();
-        codeView.setText("Code - " + randomNo);
-        generateCodeBtn.setVisibility(View.GONE);
-        mButtonStop.setVisibility(View.VISIBLE);
-        deleteBtn.setVisibility(View.VISIBLE);
-        startTimer();
+
+        AlertDialog.Builder alertDialog = new AlertDialog.Builder(getContext());
+        alertDialog.setTitle("You are taking attendance of");
+        String[] items = {LECTURE_CO5I_A, LECTURE_CO5I_B, CO5I_1, CO5I_2, CO5I_3, CO5I_4, CO5I_5};
+        int checkedItem = 0;
+        alertDialog.setSingleChoiceItems(items, checkedItem, (dialog, which) -> {
+            switch (which) {
+                case 0:
+                    attendanceOf = items[0];
+                    break;
+                case 1:
+                    attendanceOf = items[1];
+                    break;
+                case 2:
+                    attendanceOf = items[2];
+                    break;
+                case 3:
+                    attendanceOf = items[3];
+                    break;
+                case 4:
+                    attendanceOf = items[4];
+                    break;
+                case 5:
+                    attendanceOf = items[5];
+                    break;
+                case 6:
+                    attendanceOf = items[6];
+                    break;
+            }
+            onAttendanceStart();
+            codeView.setText("Code - " + randomNo);
+            generateCodeBtn.setVisibility(View.GONE);
+            mButtonStop.setVisibility(View.VISIBLE);
+            deleteBtn.setVisibility(View.VISIBLE);
+            startTimer();
+            dialog.dismiss();
+        });
+        AlertDialog alert = alertDialog.create();
+        alert.show();
     }
 
     private void stopAttendanceBtn() {
