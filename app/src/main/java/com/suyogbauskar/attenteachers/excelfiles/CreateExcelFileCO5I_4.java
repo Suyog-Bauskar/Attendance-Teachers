@@ -111,7 +111,7 @@ public class CreateExcelFileCO5I_4 extends Service {
                                     @Override
                                     public void onDataChange(@NonNull DataSnapshot snapshot) {
                                         if (!snapshot.exists()) {
-                                            sendErrorNotification("No attendance found for year " + year);
+                                            sendErrorNotification("No attendance found of CO5I-4 " + year);
                                             return;
                                         }
                                         int counter = 0;
@@ -408,9 +408,9 @@ public class CreateExcelFileCO5I_4 extends Service {
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "File")
                 .setSmallIcon(R.drawable.raw_logo)
-                .setContentText("Excel file saved in downloads folder")
+                .setContentText("Excel file of CO5I-4 saved in downloads folder")
                 .setStyle(new NotificationCompat.BigTextStyle()
-                        .bigText("Excel file saved in downloads folder"))
+                        .bigText("Excel file of CO5I-4 saved in downloads folder"))
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setContentIntent(pendingIntent)
                 .setAutoCancel(true);
