@@ -158,6 +158,7 @@ public class HomeFragment extends Fragment {
 
         switch (attendanceOf) {
             case LECTURE_CO5I_A:
+                Toast.makeText(getContext(), "Attendance started of CO5I-A", Toast.LENGTH_SHORT).show();
                 FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/" + DB_PATH_LECTURE_COUNT_CO5I_A).setValue(ServerValue.increment(1))
                         .addOnSuccessListener(unused -> FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/" + DB_PATH_LECTURE_COUNT_CO5I_A)
                                 .addListenerForSingleValueEvent(new ValueEventListener() {
@@ -175,6 +176,7 @@ public class HomeFragment extends Fragment {
 
                 break;
             case LECTURE_CO5I_B:
+                Toast.makeText(getContext(), "Attendance started of CO5I-B", Toast.LENGTH_SHORT).show();
                 FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/" + DB_PATH_LECTURE_COUNT_CO5I_B).setValue(ServerValue.increment(1))
                         .addOnSuccessListener(unused -> FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/" + DB_PATH_LECTURE_COUNT_CO5I_B)
                                 .addListenerForSingleValueEvent(new ValueEventListener() {
@@ -192,6 +194,7 @@ public class HomeFragment extends Fragment {
 
                 break;
             case CO5I_1:
+                Toast.makeText(getContext(), "Attendance started of CO5I-1", Toast.LENGTH_SHORT).show();
                 FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/" + DB_PATH_PRACTICAL_COUNT_CO5I_1).setValue(ServerValue.increment(1))
                         .addOnSuccessListener(unused -> FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/" + DB_PATH_PRACTICAL_COUNT_CO5I_1)
                                 .addListenerForSingleValueEvent(new ValueEventListener() {
@@ -209,6 +212,7 @@ public class HomeFragment extends Fragment {
 
                 break;
             case CO5I_2:
+                Toast.makeText(getContext(), "Attendance started of CO5I-2", Toast.LENGTH_SHORT).show();
                 FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/" + DB_PATH_PRACTICAL_COUNT_CO5I_2).setValue(ServerValue.increment(1))
                         .addOnSuccessListener(unused -> FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/" + DB_PATH_PRACTICAL_COUNT_CO5I_2)
                                 .addListenerForSingleValueEvent(new ValueEventListener() {
@@ -226,6 +230,7 @@ public class HomeFragment extends Fragment {
 
                 break;
             case CO5I_3:
+                Toast.makeText(getContext(), "Attendance started of CO5I-3", Toast.LENGTH_SHORT).show();
                 FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/" + DB_PATH_PRACTICAL_COUNT_CO5I_3).setValue(ServerValue.increment(1))
                         .addOnSuccessListener(unused -> FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/" + DB_PATH_PRACTICAL_COUNT_CO5I_3)
                                 .addListenerForSingleValueEvent(new ValueEventListener() {
@@ -243,6 +248,7 @@ public class HomeFragment extends Fragment {
 
                 break;
             case CO5I_4:
+                Toast.makeText(getContext(), "Attendance started of CO5I-4", Toast.LENGTH_SHORT).show();
                 FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/" + DB_PATH_PRACTICAL_COUNT_CO5I_4).setValue(ServerValue.increment(1))
                         .addOnSuccessListener(unused -> FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/" + DB_PATH_PRACTICAL_COUNT_CO5I_4)
                                 .addListenerForSingleValueEvent(new ValueEventListener() {
@@ -260,6 +266,7 @@ public class HomeFragment extends Fragment {
 
                 break;
             case CO5I_5:
+                Toast.makeText(getContext(), "Attendance started of CO5I-5", Toast.LENGTH_SHORT).show();
                 FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/" + DB_PATH_PRACTICAL_COUNT_CO5I_5).setValue(ServerValue.increment(1))
                         .addOnSuccessListener(unused -> FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/" + DB_PATH_PRACTICAL_COUNT_CO5I_5)
                                 .addListenerForSingleValueEvent(new ValueEventListener() {
@@ -357,7 +364,7 @@ public class HomeFragment extends Fragment {
                                     .addListenerForSingleValueEvent(new ValueEventListener() {
                                         @Override
                                         public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                            FirebaseDatabase.getInstance().getReference("/attendance/CO5I-A" + subjectCodeDB + "/" +
+                                            FirebaseDatabase.getInstance().getReference("/attendance/CO5I-A/" + subjectCodeDB + "/" +
                                                     year + "/" + monthStr).child(date + "-" + snapshot.getValue(Integer.class)).removeValue();
 
                                             FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/" + DB_PATH_LECTURE_COUNT_CO5I_A)
@@ -375,7 +382,7 @@ public class HomeFragment extends Fragment {
                                     .addListenerForSingleValueEvent(new ValueEventListener() {
                                         @Override
                                         public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                            FirebaseDatabase.getInstance().getReference("/attendance/CO5I-B" + subjectCodeDB + "/" +
+                                            FirebaseDatabase.getInstance().getReference("/attendance/CO5I-B/" + subjectCodeDB + "/" +
                                                     year + "/" + monthStr).child(date + "-" + snapshot.getValue(Integer.class)).removeValue();
 
                                             FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/" + DB_PATH_LECTURE_COUNT_CO5I_B)
@@ -393,7 +400,7 @@ public class HomeFragment extends Fragment {
                                     .addListenerForSingleValueEvent(new ValueEventListener() {
                                         @Override
                                         public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                            FirebaseDatabase.getInstance().getReference("/attendance/CO5I-1" + subjectCodeDB + "/" +
+                                            FirebaseDatabase.getInstance().getReference("/attendance/CO5I-1/" + subjectCodeDB + "/" +
                                                     year + "/" + monthStr).child(date + "-" + snapshot.getValue(Integer.class)).removeValue();
 
                                             FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/" + DB_PATH_PRACTICAL_COUNT_CO5I_1)
@@ -411,7 +418,7 @@ public class HomeFragment extends Fragment {
                                     .addListenerForSingleValueEvent(new ValueEventListener() {
                                         @Override
                                         public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                            FirebaseDatabase.getInstance().getReference("/attendance/CO5I-2" + subjectCodeDB + "/" +
+                                            FirebaseDatabase.getInstance().getReference("/attendance/CO5I-2/" + subjectCodeDB + "/" +
                                                     year + "/" + monthStr).child(date + "-" + snapshot.getValue(Integer.class)).removeValue();
 
                                             FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/" + DB_PATH_PRACTICAL_COUNT_CO5I_2)
@@ -429,7 +436,7 @@ public class HomeFragment extends Fragment {
                                     .addListenerForSingleValueEvent(new ValueEventListener() {
                                         @Override
                                         public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                            FirebaseDatabase.getInstance().getReference("/attendance/CO5I-3" + subjectCodeDB + "/" +
+                                            FirebaseDatabase.getInstance().getReference("/attendance/CO5I-3/" + subjectCodeDB + "/" +
                                                     year + "/" + monthStr).child(date + "-" + snapshot.getValue(Integer.class)).removeValue();
 
                                             FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/" + DB_PATH_PRACTICAL_COUNT_CO5I_3)
@@ -447,7 +454,7 @@ public class HomeFragment extends Fragment {
                                     .addListenerForSingleValueEvent(new ValueEventListener() {
                                         @Override
                                         public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                            FirebaseDatabase.getInstance().getReference("/attendance/CO5I-4" + subjectCodeDB + "/" +
+                                            FirebaseDatabase.getInstance().getReference("/attendance/CO5I-4/" + subjectCodeDB + "/" +
                                                     year + "/" + monthStr).child(date + "-" + snapshot.getValue(Integer.class)).removeValue();
 
                                             FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/" + DB_PATH_PRACTICAL_COUNT_CO5I_4)
@@ -465,7 +472,7 @@ public class HomeFragment extends Fragment {
                                     .addListenerForSingleValueEvent(new ValueEventListener() {
                                         @Override
                                         public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                            FirebaseDatabase.getInstance().getReference("/attendance/CO5I-5" + subjectCodeDB + "/" +
+                                            FirebaseDatabase.getInstance().getReference("/attendance/CO5I-5/" + subjectCodeDB + "/" +
                                                     year + "/" + monthStr).child(date + "-" + snapshot.getValue(Integer.class)).removeValue();
 
                                             FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/" + DB_PATH_PRACTICAL_COUNT_CO5I_5)

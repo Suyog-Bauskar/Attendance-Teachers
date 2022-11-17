@@ -1,7 +1,5 @@
-package com.suyogbauskar.attenteachers;
+package com.suyogbauskar.attenteachers.excelfiles;
 
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
@@ -9,7 +7,6 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Environment;
 import android.os.IBinder;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -24,6 +21,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
+import com.suyogbauskar.attenteachers.R;
 import com.suyogbauskar.attenteachers.pojos.Student;
 
 import org.apache.poi.ss.usermodel.Cell;
@@ -45,7 +43,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-public class CreateExcelFileService extends Service {
+public class CreateExcelFileCO5I_1 extends Service {
 
     private List<Student> students;
     private final FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
@@ -65,12 +63,9 @@ public class CreateExcelFileService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
 
-        Toast.makeText(this, "Creating Excel File...", Toast.LENGTH_SHORT).show();
         students = new ArrayList<>();
         xssfWorkbook = new XSSFWorkbook();
 
-        createNotificationChannelForFile();
-        createNotificationChannelForError();
         getAllStudentsData();
 
         return super.onStartCommand(intent, flags, startId);
@@ -88,7 +83,9 @@ public class CreateExcelFileService extends Service {
                     String firstname = dsp.child("firstname").getValue(String.class);
                     String lastname = dsp.child("lastname").getValue(String.class);
                     int rollNo = dsp.child("rollNo").getValue(Integer.class);
-                    students.add(new Student(firstname, lastname, rollNo));
+                    if (rollNo >= 1 && rollNo <= 23) {
+                        students.add(new Student(firstname, lastname, rollNo));
+                    }
                 }
                 getAllMonthsAndChildren();
             }
@@ -108,10 +105,9 @@ public class CreateExcelFileService extends Service {
                         SharedPreferences sharedPreferences = getSharedPreferences("yearPref", MODE_PRIVATE);
                         String year = sharedPreferences.getString("year", "");
 
-                        DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference("attendance/" +
-                                snapshot.child("subject_code").getValue(String.class) + "/" + year);
-
-                        dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                        FirebaseDatabase.getInstance().getReference("attendance/CO5I-1/" +
+                                snapshot.child("subject_code").getValue(String.class) + "/" + year)
+                                .addListenerForSingleValueEvent(new ValueEventListener() {
                             @Override
                             public void onDataChange(@NonNull DataSnapshot snapshot) {
                                 if (!snapshot.exists()) {
@@ -167,7 +163,7 @@ public class CreateExcelFileService extends Service {
                                 autoSizeAllColumns(xssfWorkbook);
                                 writeExcelDataToFile(year);
                                 sendNotificationOfExcelFileCreated();
-                                stopService(new Intent(getApplicationContext(), CreateExcelFileService.class));
+                                stopService(new Intent(getApplicationContext(), CreateExcelFileCO5I_1.class));
                             }
 
                             @Override
@@ -284,7 +280,7 @@ public class CreateExcelFileService extends Service {
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        String filename = snapshot.child("subject_name").getValue(String.class) + " Attendance " + year;
+                        String filename = snapshot.child("subject_name").getValue(String.class) + " CO5I-1 Attendance " + year;
 
                         try {
                             File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/Atten Teachers");
@@ -401,26 +397,6 @@ public class CreateExcelFileService extends Service {
                 }
             }
         }
-    }
-
-    private void createNotificationChannelForFile() {
-        String name = "File";
-        String description = "File Notifications";
-        int importance = NotificationManager.IMPORTANCE_DEFAULT;
-        NotificationChannel channel = new NotificationChannel("File", name, importance);
-        channel.setDescription(description);
-        NotificationManager notificationManager = getSystemService(NotificationManager.class);
-        notificationManager.createNotificationChannel(channel);
-    }
-
-    private void createNotificationChannelForError() {
-        String name = "Error";
-        String description = "Error Notifications";
-        int importance = NotificationManager.IMPORTANCE_DEFAULT;
-        NotificationChannel channel = new NotificationChannel("Error", name, importance);
-        channel.setDescription(description);
-        NotificationManager notificationManager = getSystemService(NotificationManager.class);
-        notificationManager.createNotificationChannel(channel);
     }
 
     private void sendNotificationOfExcelFileCreated() {

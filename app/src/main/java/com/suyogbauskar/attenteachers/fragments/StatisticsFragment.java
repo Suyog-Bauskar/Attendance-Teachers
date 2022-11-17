@@ -2,6 +2,8 @@ package com.suyogbauskar.attenteachers.fragments;
 
 import static android.content.Context.MODE_PRIVATE;
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -9,13 +11,20 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 
 import com.suyogbauskar.attenteachers.AttendanceBelow75Activity;
-import com.suyogbauskar.attenteachers.CreateExcelFileService;
 import com.suyogbauskar.attenteachers.R;
+import com.suyogbauskar.attenteachers.excelfiles.CreateExcelFileCO5I_1;
+import com.suyogbauskar.attenteachers.excelfiles.CreateExcelFileCO5I_2;
+import com.suyogbauskar.attenteachers.excelfiles.CreateExcelFileCO5I_3;
+import com.suyogbauskar.attenteachers.excelfiles.CreateExcelFileCO5I_4;
+import com.suyogbauskar.attenteachers.excelfiles.CreateExcelFileCO5I_5;
+import com.suyogbauskar.attenteachers.excelfiles.CreateExcelFileCO5I_A;
+import com.suyogbauskar.attenteachers.excelfiles.CreateExcelFileCO5I_B;
 
 public class StatisticsFragment extends Fragment {
     private Button excelBtn, attendanceBelow75Btn;
@@ -28,6 +37,8 @@ public class StatisticsFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_statistics, container, false);
         getActivity().setTitle("Statistics");
 
+        createNotificationChannelForFile();
+        createNotificationChannelForError();
         findAllViews(view);
         setOnClickListeners();
 
@@ -70,11 +81,38 @@ public class StatisticsFragment extends Fragment {
                     editor.putString("year", items[4]);
                     break;
             }
+            Toast.makeText(getContext(), "Creating Excel File...", Toast.LENGTH_SHORT).show();
             dialog.dismiss();
             editor.commit();
-            requireActivity().startService(new Intent(getContext(), CreateExcelFileService.class));
+            requireActivity().startService(new Intent(getContext(), CreateExcelFileCO5I_A.class));
+            requireActivity().startService(new Intent(getContext(), CreateExcelFileCO5I_B.class));
+            requireActivity().startService(new Intent(getContext(), CreateExcelFileCO5I_1.class));
+            requireActivity().startService(new Intent(getContext(), CreateExcelFileCO5I_2.class));
+            requireActivity().startService(new Intent(getContext(), CreateExcelFileCO5I_3.class));
+            requireActivity().startService(new Intent(getContext(), CreateExcelFileCO5I_4.class));
+            requireActivity().startService(new Intent(getContext(), CreateExcelFileCO5I_5.class));
         });
         AlertDialog alert = alertDialog.create();
         alert.show();
+    }
+
+    private void createNotificationChannelForFile() {
+        String name = "File";
+        String description = "File Notifications";
+        int importance = NotificationManager.IMPORTANCE_DEFAULT;
+        NotificationChannel channel = new NotificationChannel("File", name, importance);
+        channel.setDescription(description);
+        NotificationManager notificationManager = getActivity().getSystemService(NotificationManager.class);
+        notificationManager.createNotificationChannel(channel);
+    }
+
+    private void createNotificationChannelForError() {
+        String name = "Error";
+        String description = "Error Notifications";
+        int importance = NotificationManager.IMPORTANCE_DEFAULT;
+        NotificationChannel channel = new NotificationChannel("Error", name, importance);
+        channel.setDescription(description);
+        NotificationManager notificationManager = getActivity().getSystemService(NotificationManager.class);
+        notificationManager.createNotificationChannel(channel);
     }
 }
