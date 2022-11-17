@@ -51,12 +51,12 @@ public class StatisticsFragment extends Fragment {
     }
 
     private void setOnClickListeners() {
-        excelBtn.setOnClickListener(view -> showYearPicker());
+        excelBtn.setOnClickListener(view -> showYearPickerForCreatingExcelFile());
 
-        attendanceBelow75Btn.setOnClickListener(view -> startActivity(new Intent(getActivity(), AttendanceBelow75Activity.class)));
+        attendanceBelow75Btn.setOnClickListener(view -> showClassPickerForFindingStudentsBelow75());
     }
 
-    private void showYearPicker() {
+    private void showYearPickerForCreatingExcelFile() {
         AlertDialog.Builder alertDialog = new AlertDialog.Builder(getContext());
         alertDialog.setTitle("Year");
         String[] items = {"2022", "2023", "2024", "2025", "2026"};
@@ -91,6 +91,45 @@ public class StatisticsFragment extends Fragment {
             requireActivity().startService(new Intent(getContext(), CreateExcelFileCO5I_3.class));
             requireActivity().startService(new Intent(getContext(), CreateExcelFileCO5I_4.class));
             requireActivity().startService(new Intent(getContext(), CreateExcelFileCO5I_5.class));
+        });
+        AlertDialog alert = alertDialog.create();
+        alert.show();
+    }
+
+    private void showClassPickerForFindingStudentsBelow75() {
+        AlertDialog.Builder alertDialog = new AlertDialog.Builder(getContext());
+        alertDialog.setTitle("Class");
+        String[] items = {"CO5I-A", "CO5I-B", "CO5I-1", "CO5I-2", "CO5I-3", "CO5I-4", "CO5I-5"};
+        int checkedItem = 0;
+        alertDialog.setSingleChoiceItems(items, checkedItem, (dialog, which) -> {
+            SharedPreferences sharedPreferences = getActivity().getSharedPreferences("classPref",MODE_PRIVATE);
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            switch (which) {
+                case 0:
+                    editor.putString("class", items[0]);
+                    break;
+                case 1:
+                    editor.putString("class", items[1]);
+                    break;
+                case 2:
+                    editor.putString("class", items[2]);
+                    break;
+                case 3:
+                    editor.putString("class", items[3]);
+                    break;
+                case 4:
+                    editor.putString("class", items[4]);
+                    break;
+                case 5:
+                    editor.putString("class", items[5]);
+                    break;
+                case 6:
+                    editor.putString("class", items[6]);
+                    break;
+            }
+            dialog.dismiss();
+            editor.commit();
+            startActivity(new Intent(getActivity(), AttendanceBelow75Activity.class));
         });
         AlertDialog alert = alertDialog.create();
         alert.show();

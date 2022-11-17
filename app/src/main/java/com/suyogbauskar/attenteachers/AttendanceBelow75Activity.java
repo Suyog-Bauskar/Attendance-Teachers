@@ -1,6 +1,7 @@
 package com.suyogbauskar.attenteachers;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
@@ -23,7 +24,6 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 import com.kal.rackmonthpicker.RackMonthPicker;
 import com.suyogbauskar.attenteachers.pojos.Student;
@@ -45,10 +45,10 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
     private long totalLectures = 0;
     private Map<String, Integer> studentsAttendance;
     private Map<String, Map<String, Map<String, Object>>> allDataOfMonths;
-    private String subjectCode;
+    private String subjectCode, whichClass;
     private Map<String, Float> studentsBelow75List;
     private Map<String, Student> allStudents;
-    private ProgressDialog progressDialog = new ProgressDialog();
+    private final ProgressDialog progressDialog = new ProgressDialog();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,6 +66,8 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
         allDataOfMonths = new HashMap<>();
         studentsBelow75List = new HashMap<>();
         allStudents = new HashMap<>();
+        SharedPreferences sharedPreferences = getSharedPreferences("classPref", MODE_PRIVATE);
+        whichClass = sharedPreferences.getString("class", "");
         getMonthRange();
 
         table = findViewById(R.id.table);
@@ -209,7 +211,8 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
             dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot snapshot) {
-                    dbRef = FirebaseDatabase.getInstance().getReference("attendance").child(snapshot.getValue(String.class)).child(String.valueOf(startYear));
+                    dbRef = FirebaseDatabase.getInstance().getReference("attendance/" + whichClass + "/")
+                            .child(snapshot.getValue(String.class)).child(String.valueOf(startYear));
 
                     dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
@@ -312,7 +315,8 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot snapshot) {
                     subjectCode = snapshot.getValue(String.class);
-                    dbRef = FirebaseDatabase.getInstance().getReference("attendance").child(subjectCode).child(String.valueOf(startYear));
+                    dbRef = FirebaseDatabase.getInstance().getReference("attendance/" + whichClass + "/")
+                            .child(subjectCode).child(String.valueOf(startYear));
 
                     dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
@@ -396,7 +400,8 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
                                 }
                             }
 
-                            dbRef = FirebaseDatabase.getInstance().getReference("attendance").child(subjectCode).child(String.valueOf(endYear));
+                            dbRef = FirebaseDatabase.getInstance().getReference("attendance/" + whichClass + "/")
+                                    .child(subjectCode).child(String.valueOf(endYear));
 
                             dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
                                 @Override
@@ -465,33 +470,32 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
             }
         }
 
-        DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference("/students_data");
-        Query rollNoQuery = databaseRef.orderByChild("rollNo");
+        FirebaseDatabase.getInstance().getReference("/students_data")
+                .orderByChild("rollNo")
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        for (DataSnapshot dsp : snapshot.getChildren()) {
+                            String firstname = dsp.child("firstname").getValue(String.class);
+                            String lastname = dsp.child("lastname").getValue(String.class);
+                            int rollNo = dsp.child("rollNo").getValue(Integer.class);
+                            allStudents.put(dsp.getKey(), new Student(firstname, lastname, rollNo));
+                        }
 
-        rollNoQuery.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                for (DataSnapshot dsp : snapshot.getChildren()) {
-                    String firstname = dsp.child("firstname").getValue(String.class);
-                    String lastname = dsp.child("lastname").getValue(String.class);
-                    int rollNo = dsp.child("rollNo").getValue(Integer.class);
-                    allStudents.put(dsp.getKey(), new Student(firstname, lastname, rollNo));
-                }
+                        for (Map.Entry<String, Float> entry : studentsBelow75List.entrySet()) {
+                            String firstname = allStudents.get(entry.getKey()).getFirstname();
+                            String lastname = allStudents.get(entry.getKey()).getLastname();
+                            int rollNo = allStudents.get(entry.getKey()).getRollNo();
 
-                for (Map.Entry<String, Float> entry : studentsBelow75List.entrySet()) {
-                    String firstname = allStudents.get(entry.getKey()).getFirstname();
-                    String lastname = allStudents.get(entry.getKey()).getLastname();
-                    int rollNo = allStudents.get(entry.getKey()).getRollNo();
+                            createTableRow(rollNo, firstname + " " + lastname, entry.getValue());
+                        }
+                    }
 
-                    createTableRow(rollNo, firstname + " " + lastname, entry.getValue());
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                Toast.makeText(AttendanceBelow75Activity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        });
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        Toast.makeText(AttendanceBelow75Activity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     private void drawTableHeader() {
