@@ -561,29 +561,39 @@ public class HomeFragment extends Fragment {
         String[] items = {LECTURE_CO5I_A, LECTURE_CO5I_B, CO5I_1, CO5I_2, CO5I_3, CO5I_4, CO5I_5};
         int checkedItem = 0;
         alertDialog.setSingleChoiceItems(items, checkedItem, (dialog, which) -> {
+            SharedPreferences sharedPreferences = getActivity().getSharedPreferences("classHomePref",MODE_PRIVATE);
+            SharedPreferences.Editor editor = sharedPreferences.edit();
             switch (which) {
                 case 0:
                     attendanceOf = items[0];
+                    editor.putString("class", "CO5I-A");
                     break;
                 case 1:
                     attendanceOf = items[1];
+                    editor.putString("class", "CO5I-B");
                     break;
                 case 2:
                     attendanceOf = items[2];
+                    editor.putString("class", "CO5I-1");
                     break;
                 case 3:
                     attendanceOf = items[3];
+                    editor.putString("class", "CO5I-2");
                     break;
                 case 4:
                     attendanceOf = items[4];
+                    editor.putString("class", "CO5I-3");
                     break;
                 case 5:
                     attendanceOf = items[5];
+                    editor.putString("class", "CO5I-4");
                     break;
                 case 6:
                     attendanceOf = items[6];
+                    editor.putString("class", "CO5I-5");
                     break;
             }
+            editor.commit();
             onAttendanceStart();
             codeView.setText("Code - " + randomNo);
             generateCodeBtn.setVisibility(View.GONE);
