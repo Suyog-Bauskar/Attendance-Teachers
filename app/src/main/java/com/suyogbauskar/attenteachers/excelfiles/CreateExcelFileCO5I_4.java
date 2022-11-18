@@ -92,7 +92,7 @@ public class CreateExcelFileCO5I_4 extends Service {
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                sendErrorNotification(error.getMessage());
+                sendErrorNotification(error.getMessage(), 61);
             }
         });
     }
@@ -111,7 +111,7 @@ public class CreateExcelFileCO5I_4 extends Service {
                                     @Override
                                     public void onDataChange(@NonNull DataSnapshot snapshot) {
                                         if (!snapshot.exists()) {
-                                            sendErrorNotification("No attendance found of CO5I-4 " + year);
+                                            sendErrorNotification("No attendance found of CO5I-4 " + year, 62);
                                             return;
                                         }
                                         int counter = 0;
@@ -162,20 +162,20 @@ public class CreateExcelFileCO5I_4 extends Service {
                                         calculatePercentage();
                                         autoSizeAllColumns(xssfWorkbook);
                                         writeExcelDataToFile(year);
-                                        sendNotificationOfExcelFileCreated();
+                                        sendNotificationOfExcelFileCreated(61);
                                         stopService(new Intent(getApplicationContext(), CreateExcelFileCO5I_4.class));
                                     }
 
                                     @Override
                                     public void onCancelled(@NonNull DatabaseError error) {
-                                        sendErrorNotification(error.getMessage());
+                                        sendErrorNotification(error.getMessage(), 63);
                                     }
                                 });
                     }
 
                     @Override
                     public void onCancelled(@NonNull DatabaseError error) {
-                        sendErrorNotification(error.getMessage());
+                        sendErrorNotification(error.getMessage(), 64);
                     }
                 });
     }
@@ -286,7 +286,7 @@ public class CreateExcelFileCO5I_4 extends Service {
                             File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/Atten Teachers");
                             dir.mkdir();
                         } catch (Exception e) {
-                            sendErrorNotification(e.getMessage());
+                            sendErrorNotification(e.getMessage(), 65);
                         }
                         File filePath = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/Atten Teachers/" + filename + ".xlsx");
 
@@ -300,13 +300,13 @@ public class CreateExcelFileCO5I_4 extends Service {
                             outputStream.close();
 
                         } catch (Exception e) {
-                            sendErrorNotification(e.getMessage());
+                            sendErrorNotification(e.getMessage(),66);
                         }
                     }
 
                     @Override
                     public void onCancelled(@NonNull DatabaseError error) {
-                        sendErrorNotification(error.getMessage());
+                        sendErrorNotification(error.getMessage(),67);
                     }
                 });
     }
@@ -322,7 +322,7 @@ public class CreateExcelFileCO5I_4 extends Service {
             try {
                 xssfSheet = xssfWorkbook.createSheet(entry1.getKey());
             } catch (IllegalArgumentException e) {
-                sendErrorNotification(e.getMessage());
+                sendErrorNotification(e.getMessage(),68);
                 return;
             }
 
@@ -399,7 +399,7 @@ public class CreateExcelFileCO5I_4 extends Service {
         }
     }
 
-    private void sendNotificationOfExcelFileCreated() {
+    private void sendNotificationOfExcelFileCreated(int id) {
         Uri selectedUri = Uri.parse(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/Atten Teachers");
         Intent intent = new Intent(Intent.ACTION_VIEW);
         intent.setDataAndType(selectedUri, "resource/folder");
@@ -415,10 +415,10 @@ public class CreateExcelFileCO5I_4 extends Service {
                 .setContentIntent(pendingIntent)
                 .setAutoCancel(true);
 
-        NotificationManagerCompat.from(this).notify(0, builder.build());
+        NotificationManagerCompat.from(this).notify(id, builder.build());
     }
 
-    private void sendErrorNotification(String error) {
+    private void sendErrorNotification(String error, int id) {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "Error")
                 .setSmallIcon(R.drawable.raw_logo)
                 .setContentText(error)
@@ -426,6 +426,6 @@ public class CreateExcelFileCO5I_4 extends Service {
                         .bigText(error))
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT);
 
-        NotificationManagerCompat.from(this).notify(0, builder.build());
+        NotificationManagerCompat.from(this).notify(id, builder.build());
     }
 }

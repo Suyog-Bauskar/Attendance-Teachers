@@ -38,7 +38,7 @@ import cn.pedant.SweetAlert.SweetAlertDialog;
 
 public class HomeFragment extends Fragment {
 
-    private String firstnameDB, lastnameDB, subjectCodeDB, subjectNameDB, attendanceOf = "", monthStr;
+    private String firstnameDB, lastnameDB, subjectCodeDB, subjectNameDB, subjectShortNameDB, attendanceOf = "", monthStr;
     private static final long START_TIME_IN_MILLIS = 180000;
     private TextView mTextViewCountDown, codeView;
     private Button mButtonStop, generateCodeBtn, deleteBtn;
@@ -79,6 +79,7 @@ public class HomeFragment extends Fragment {
                     firstnameDB = document.child("firstname").getValue(String.class);
                     lastnameDB = document.child("lastname").getValue(String.class);
                     subjectNameDB = document.child("subject_name").getValue(String.class);
+                    subjectShortNameDB = document.child("subject_short_name").getValue(String.class);
                     subjectCodeDB = document.child("subject_code").getValue(String.class);
                 })
                 .addOnFailureListener(e -> Toast.makeText(getContext(), e.getMessage(), Toast.LENGTH_LONG).show());
@@ -154,6 +155,7 @@ public class HomeFragment extends Fragment {
         data.put("lastname", lastnameDB);
         data.put("subject_code", subjectCodeDB);
         data.put("subject_name", subjectNameDB);
+        data.put("subject_short_name", subjectShortNameDB);
         data.put("uid", user.getUid());
 
         switch (attendanceOf) {
@@ -294,6 +296,7 @@ public class HomeFragment extends Fragment {
         data.put("lastname", "0");
         data.put("subject_code", "0");
         data.put("subject_name", "0");
+        data.put("subject_short_name", "0");
         data.put("uid", "0");
 
         switch (attendanceOf) {
