@@ -6,10 +6,6 @@
             app:key="sign_out"
             app:title="Sign Out" />
 
-        <Preference
-            app:key="delete_account"
-            app:title="Delete Account" />
-
     </PreferenceCategory>
 
 </PreferenceScreen>

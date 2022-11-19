@@ -22,18 +22,9 @@ public class SettingsFragment extends PreferenceFragmentCompat {
 
         Preference signOutPreference = findPreference("sign_out");
         signOutPreference.setOnPreferenceClickListener(preference -> {
-            deleteCache(getContext());
             FirebaseAuth.getInstance().signOut();
-            startActivity(new Intent(getActivity(), MainActivity.class));
-            return true;
-        });
-
-        Preference deleteAccountPreference = findPreference("delete_account");
-        deleteAccountPreference.setOnPreferenceClickListener(preference -> {
             deleteCache(getContext());
-            FirebaseAuth.getInstance().signOut();
-            FirebaseAuth.getInstance().getCurrentUser().delete();
-            startActivity(new Intent(getActivity(), MainActivity.class));
+            startActivity(new Intent(getContext(), MainActivity.class));
             return true;
         });
     }

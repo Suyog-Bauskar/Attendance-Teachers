@@ -59,7 +59,9 @@ public class StudentDataActivity extends AppCompatActivity {
                         drawTableHeader();
                         noStudentsFoundView.setVisibility(View.GONE);
                         for (DataSnapshot ds : snapshot.getChildren()) {
-                            createTableRow(ds.child("rollNo").getValue(Integer.class), ds.child("firstname").getValue(String.class) + " " + ds.child("lastname").getValue(String.class), ds.child("enrollNo").getValue(Long.class));
+                            if (ds.child("isVerified").getValue(Boolean.class)) {
+                                createTableRow(ds.child("rollNo").getValue(Integer.class), ds.child("firstname").getValue(String.class) + " " + ds.child("lastname").getValue(String.class), ds.child("enrollNo").getValue(Long.class));
+                            }
                         }
                     }
 
