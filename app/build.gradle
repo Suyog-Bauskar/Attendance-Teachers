@@ -11,8 +11,8 @@ android {
         applicationId "com.suyogbauskar.attenteachers"
         minSdk 26
         targetSdk 33
-        versionCode 8
-        versionName "1.0.6"
+        versionCode 9
+        versionName "1.0.7"
         resConfigs "en"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
