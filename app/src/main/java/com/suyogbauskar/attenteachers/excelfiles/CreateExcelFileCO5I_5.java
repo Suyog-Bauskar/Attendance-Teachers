@@ -338,19 +338,26 @@ public class CreateExcelFileCO5I_5 extends Service {
 
             columnNo++;
 
-            float dayNameInFloat;
             List<Float> dayNameFloatList = new ArrayList<>();
+            List<String> lastCharacters = new ArrayList<>();
 
             for (Map.Entry<String, Map<String, Map<String, Object>>> entry2 : entry1.getValue().entrySet()) {
-                dayNameInFloat = Float.parseFloat(entry2.getKey().replace("-", "."));
-                dayNameFloatList.add(dayNameInFloat);
+                if (entry2.getKey().charAt(entry2.getKey().length() - 1) == '0') {
+                    lastCharacters.add("0");
+                } else {
+                    lastCharacters.add("");
+                }
+                dayNameFloatList.add(Float.parseFloat(entry2.getKey().replace("-", ".")));
             }
 
             Collections.sort(dayNameFloatList);
 
             String dayNameInStr;
+            int i = 0;
             for (Float f : dayNameFloatList) {
                 dayNameInStr = f.toString().replace(".", "-");
+                dayNameInStr += lastCharacters.get(i);
+                i++;
                 xssfCell = xssfRow.createCell(columnNo);
                 xssfCell.setCellValue(dayNameInStr);
 
