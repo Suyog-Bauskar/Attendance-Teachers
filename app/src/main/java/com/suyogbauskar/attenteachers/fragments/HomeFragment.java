@@ -47,7 +47,7 @@ public class HomeFragment extends Fragment {
     private long mTimeLeftInMillis, mEndTime;
     private int randomNo, date, year;
     private FirebaseUser user;
-    private static final String LECTURE_CO5I_A = "CO5I-A Lecture", LECTURE_CO5I_B = "CO5I-B Lecture", CO5I_1 = "CO5I-1 Practical", CO5I_2 = "CO5I-2 Practical", CO5I_3 = "CO5I-3 Practical", CO5I_4 = "CO5I-4 Practical", CO5I_5 = "CO5I-5 Practical";
+    private static final String CO5I_A = "CO5I-A", CO5I_B = "CO5I-B", CO5I_1 = "CO5I-1", CO5I_2 = "CO5I-2", CO5I_3 = "CO5I-3", CO5I_4 = "CO5I-4", CO5I_5 = "CO5I-5";
     private static final String DB_PATH_LECTURE_COUNT_CO5I_A = "CO5I-A_lectures_taken_today", DB_PATH_LECTURE_COUNT_CO5I_B = "CO5I-B_lectures_taken_today", DB_PATH_PRACTICAL_COUNT_CO5I_1 = "CO5I-1_practicals_taken_today", DB_PATH_PRACTICAL_COUNT_CO5I_2 = "CO5I-2_practicals_taken_today", DB_PATH_PRACTICAL_COUNT_CO5I_3 = "CO5I-3_practicals_taken_today", DB_PATH_PRACTICAL_COUNT_CO5I_4 = "CO5I-4_practicals_taken_today", DB_PATH_PRACTICAL_COUNT_CO5I_5 = "CO5I-5_practicals_taken_today";
 
     public HomeFragment() {
@@ -69,6 +69,8 @@ public class HomeFragment extends Fragment {
 
     private void init(View view) {
         user = FirebaseAuth.getInstance().getCurrentUser();
+        SharedPreferences sharedPreferences = getActivity().getSharedPreferences("classHomePref", MODE_PRIVATE);
+        attendanceOf = sharedPreferences.getString("class", "");
         findAllViews(view);
     }
 
@@ -159,7 +161,7 @@ public class HomeFragment extends Fragment {
         data.put("uid", user.getUid());
 
         switch (attendanceOf) {
-            case LECTURE_CO5I_A:
+            case CO5I_A:
                 Toast.makeText(getContext(), "Attendance started of CO5I-A", Toast.LENGTH_SHORT).show();
                 FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/" + DB_PATH_LECTURE_COUNT_CO5I_A).setValue(ServerValue.increment(1))
                         .addOnSuccessListener(unused -> FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/" + DB_PATH_LECTURE_COUNT_CO5I_A)
@@ -177,7 +179,7 @@ public class HomeFragment extends Fragment {
                                 }));
 
                 break;
-            case LECTURE_CO5I_B:
+            case CO5I_B:
                 Toast.makeText(getContext(), "Attendance started of CO5I-B", Toast.LENGTH_SHORT).show();
                 FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/" + DB_PATH_LECTURE_COUNT_CO5I_B).setValue(ServerValue.increment(1))
                         .addOnSuccessListener(unused -> FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/" + DB_PATH_LECTURE_COUNT_CO5I_B)
@@ -300,11 +302,11 @@ public class HomeFragment extends Fragment {
         data.put("uid", "0");
 
         switch (attendanceOf) {
-            case LECTURE_CO5I_A:
+            case CO5I_A:
                 data.put(DB_PATH_LECTURE_COUNT_CO5I_A, 0);
                 FirebaseDatabase.getInstance().getReference("attendance/active_attendance/CO5I-A").setValue(data);
                 break;
-            case LECTURE_CO5I_B:
+            case CO5I_B:
                 data.put(DB_PATH_LECTURE_COUNT_CO5I_B, 0);
                 FirebaseDatabase.getInstance().getReference("attendance/active_attendance/CO5I-B").setValue(data);
                 break;
@@ -362,7 +364,7 @@ public class HomeFragment extends Fragment {
                     sDialog.dismissWithAnimation();
 
                     switch (attendanceOf) {
-                        case LECTURE_CO5I_A:
+                        case CO5I_A:
                             FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/" + DB_PATH_LECTURE_COUNT_CO5I_A)
                                     .addListenerForSingleValueEvent(new ValueEventListener() {
                                         @Override
@@ -380,7 +382,7 @@ public class HomeFragment extends Fragment {
                                         }
                                     });
                             break;
-                        case LECTURE_CO5I_B:
+                        case CO5I_B:
                             FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/" + DB_PATH_LECTURE_COUNT_CO5I_B)
                                     .addListenerForSingleValueEvent(new ValueEventListener() {
                                         @Override
@@ -558,7 +560,7 @@ public class HomeFragment extends Fragment {
 
         AlertDialog.Builder alertDialog = new AlertDialog.Builder(getContext());
         alertDialog.setTitle("You are taking attendance of");
-        String[] items = {LECTURE_CO5I_A, LECTURE_CO5I_B, CO5I_1, CO5I_2, CO5I_3, CO5I_4, CO5I_5};
+        String[] items = {CO5I_A, CO5I_B, CO5I_1, CO5I_2, CO5I_3, CO5I_4, CO5I_5};
         int checkedItem = 0;
         alertDialog.setSingleChoiceItems(items, checkedItem, (dialog, which) -> {
             SharedPreferences sharedPreferences = getActivity().getSharedPreferences("classHomePref",MODE_PRIVATE);
@@ -566,31 +568,31 @@ public class HomeFragment extends Fragment {
             switch (which) {
                 case 0:
                     attendanceOf = items[0];
-                    editor.putString("class", "CO5I-A");
+                    editor.putString("class", items[0]);
                     break;
                 case 1:
                     attendanceOf = items[1];
-                    editor.putString("class", "CO5I-B");
+                    editor.putString("class", items[1]);
                     break;
                 case 2:
                     attendanceOf = items[2];
-                    editor.putString("class", "CO5I-1");
+                    editor.putString("class", items[2]);
                     break;
                 case 3:
                     attendanceOf = items[3];
-                    editor.putString("class", "CO5I-2");
+                    editor.putString("class", items[3]);
                     break;
                 case 4:
                     attendanceOf = items[4];
-                    editor.putString("class", "CO5I-3");
+                    editor.putString("class", items[4]);
                     break;
                 case 5:
                     attendanceOf = items[5];
-                    editor.putString("class", "CO5I-4");
+                    editor.putString("class", items[5]);
                     break;
                 case 6:
                     attendanceOf = items[6];
-                    editor.putString("class", "CO5I-5");
+                    editor.putString("class", items[6]);
                     break;
             }
             editor.commit();
