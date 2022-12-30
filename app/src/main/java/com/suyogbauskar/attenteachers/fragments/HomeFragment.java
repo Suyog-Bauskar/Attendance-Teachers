@@ -2,12 +2,16 @@ package com.suyogbauskar.attenteachers.fragments;
 
 import static android.content.Context.MODE_PRIVATE;
 
+import static androidx.constraintlayout.helper.widget.MotionEffect.TAG;
+
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -15,7 +19,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.widget.PopupMenu;
 import androidx.fragment.app.Fragment;
 
 import com.google.firebase.auth.FirebaseAuth;
@@ -26,29 +30,38 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ServerValue;
 import com.google.firebase.database.ValueEventListener;
 import com.suyogbauskar.attenteachers.R;
+import com.suyogbauskar.attenteachers.pojos.SubjectInformation;
+import com.suyogbauskar.attenteachers.utils.ProgressDialog;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
+import java.util.TreeMap;
 
 import cn.pedant.SweetAlert.SweetAlertDialog;
 
 public class HomeFragment extends Fragment {
 
-    private String firstnameDB, lastnameDB, subjectCodeDB, subjectNameDB, subjectShortNameDB, attendanceOf = "", monthStr;
+    private String firstnameDB, lastnameDB, attendanceOf = "", monthStr, selectedSubjectCode, selectedSubjectName, selectedSubjectShortName, selectedAttendanceOf;
     private static final long START_TIME_IN_MILLIS = 180000;
     private TextView mTextViewCountDown, codeView;
     private Button mButtonStop, generateCodeBtn, deleteBtn;
     private CountDownTimer mCountDownTimer;
     private boolean mTimerRunning;
     private long mTimeLeftInMillis, mEndTime;
-    private int randomNo, date, year;
+    private int randomNo, date, year, selectedSemester;
     private FirebaseUser user;
     private static final String CO5I_A = "CO5I-A", CO5I_B = "CO5I-B", CO5I_1 = "CO5I-1", CO5I_2 = "CO5I-2", CO5I_3 = "CO5I-3", CO5I_4 = "CO5I-4", CO5I_5 = "CO5I-5";
     private static final String DB_PATH_LECTURE_COUNT_CO5I_A = "CO5I-A_lectures_taken_today", DB_PATH_LECTURE_COUNT_CO5I_B = "CO5I-B_lectures_taken_today", DB_PATH_PRACTICAL_COUNT_CO5I_1 = "CO5I-1_practicals_taken_today", DB_PATH_PRACTICAL_COUNT_CO5I_2 = "CO5I-2_practicals_taken_today", DB_PATH_PRACTICAL_COUNT_CO5I_3 = "CO5I-3_practicals_taken_today", DB_PATH_PRACTICAL_COUNT_CO5I_4 = "CO5I-4_practicals_taken_today", DB_PATH_PRACTICAL_COUNT_CO5I_5 = "CO5I-5_practicals_taken_today";
+    private final Map<String, List<SubjectInformation>> allSubjects = new TreeMap<>();
+    private final Map<String, SubjectInformation> subjectID = new HashMap<>();
+    private ProgressDialog progressDialog = new ProgressDialog();
 
     public HomeFragment() {
     }
@@ -59,10 +72,10 @@ public class HomeFragment extends Fragment {
         getActivity().setTitle("Attendance");
 
         init(view);
-        fetchDataFromDatabase();
         refreshDaily();
         setOnClickListeners();
         getCurrentTime();
+        fetchDataFromDatabase();
 
         return view;
     }
@@ -75,16 +88,21 @@ public class HomeFragment extends Fragment {
     }
 
     private void fetchDataFromDatabase() {
+        progressDialog.show(getContext());
+
         FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid())
                 .get().addOnCompleteListener(task -> {
+                    progressDialog.hide();
                     DataSnapshot document = task.getResult();
                     firstnameDB = document.child("firstname").getValue(String.class);
                     lastnameDB = document.child("lastname").getValue(String.class);
-                    subjectNameDB = document.child("subject_name").getValue(String.class);
-                    subjectShortNameDB = document.child("subject_short_name").getValue(String.class);
-                    subjectCodeDB = document.child("subject_code").getValue(String.class);
+                    getSubjectInformation();
+
                 })
-                .addOnFailureListener(e -> Toast.makeText(getContext(), e.getMessage(), Toast.LENGTH_LONG).show());
+                .addOnFailureListener(e -> {
+                    progressDialog.hide();
+                    Toast.makeText(getContext(), e.getMessage(), Toast.LENGTH_LONG).show();
+                });
     }
 
     private void findAllViews(View view) {
@@ -97,10 +115,52 @@ public class HomeFragment extends Fragment {
 
     private void setOnClickListeners() {
         generateCodeBtn.setOnClickListener(view -> generateCodeBtn());
-
         mButtonStop.setOnClickListener(view -> stopAttendanceBtn());
-
         deleteBtn.setOnClickListener(view -> deleteCurrentAttendanceBtn());
+    }
+
+    private void getSubjectInformation() {
+        FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subject_information")
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        String[] subjectCodes, subjectNames, subjectShortNames;
+                        List<SubjectInformation> tempList;
+                        Map<String, List<SubjectInformation>> unsorted = new HashMap<>();
+
+                        for (DataSnapshot dsp : snapshot.getChildren()) {
+                            tempList = new ArrayList<>();
+                            subjectCodes = snapshot.child(dsp.getKey()).child("subject_codes").getValue(String.class).split(",");
+                            subjectNames = snapshot.child(dsp.getKey()).child("subject_names").getValue(String.class).split(",");
+                            subjectShortNames = snapshot.child(dsp.getKey()).child("subject_short_names").getValue(String.class).split(",");
+
+                            for (int i = 0; i < subjectCodes.length; i++) {
+                                tempList.add(new SubjectInformation(subjectCodes[i], subjectNames[i], subjectShortNames[i]));
+                                subjectID.put(subjectCodes[i], new SubjectInformation(subjectCodes[i], subjectNames[i], subjectShortNames[i]));
+                            }
+
+                            tempList.sort(Comparator.comparing(SubjectInformation::getSubjectCode));
+                            unsorted.put(dsp.getKey(), tempList);
+                        }
+
+                        allSubjects.putAll(unsorted);
+
+//                                                for (Map.Entry<String, List<SubjectInformation>> entry1: allSubjects.entrySet()) {
+//                                                    Log.d(TAG, "Key: " + entry1.getKey());
+//
+//                                                    for (SubjectInformation entry2: entry1.getValue()) {
+//                                                        Log.d(TAG, "Code: " + entry2.getSubjectCode());
+//                                                        Log.d(TAG, "Name: " + entry2.getSubjectName());
+//                                                        Log.d(TAG, "Short: " + entry2.getSubjectShortName());
+//                                                    }
+//                                                }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        Toast.makeText(getContext(), error.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     private void startTimer() {
@@ -155,9 +215,10 @@ public class HomeFragment extends Fragment {
         data.put("isAttendanceRunning", true);
         data.put("firstname", firstnameDB);
         data.put("lastname", lastnameDB);
-        data.put("subject_code", subjectCodeDB);
-        data.put("subject_name", subjectNameDB);
-        data.put("subject_short_name", subjectShortNameDB);
+        //TODO: Uncomment comments
+//        data.put("subject_code", subjectCodeDB);
+//        data.put("subject_name", subjectNameDB);
+//        data.put("subject_short_name", subjectShortNameDB);
         data.put("uid", user.getUid());
 
         switch (attendanceOf) {
@@ -356,6 +417,7 @@ public class HomeFragment extends Fragment {
     }
 
     private void deleteCurrentAttendanceBtn() {
+        //TODO: Uncomment all comments
         new SweetAlertDialog(getContext(), SweetAlertDialog.WARNING_TYPE)
                 .setTitleText("Delete Attendance?")
                 .setContentText("Currently started attendance will be deleted")
@@ -369,8 +431,8 @@ public class HomeFragment extends Fragment {
                                     .addListenerForSingleValueEvent(new ValueEventListener() {
                                         @Override
                                         public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                            FirebaseDatabase.getInstance().getReference("/attendance/CO5I-A/" + subjectCodeDB + "/" +
-                                                    year + "/" + monthStr).child(date + "-" + snapshot.getValue(Integer.class)).removeValue();
+//                                            FirebaseDatabase.getInstance().getReference("/attendance/CO5I-A/" + subjectCodeDB + "/" +
+//                                                    year + "/" + monthStr).child(date + "-" + snapshot.getValue(Integer.class)).removeValue();
 
                                             FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/" + DB_PATH_LECTURE_COUNT_CO5I_A)
                                                     .setValue(ServerValue.increment(-1));
@@ -387,8 +449,8 @@ public class HomeFragment extends Fragment {
                                     .addListenerForSingleValueEvent(new ValueEventListener() {
                                         @Override
                                         public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                            FirebaseDatabase.getInstance().getReference("/attendance/CO5I-B/" + subjectCodeDB + "/" +
-                                                    year + "/" + monthStr).child(date + "-" + snapshot.getValue(Integer.class)).removeValue();
+//                                            FirebaseDatabase.getInstance().getReference("/attendance/CO5I-B/" + subjectCodeDB + "/" +
+//                                                    year + "/" + monthStr).child(date + "-" + snapshot.getValue(Integer.class)).removeValue();
 
                                             FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/" + DB_PATH_LECTURE_COUNT_CO5I_B)
                                                     .setValue(ServerValue.increment(-1));
@@ -405,8 +467,8 @@ public class HomeFragment extends Fragment {
                                     .addListenerForSingleValueEvent(new ValueEventListener() {
                                         @Override
                                         public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                            FirebaseDatabase.getInstance().getReference("/attendance/CO5I-1/" + subjectCodeDB + "/" +
-                                                    year + "/" + monthStr).child(date + "-" + snapshot.getValue(Integer.class)).removeValue();
+//                                            FirebaseDatabase.getInstance().getReference("/attendance/CO5I-1/" + subjectCodeDB + "/" +
+//                                                    year + "/" + monthStr).child(date + "-" + snapshot.getValue(Integer.class)).removeValue();
 
                                             FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/" + DB_PATH_PRACTICAL_COUNT_CO5I_1)
                                                     .setValue(ServerValue.increment(-1));
@@ -423,8 +485,8 @@ public class HomeFragment extends Fragment {
                                     .addListenerForSingleValueEvent(new ValueEventListener() {
                                         @Override
                                         public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                            FirebaseDatabase.getInstance().getReference("/attendance/CO5I-2/" + subjectCodeDB + "/" +
-                                                    year + "/" + monthStr).child(date + "-" + snapshot.getValue(Integer.class)).removeValue();
+//                                            FirebaseDatabase.getInstance().getReference("/attendance/CO5I-2/" + subjectCodeDB + "/" +
+//                                                    year + "/" + monthStr).child(date + "-" + snapshot.getValue(Integer.class)).removeValue();
 
                                             FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/" + DB_PATH_PRACTICAL_COUNT_CO5I_2)
                                                     .setValue(ServerValue.increment(-1));
@@ -441,8 +503,8 @@ public class HomeFragment extends Fragment {
                                     .addListenerForSingleValueEvent(new ValueEventListener() {
                                         @Override
                                         public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                            FirebaseDatabase.getInstance().getReference("/attendance/CO5I-3/" + subjectCodeDB + "/" +
-                                                    year + "/" + monthStr).child(date + "-" + snapshot.getValue(Integer.class)).removeValue();
+//                                            FirebaseDatabase.getInstance().getReference("/attendance/CO5I-3/" + subjectCodeDB + "/" +
+//                                                    year + "/" + monthStr).child(date + "-" + snapshot.getValue(Integer.class)).removeValue();
 
                                             FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/" + DB_PATH_PRACTICAL_COUNT_CO5I_3)
                                                     .setValue(ServerValue.increment(-1));
@@ -459,8 +521,8 @@ public class HomeFragment extends Fragment {
                                     .addListenerForSingleValueEvent(new ValueEventListener() {
                                         @Override
                                         public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                            FirebaseDatabase.getInstance().getReference("/attendance/CO5I-4/" + subjectCodeDB + "/" +
-                                                    year + "/" + monthStr).child(date + "-" + snapshot.getValue(Integer.class)).removeValue();
+//                                            FirebaseDatabase.getInstance().getReference("/attendance/CO5I-4/" + subjectCodeDB + "/" +
+//                                                    year + "/" + monthStr).child(date + "-" + snapshot.getValue(Integer.class)).removeValue();
 
                                             FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/" + DB_PATH_PRACTICAL_COUNT_CO5I_4)
                                                     .setValue(ServerValue.increment(-1));
@@ -477,8 +539,8 @@ public class HomeFragment extends Fragment {
                                     .addListenerForSingleValueEvent(new ValueEventListener() {
                                         @Override
                                         public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                            FirebaseDatabase.getInstance().getReference("/attendance/CO5I-5/" + subjectCodeDB + "/" +
-                                                    year + "/" + monthStr).child(date + "-" + snapshot.getValue(Integer.class)).removeValue();
+//                                            FirebaseDatabase.getInstance().getReference("/attendance/CO5I-5/" + subjectCodeDB + "/" +
+//                                                    year + "/" + monthStr).child(date + "-" + snapshot.getValue(Integer.class)).removeValue();
 
                                             FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/" + DB_PATH_PRACTICAL_COUNT_CO5I_5)
                                                     .setValue(ServerValue.increment(-1));
@@ -558,54 +620,136 @@ public class HomeFragment extends Fragment {
     private void generateCodeBtn() {
         randomNo = new Random().nextInt((99999 - 10000) + 1) + 10000;
 
-        AlertDialog.Builder alertDialog = new AlertDialog.Builder(getContext());
-        alertDialog.setTitle("You are taking attendance of");
-        String[] items = {CO5I_A, CO5I_B, CO5I_1, CO5I_2, CO5I_3, CO5I_4, CO5I_5};
-        int checkedItem = 0;
-        alertDialog.setSingleChoiceItems(items, checkedItem, (dialog, which) -> {
-            SharedPreferences sharedPreferences = getActivity().getSharedPreferences("classHomePref",MODE_PRIVATE);
-            SharedPreferences.Editor editor = sharedPreferences.edit();
-            switch (which) {
-                case 0:
-                    attendanceOf = items[0];
-                    editor.putString("class", items[0]);
-                    break;
-                case 1:
-                    attendanceOf = items[1];
-                    editor.putString("class", items[1]);
-                    break;
-                case 2:
-                    attendanceOf = items[2];
-                    editor.putString("class", items[2]);
-                    break;
-                case 3:
-                    attendanceOf = items[3];
-                    editor.putString("class", items[3]);
-                    break;
-                case 4:
-                    attendanceOf = items[4];
-                    editor.putString("class", items[4]);
-                    break;
-                case 5:
-                    attendanceOf = items[5];
-                    editor.putString("class", items[5]);
-                    break;
-                case 6:
-                    attendanceOf = items[6];
-                    editor.putString("class", items[6]);
-                    break;
+//        AlertDialog.Builder alertDialog = new AlertDialog.Builder(getContext());
+//        alertDialog.setTitle("You are taking attendance of");
+//        String[] semesters = {"Semester 1", "Semester 2", "Semester 3", "Semester 4", "Semester 5", "Semester 6"};
+//        String[] items = {CO5I_A, CO5I_B, CO5I_1, CO5I_2, CO5I_3, CO5I_4, CO5I_5};
+
+        PopupMenu semesterMenu = new PopupMenu(getContext(), codeView);
+
+        semesterMenu.getMenu().add(Menu.NONE, 1, 1, "Semester 1");
+        semesterMenu.getMenu().add(Menu.NONE, 2, 2, "Semester 2");
+        semesterMenu.getMenu().add(Menu.NONE, 3, 3, "Semester 3");
+        semesterMenu.getMenu().add(Menu.NONE, 4, 4, "Semester 4");
+        semesterMenu.getMenu().add(Menu.NONE, 5, 5, "Semester 5");
+        semesterMenu.getMenu().add(Menu.NONE, 6, 6, "Semester 6");
+        semesterMenu.show();
+        semesterMenu.setOnMenuItemClickListener(item -> {
+            if (!allSubjects.containsKey("CO-" + item.getItemId())) {
+                Toast.makeText(getContext(), "You don't teach this semester", Toast.LENGTH_SHORT).show();
+                return false;
             }
-            editor.commit();
-            onAttendanceStart();
-            codeView.setText("Code - " + randomNo);
-            generateCodeBtn.setVisibility(View.GONE);
-            mButtonStop.setVisibility(View.VISIBLE);
-            deleteBtn.setVisibility(View.VISIBLE);
-            startTimer();
-            dialog.dismiss();
+            selectedSemester = item.getItemId();
+            List<SubjectInformation> subjectNamesForMenu = allSubjects.get("CO-" + item.getItemId());
+
+            PopupMenu subjectMenu = new PopupMenu(getContext(), codeView);
+            for (int i = 0; i < subjectNamesForMenu.size(); i++) {
+                subjectMenu.getMenu().add(Menu.NONE, Integer.parseInt(subjectNamesForMenu.get(i).getSubjectCode()), Integer.parseInt(subjectNamesForMenu.get(i).getSubjectCode()), subjectNamesForMenu.get(i).getSubjectName());
+            }
+            subjectMenu.show();
+            subjectMenu.setOnMenuItemClickListener(item1 -> {
+                selectedSubjectCode = subjectID.get(item1.getItemId() + "").getSubjectCode();
+                selectedSubjectName = subjectID.get(item1.getItemId() + "").getSubjectName();
+                selectedSubjectShortName = subjectID.get(item1.getItemId() + "").getSubjectShortName();
+
+                PopupMenu attendanceOfMenu = new PopupMenu(getContext(), codeView);
+                attendanceOfMenu.getMenu().add(Menu.NONE, 1, 1, "Division A");
+                attendanceOfMenu.getMenu().add(Menu.NONE, 2, 2, "Division B");
+                attendanceOfMenu.getMenu().add(Menu.NONE, 3, 3, "Batch 1");
+                attendanceOfMenu.getMenu().add(Menu.NONE, 4, 4, "Batch 2");
+                attendanceOfMenu.getMenu().add(Menu.NONE, 5, 5, "Batch 3");
+                attendanceOfMenu.getMenu().add(Menu.NONE, 6, 6, "Batch 4");
+                attendanceOfMenu.getMenu().add(Menu.NONE, 7, 7, "Batch 5");
+                attendanceOfMenu.show();
+                attendanceOfMenu.setOnMenuItemClickListener(item2 -> {
+                    switch (item2.getItemId()) {
+                        case 1:
+                            selectedAttendanceOf = "A";
+                            break;
+
+                        case 2:
+                            selectedAttendanceOf = "B";
+                            break;
+
+                        case 3:
+                            selectedAttendanceOf = "1";
+                            break;
+
+                        case 4:
+                            selectedAttendanceOf = "2";
+                            break;
+
+                        case 5:
+                            selectedAttendanceOf = "3";
+                            break;
+
+                        case 6:
+                            selectedAttendanceOf = "4";
+                            break;
+
+                        case 7:
+                            selectedAttendanceOf = "5";
+                            break;
+                    }
+                    Log.d(TAG, "Semester: " + selectedSemester);
+                    Log.d(TAG, "Subject: " + selectedSubjectName);
+                    Log.d(TAG, "Attendance Of: " + selectedAttendanceOf);
+
+//                    onAttendanceStart();
+//                    codeView.setText("Code - " + randomNo);
+//                    generateCodeBtn.setVisibility(View.GONE);
+//                    mButtonStop.setVisibility(View.VISIBLE);
+//                    deleteBtn.setVisibility(View.VISIBLE);
+//                    startTimer();
+                    return true;
+                });
+
+                return true;
+            });
+
+            return true;
         });
-        AlertDialog alert = alertDialog.create();
-        alert.show();
+
+//        int checkedItem = 0;
+//        alertDialog.setSingleChoiceItems(items, checkedItem, (dialog, which) -> {
+//            SharedPreferences sharedPreferences = getActivity().getSharedPreferences("classHomePref", MODE_PRIVATE);
+//            SharedPreferences.Editor editor = sharedPreferences.edit();
+//            switch (which) {
+//                case 0:
+//                    attendanceOf = items[0];
+//                    editor.putString("class", items[0]);
+//                    break;
+//                case 1:
+//                    attendanceOf = items[1];
+//                    editor.putString("class", items[1]);
+//                    break;
+//                case 2:
+//                    attendanceOf = items[2];
+//                    editor.putString("class", items[2]);
+//                    break;
+//                case 3:
+//                    attendanceOf = items[3];
+//                    editor.putString("class", items[3]);
+//                    break;
+//                case 4:
+//                    attendanceOf = items[4];
+//                    editor.putString("class", items[4]);
+//                    break;
+//                case 5:
+//                    attendanceOf = items[5];
+//                    editor.putString("class", items[5]);
+//                    break;
+//                case 6:
+//                    attendanceOf = items[6];
+//                    editor.putString("class", items[6]);
+//                    break;
+//            }
+//            editor.commit();
+
+//            dialog.dismiss();
+//        });
+//        AlertDialog alert = alertDialog.create();
+//        alert.show();
     }
 
     private void stopAttendanceBtn() {
