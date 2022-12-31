@@ -1,12 +1,11 @@
 package com.suyogbauskar.attenteachers.fragments;
 
 import static android.content.Context.MODE_PRIVATE;
+import static androidx.constraintlayout.helper.widget.MotionEffect.TAG;
 
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.os.CountDownTimer;
-import android.os.Handler;
-import android.os.Looper;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.View;
@@ -43,15 +42,12 @@ import cn.pedant.SweetAlert.SweetAlertDialog;
 
 public class HomeFragment extends Fragment {
 
-    private String firstnameDB, lastnameDB, monthStr, selectedSubjectCode, selectedSubjectName, selectedSubjectShortName, selectedAttendanceOf;
-    private static final long START_TIME_IN_MILLIS = 180000;
-    private TextView mTextViewCountDown, codeView, statusView;
-    private Button mButtonStop, generateCodeBtn, deleteBtn;
-    private CountDownTimer mCountDownTimer;
-    private boolean mTimerRunning;
-    private long mTimeLeftInMillis, mEndTime;
-    private int randomNo, date, year, selectedSemester;
+    private String firstnameDB, lastnameDB, monthStr, selectedSubjectCode, selectedSubjectName, selectedSubjectShortName, selectedAttendanceOf, statusMessage;
+    private TextView codeView, statusView;
+    private Button generateCodeAndStopBtn, deleteBtn;
+    private int randomNo, date, year, selectedSemester, count;
     private FirebaseUser user;
+    private boolean wasAttendanceRunning;
     private final Map<String, SubjectInformation> allSubjects = new TreeMap<>();
     private final ProgressDialog progressDialog = new ProgressDialog();
 
@@ -73,8 +69,14 @@ public class HomeFragment extends Fragment {
 
     private void init(View view) {
         user = FirebaseAuth.getInstance().getCurrentUser();
-        SharedPreferences sharedPreferences = getActivity().getSharedPreferences("classHomePref", MODE_PRIVATE);
-        selectedAttendanceOf = sharedPreferences.getString("class", "");
+        SharedPreferences sharedPreferences = getActivity().getSharedPreferences("DBPathPref", MODE_PRIVATE);
+        selectedAttendanceOf = sharedPreferences.getString("attendanceOf", "");
+        selectedSubjectCode = sharedPreferences.getString("subjectCode", "");
+        selectedSubjectName = sharedPreferences.getString("subjectName", "");
+        selectedSubjectShortName = sharedPreferences.getString("subjectShortName", "");
+        selectedSemester = sharedPreferences.getInt("subjectSemester", 0);
+        count = sharedPreferences.getInt("count", 0);
+        Log.d(TAG, "Attendance: " + selectedAttendanceOf);
         findAllViews(view);
     }
 
@@ -97,18 +99,23 @@ public class HomeFragment extends Fragment {
     }
 
     private void findAllViews(View view) {
-        mTextViewCountDown = view.findViewById(R.id.text_view_countdown);
-        mButtonStop = view.findViewById(R.id.stopBtn);
-        generateCodeBtn = view.findViewById(R.id.generateCodeBtn);
+        generateCodeAndStopBtn = view.findViewById(R.id.generateCodeAndStopBtn);
         codeView = view.findViewById(R.id.codeView);
         deleteBtn = view.findViewById(R.id.deleteBtn);
         statusView = view.findViewById(R.id.statusView);
     }
 
     private void setOnClickListeners() {
-        generateCodeBtn.setOnClickListener(view -> generateCodeBtn());
-        mButtonStop.setOnClickListener(view -> stopAttendanceBtn());
+        generateCodeAndStopBtn.setOnClickListener(view -> checkButtonName());
         deleteBtn.setOnClickListener(view -> deleteCurrentAttendanceBtn());
+    }
+
+    private void checkButtonName() {
+        if (generateCodeAndStopBtn.getText().equals("Generate")) {
+            generateCodeBtn();
+        } else {
+            stopAttendanceBtn();
+        }
     }
 
     private void getSubjectInformation() {
@@ -136,52 +143,6 @@ public class HomeFragment extends Fragment {
                 });
     }
 
-    private void startTimer() {
-        mEndTime = System.currentTimeMillis() + mTimeLeftInMillis;
-        mCountDownTimer = new CountDownTimer(mTimeLeftInMillis, 1000) {
-            @Override
-            public void onTick(long millisUntilFinished) {
-                mTimeLeftInMillis = millisUntilFinished;
-                updateCountDownText();
-            }
-
-            @Override
-            public void onFinish() {
-                stopAttendance();
-                onAttendanceStop();
-            }
-        }.start();
-
-        mTimerRunning = true;
-        mButtonStop.setText("Stop");
-    }
-
-    private void stopTimer() {
-        mCountDownTimer.cancel();
-        stopAttendance();
-    }
-
-    private void updateCountDownText() {
-        int minutes = (int) (mTimeLeftInMillis / 1000) / 60;
-        int seconds = (int) (mTimeLeftInMillis / 1000) % 60;
-
-        String timeLeftFormatted = String.format(Locale.getDefault(), "%02d:%02d", minutes, seconds);
-
-        mTextViewCountDown.setText(timeLeftFormatted);
-    }
-
-    private void stopAttendance() {
-        mTimeLeftInMillis = START_TIME_IN_MILLIS;
-        updateCountDownText();
-        mTimerRunning = false;
-        randomNo = 0;
-        Handler uiHandler = new Handler(Looper.getMainLooper());
-        uiHandler.post(() -> {
-            getActivity().getSupportFragmentManager().beginTransaction().detach(HomeFragment.this).commitNow();
-            getActivity().getSupportFragmentManager().beginTransaction().attach(HomeFragment.this).commitNow();
-        });
-    }
-
     private void onAttendanceStart() {
         Map<String, Object> data = new HashMap<>();
         data.put("code", randomNo);
@@ -193,7 +154,8 @@ public class HomeFragment extends Fragment {
         data.put("subject_short_name", selectedSubjectShortName);
         data.put("uid", user.getUid());
 
-        statusView.setText("CO" + selectedSemester + "-" + selectedAttendanceOf + " " + selectedSubjectShortName + "\nAttendance Started");
+        statusMessage = "CO" + selectedSemester + "-" + selectedAttendanceOf + " " + selectedSubjectShortName + "\nAttendance Started";
+        statusView.setText(statusMessage);
         statusView.setVisibility(View.VISIBLE);
 
         FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects/" + selectedSubjectCode + "/" + selectedAttendanceOf + "_count")
@@ -204,6 +166,16 @@ public class HomeFragment extends Fragment {
                             public void onDataChange(@NonNull DataSnapshot snapshot) {
                                 data.put("count", snapshot.getValue(Integer.class));
                                 FirebaseDatabase.getInstance().getReference("attendance/active_attendance/CO" + selectedSemester + "-" + selectedAttendanceOf).setValue(data);
+
+                                SharedPreferences sharedPreferences = getActivity().getSharedPreferences("DBPathPref",MODE_PRIVATE);
+                                SharedPreferences.Editor myEdit = sharedPreferences.edit();
+                                myEdit.putString("attendanceOf", selectedAttendanceOf);
+                                myEdit.putString("subjectCode", selectedSubjectCode);
+                                myEdit.putString("subjectName", selectedSubjectName);
+                                myEdit.putString("subjectShortName", selectedSubjectShortName);
+                                myEdit.putInt("subjectSemester", selectedSemester);
+                                myEdit.putInt("count", snapshot.getValue(Integer.class));
+                                myEdit.commit();
                             }
 
                             @Override
@@ -214,7 +186,7 @@ public class HomeFragment extends Fragment {
 
     }
 
-    private void onAttendanceStop() {
+    private void stopAttendanceBtn() {
         Map<String, Object> data = new HashMap<>();
         data.put("code", 0);
         data.put("isAttendanceRunning", false);
@@ -227,6 +199,30 @@ public class HomeFragment extends Fragment {
         data.put("count", 0);
 
         FirebaseDatabase.getInstance().getReference("attendance/active_attendance/CO" + selectedSemester + "-" + selectedAttendanceOf).setValue(data);
+
+        SharedPreferences sharedPreferences = getActivity().getSharedPreferences("DBPathPref",MODE_PRIVATE);
+        SharedPreferences.Editor myEdit = sharedPreferences.edit();
+        myEdit.putString("attendanceOf", "");
+        myEdit.putString("subjectCode", "");
+        myEdit.putString("subjectName", "");
+        myEdit.putString("subjectShortName", "");
+        myEdit.putInt("subjectSemester", 0);
+        myEdit.putInt("count", 0);
+        myEdit.commit();
+
+        SharedPreferences prefs = getActivity().getSharedPreferences("attendanceStatusPref", MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putBoolean("wasAttendanceRunning", false);
+        editor.putString("statusMessage", "");
+        editor.putInt("code", 0);
+        editor.apply();
+
+        randomNo = 0;
+
+        statusView.setVisibility(View.GONE);
+        deleteBtn.setVisibility(View.GONE);
+        codeView.setText("Generate\nCode");
+        generateCodeAndStopBtn.setText("Generate");
     }
 
     private void refreshDaily(DataSnapshot snapshot) {
@@ -276,8 +272,7 @@ public class HomeFragment extends Fragment {
                                 }
                             });
 
-                    stopTimer();
-                    onAttendanceStop();
+                    stopAttendanceBtn();
                 })
                 .setCancelButton("No", SweetAlertDialog::dismissWithAnimation)
                 .show();
@@ -287,46 +282,17 @@ public class HomeFragment extends Fragment {
     public void onStart() {
         super.onStart();
 
-        SharedPreferences prefs = getActivity().getSharedPreferences("timerPref", MODE_PRIVATE);
-        mTimeLeftInMillis = prefs.getLong("millisLeft", START_TIME_IN_MILLIS);
-        mTimerRunning = prefs.getBoolean("timerRunning", false);
+        SharedPreferences prefs = getActivity().getSharedPreferences("attendanceStatusPref", MODE_PRIVATE);
+        wasAttendanceRunning = prefs.getBoolean("wasAttendanceRunning", false);
         randomNo = prefs.getInt("code", 0);
+        statusMessage = prefs.getString("statusMessage", "");
 
-        updateCountDownText();
-
-        if (mTimerRunning) {
-            mEndTime = prefs.getLong("endTime", 0);
-            mTimeLeftInMillis = mEndTime - System.currentTimeMillis();
+        if (wasAttendanceRunning) {
             codeView.setText("Code - " + randomNo);
-            generateCodeBtn.setVisibility(View.GONE);
-            mButtonStop.setVisibility(View.VISIBLE);
             deleteBtn.setVisibility(View.VISIBLE);
-            statusView.setVisibility(View.GONE);
-
-            if (mTimeLeftInMillis < 0) {
-                stopAttendance();
-                onAttendanceStop();
-            } else {
-                startTimer();
-            }
-        }
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-
-        SharedPreferences prefs = getActivity().getSharedPreferences("timerPref", MODE_PRIVATE);
-        SharedPreferences.Editor editor = prefs.edit();
-
-        editor.putLong("millisLeft", mTimeLeftInMillis);
-        editor.putBoolean("timerRunning", mTimerRunning);
-        editor.putLong("endTime", mEndTime);
-        editor.putInt("code", randomNo);
-        editor.apply();
-
-        if (mCountDownTimer != null) {
-            mCountDownTimer.cancel();
+            generateCodeAndStopBtn.setText("Stop");
+            statusView.setText(statusMessage);
+            statusView.setVisibility(View.VISIBLE);
         }
     }
 
@@ -380,60 +346,61 @@ public class HomeFragment extends Fragment {
             attendanceOfMenu.getMenu().add(Menu.NONE, 7, 7, "Batch B2");
             attendanceOfMenu.show();
             attendanceOfMenu.setOnMenuItemClickListener(item2 -> {
-                SharedPreferences sharedPreferences = getActivity().getSharedPreferences("classHomePref", MODE_PRIVATE);
+                SharedPreferences sharedPreferences = getActivity().getSharedPreferences("DBPathPref", MODE_PRIVATE);
                 SharedPreferences.Editor editor = sharedPreferences.edit();
                 switch (item2.getItemId()) {
                     case 1:
                         selectedAttendanceOf = "A";
-                        editor.putString("class", "A");
+                        editor.putString("attendanceOf", "A");
                         break;
 
                     case 2:
                         selectedAttendanceOf = "B";
-                        editor.putString("class", "B");
+                        editor.putString("attendanceOf", "B");
                         break;
 
                     case 3:
                         selectedAttendanceOf = "A1";
-                        editor.putString("class", "A1");
+                        editor.putString("attendanceOf", "A1");
                         break;
 
                     case 4:
                         selectedAttendanceOf = "A2";
-                        editor.putString("class", "A2");
+                        editor.putString("attendanceOf", "A2");
                         break;
 
                     case 5:
                         selectedAttendanceOf = "A3";
-                        editor.putString("class", "A3");
+                        editor.putString("attendanceOf", "A3");
                         break;
 
                     case 6:
                         selectedAttendanceOf = "B1";
-                        editor.putString("class", "B1");
+                        editor.putString("attendanceOf", "B1");
                         break;
 
                     case 7:
                         selectedAttendanceOf = "B2";
-                        editor.putString("class", "B2");
+                        editor.putString("attendanceOf", "B2");
                         break;
                 }
 
                 editor.commit();
                 onAttendanceStart();
                 codeView.setText("Code - " + randomNo);
-                generateCodeBtn.setVisibility(View.GONE);
-                mButtonStop.setVisibility(View.VISIBLE);
                 deleteBtn.setVisibility(View.VISIBLE);
-                startTimer();
+                generateCodeAndStopBtn.setText("Stop");
+
+                SharedPreferences prefs = getActivity().getSharedPreferences("attendanceStatusPref", MODE_PRIVATE);
+                SharedPreferences.Editor edit2 = prefs.edit();
+                edit2.putBoolean("wasAttendanceRunning", true);
+                edit2.putString("statusMessage", statusMessage);
+                edit2.putInt("code", randomNo);
+                edit2.apply();
                 return true;
             });
             return true;
         });
     }
 
-    private void stopAttendanceBtn() {
-        stopTimer();
-        onAttendanceStop();
-    }
 }

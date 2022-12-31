@@ -5,34 +5,12 @@
     android:layout_height="match_parent"
     tools:context=".fragments.HomeFragment">
 
-    <TextView
-        android:id="@+id/text_view_countdown"
+    <Button
+        android:id="@+id/generateCodeAndStopBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
         android:layout_centerVertical="true"
-        android:text="00:00"
-        android:textColor="@android:color/black"
-        android:textSize="60sp" />
-
-    <Button
-        android:id="@+id/stopBtn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/text_view_countdown"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="30dp"
-        android:text="stop"
-        android:visibility="gone"
-        tools:visibility="visible" />
-
-    <Button
-        android:id="@+id/generateCodeBtn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/text_view_countdown"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="30dp"
         android:text="Generate" />
 
     <TextView
@@ -43,9 +21,9 @@
         android:layout_centerHorizontal="true"
         android:layout_marginTop="60dp"
         android:textAlignment="center"
-        android:textColor="@color/black"
-        android:textSize="25sp"
-        android:visibility="gone"/>
+        android:textColor="#47D14D"
+        android:textSize="35sp"
+        android:visibility="gone" />
 
     <TextView
         android:id="@+id/codeView"
@@ -53,7 +31,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="160dp"
+        android:layout_marginTop="170dp"
         android:text="Generate\nCode"
         android:textAlignment="center"
         android:textColor="@color/black"
@@ -63,9 +41,9 @@
         android:id="@+id/deleteBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/text_view_countdown"
+        android:layout_below="@+id/generateCodeAndStopBtn"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="108dp"
+        android:layout_marginTop="50dp"
         android:text="Delete"
         android:visibility="gone"
         tools:visibility="visible" />

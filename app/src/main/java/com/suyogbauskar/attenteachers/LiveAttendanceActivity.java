@@ -22,7 +22,6 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.suyogbauskar.attenteachers.utils.ProgressDialog;
@@ -41,12 +40,11 @@ public class LiveAttendanceActivity extends AppCompatActivity {
     private TextView noAttendanceStartedView, totalPresentStudentsView;
     private Button addStudentBtn;
     private boolean isFirstRow;
-    private String teacherSubjectCode, monthStr;
-    private int DBLectureOrPracticalCount, date, year;
+    private String monthStr, subjectCode;
+    private int date, year, semester, count;
     private String studentUID, studentFirstname, studentLastname, attendanceOf;
     private Map<String, Object> studentData;
     private final ProgressDialog progressDialog = new ProgressDialog();
-    private static final String DB_PATH_LECTURE_COUNT_CO5I_A = "CO5I-A_lectures_taken_today", DB_PATH_LECTURE_COUNT_CO5I_B = "CO5I-B_lectures_taken_today", DB_PATH_PRACTICAL_COUNT_CO5I_1 = "CO5I-1_practicals_taken_today", DB_PATH_PRACTICAL_COUNT_CO5I_2 = "CO5I-2_practicals_taken_today", DB_PATH_PRACTICAL_COUNT_CO5I_3 = "CO5I-3_practicals_taken_today", DB_PATH_PRACTICAL_COUNT_CO5I_4 = "CO5I-4_practicals_taken_today", DB_PATH_PRACTICAL_COUNT_CO5I_5 = "CO5I-5_practicals_taken_today";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,8 +61,11 @@ public class LiveAttendanceActivity extends AppCompatActivity {
         user = FirebaseAuth.getInstance().getCurrentUser();
         studentData = new HashMap<>();
 
-        SharedPreferences sharedPreferences = getSharedPreferences("classHomePref", MODE_PRIVATE);
-        attendanceOf = sharedPreferences.getString("class", "");
+        SharedPreferences sharedPreferences = getSharedPreferences("DBPathPref", MODE_PRIVATE);
+        attendanceOf = sharedPreferences.getString("attendanceOf", "");
+        subjectCode = sharedPreferences.getString("subjectCode", "");
+        semester = sharedPreferences.getInt("subjectSemester", 0);
+        count = sharedPreferences.getInt("count", 0);
 
         findAllViews();
         setListeners();
@@ -115,54 +116,13 @@ public class LiveAttendanceActivity extends AppCompatActivity {
                         studentData.put("lastname", studentLastname);
                         studentData.put("rollNo", rollNo);
 
-                        FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid())
-                                .addListenerForSingleValueEvent(new ValueEventListener() {
-                                    @Override
-                                    public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                        DatabaseReference classRef = FirebaseDatabase.getInstance().getReference();
+                        FirebaseDatabase.getInstance().getReference("attendance/CO" + semester + "-" + attendanceOf + "/" + subjectCode + "/" + year + "/" + monthStr)
+                                .child(date + "-" + count)
+                                .child(studentUID)
+                                .setValue(studentData)
+                                .addOnSuccessListener(unused -> Toast.makeText(LiveAttendanceActivity.this, "Roll no. " + rollNo + " added successfully", Toast.LENGTH_SHORT).show())
+                                .addOnFailureListener(e -> Toast.makeText(LiveAttendanceActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show());
 
-                                        switch (attendanceOf) {
-                                            case "CO5I-A":
-                                                classRef = FirebaseDatabase.getInstance().getReference("/attendance/" + attendanceOf + "/" + snapshot.child("subject_code").getValue(String.class) + "/" +
-                                                        year + "/" + monthStr).child(date + "-" + snapshot.child(DB_PATH_LECTURE_COUNT_CO5I_A).getValue(Integer.class));
-                                                break;
-                                            case "CO5I-B":
-                                                classRef = FirebaseDatabase.getInstance().getReference("/attendance/" + attendanceOf + "/" + snapshot.child("subject_code").getValue(String.class) + "/" +
-                                                        year + "/" + monthStr).child(date + "-" + snapshot.child(DB_PATH_LECTURE_COUNT_CO5I_B).getValue(Integer.class));
-                                                break;
-                                            case "CO5I-1":
-                                                classRef = FirebaseDatabase.getInstance().getReference("/attendance/" + attendanceOf + "/" + snapshot.child("subject_code").getValue(String.class) + "/" +
-                                                        year + "/" + monthStr).child(date + "-" + snapshot.child(DB_PATH_PRACTICAL_COUNT_CO5I_1).getValue(Integer.class));
-                                                break;
-                                            case "CO5I-2":
-                                                classRef = FirebaseDatabase.getInstance().getReference("/attendance/" + attendanceOf + "/" + snapshot.child("subject_code").getValue(String.class) + "/" +
-                                                        year + "/" + monthStr).child(date + "-" + snapshot.child(DB_PATH_PRACTICAL_COUNT_CO5I_2).getValue(Integer.class));
-                                                break;
-                                            case "CO5I-3":
-                                                classRef = FirebaseDatabase.getInstance().getReference("/attendance/" + attendanceOf + "/" + snapshot.child("subject_code").getValue(String.class) + "/" +
-                                                        year + "/" + monthStr).child(date + "-" + snapshot.child(DB_PATH_PRACTICAL_COUNT_CO5I_3).getValue(Integer.class));
-                                                break;
-                                            case "CO5I-4":
-                                                classRef = FirebaseDatabase.getInstance().getReference("/attendance/" + attendanceOf + "/" + snapshot.child("subject_code").getValue(String.class) + "/" +
-                                                        year + "/" + monthStr).child(date + "-" + snapshot.child(DB_PATH_PRACTICAL_COUNT_CO5I_4).getValue(Integer.class));
-                                                break;
-                                            case "CO5I-5":
-                                                classRef = FirebaseDatabase.getInstance().getReference("/attendance/" + attendanceOf + "/" + snapshot.child("subject_code").getValue(String.class) + "/" +
-                                                        year + "/" + monthStr).child(date + "-" + snapshot.child(DB_PATH_PRACTICAL_COUNT_CO5I_5).getValue(Integer.class));
-                                                break;
-                                        }
-
-                                        classRef.child(studentUID)
-                                                .setValue(studentData)
-                                                .addOnSuccessListener(unused -> Toast.makeText(LiveAttendanceActivity.this, "Roll no. " + rollNo + " added", Toast.LENGTH_SHORT).show())
-                                                .addOnFailureListener(e -> Toast.makeText(LiveAttendanceActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show());
-                                    }
-
-                                    @Override
-                                    public void onCancelled(@NonNull DatabaseError error) {
-                                        Toast.makeText(LiveAttendanceActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
-                                    }
-                                });
                     }
 
                     @Override
@@ -192,76 +152,38 @@ public class LiveAttendanceActivity extends AppCompatActivity {
     private void checkForAttendance() {
         progressDialog.show(LiveAttendanceActivity.this);
 
-        FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid())
+        FirebaseDatabase.getInstance().getReference("attendance/active_attendance/CO" + semester + "-" + attendanceOf + "/subject_code")
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        teacherSubjectCode = snapshot.child("subject_code").getValue(String.class);
+                        progressDialog.hide();
+                        if (subjectCode.equals(snapshot.getValue(String.class))) {
+                            addStudentBtn.setVisibility(View.VISIBLE);
+                            drawTableHeader();
 
-                        switch (attendanceOf) {
-                            case "CO5I-A":
-                                DBLectureOrPracticalCount = snapshot.child(DB_PATH_LECTURE_COUNT_CO5I_A).getValue(Integer.class);
-                                break;
-                            case "CO5I-B":
-                                DBLectureOrPracticalCount = snapshot.child(DB_PATH_LECTURE_COUNT_CO5I_B).getValue(Integer.class);
-                                break;
-                            case "CO5I-1":
-                                DBLectureOrPracticalCount = snapshot.child(DB_PATH_PRACTICAL_COUNT_CO5I_1).getValue(Integer.class);
-                                break;
-                            case "CO5I-2":
-                                DBLectureOrPracticalCount = snapshot.child(DB_PATH_PRACTICAL_COUNT_CO5I_2).getValue(Integer.class);
-                                break;
-                            case "CO5I-3":
-                                DBLectureOrPracticalCount = snapshot.child(DB_PATH_PRACTICAL_COUNT_CO5I_3).getValue(Integer.class);
-                                break;
-                            case "CO5I-4":
-                                DBLectureOrPracticalCount = snapshot.child(DB_PATH_PRACTICAL_COUNT_CO5I_4).getValue(Integer.class);
-                                break;
-                            case "CO5I-5":
-                                DBLectureOrPracticalCount = snapshot.child(DB_PATH_PRACTICAL_COUNT_CO5I_5).getValue(Integer.class);
-                                break;
-                        }
-
-                        FirebaseDatabase.getInstance().getReference("attendance/active_attendance/" + attendanceOf + "/subject_code")
-                                .addListenerForSingleValueEvent(new ValueEventListener() {
-                                    @Override
-                                    public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                        progressDialog.hide();
-                                        if (teacherSubjectCode.equals(snapshot.getValue(String.class))) {
-                                            addStudentBtn.setVisibility(View.VISIBLE);
-                                            drawTableHeader();
-
-                                            FirebaseDatabase.getInstance().getReference("/attendance/" + attendanceOf + "/" + teacherSubjectCode + "/" +
-                                                            year + "/" + monthStr).child(date + "-" + DBLectureOrPracticalCount)
-                                                    .orderByChild("rollNo")
-                                                    .addValueEventListener(new ValueEventListener() {
-                                                        @Override
-                                                        public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                                            table.removeViews(1, table.getChildCount() - 1);
-                                                            totalPresentStudentsView.setText("Total present students: " + snapshot.getChildrenCount());
-                                                            for (DataSnapshot dsp : snapshot.getChildren()) {
-                                                                createTableRow(dsp.child("rollNo").getValue(Integer.class), dsp.child("firstname").getValue(String.class) + " " + dsp.child("lastname").getValue(String.class));
-                                                            }
-                                                        }
-
-                                                        @Override
-                                                        public void onCancelled(@NonNull DatabaseError error) {
-                                                            progressDialog.hide();
-                                                            Toast.makeText(getApplicationContext(), error.getMessage(), Toast.LENGTH_SHORT).show();
-                                                        }
-                                                    });
-
-                                        } else {
-                                            noAttendanceStartedView.setVisibility(View.VISIBLE);
+                            FirebaseDatabase.getInstance().getReference("attendance/CO" + semester + "-" + attendanceOf + "/" + subjectCode + "/" + year + "/" + monthStr)
+                                    .child(date + "-" + count)
+                                    .orderByChild("rollNo")
+                                    .addValueEventListener(new ValueEventListener() {
+                                        @Override
+                                        public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                            table.removeViews(1, table.getChildCount() - 1);
+                                            totalPresentStudentsView.setText("Total present students: " + snapshot.getChildrenCount());
+                                            for (DataSnapshot dsp : snapshot.getChildren()) {
+                                                createTableRow(dsp.child("rollNo").getValue(Integer.class), dsp.child("firstname").getValue(String.class) + " " + dsp.child("lastname").getValue(String.class));
+                                            }
                                         }
-                                    }
 
-                                    @Override
-                                    public void onCancelled(@NonNull DatabaseError error) {
-                                        progressDialog.hide();
-                                        Toast.makeText(getApplicationContext(), error.getMessage(), Toast.LENGTH_SHORT).show();
-                                    }
-                                });
+                                        @Override
+                                        public void onCancelled(@NonNull DatabaseError error) {
+                                            progressDialog.hide();
+                                            Toast.makeText(getApplicationContext(), error.getMessage(), Toast.LENGTH_SHORT).show();
+                                        }
+                                    });
+
+                        } else {
+                            noAttendanceStartedView.setVisibility(View.VISIBLE);
+                        }
                     }
 
                     @Override
