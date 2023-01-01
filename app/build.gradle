@@ -51,6 +51,7 @@ dependencies {
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version"
     implementation 'com.github.kal72:RackMonthPicker:1.6.1'
     implementation 'com.github.mejdi14:Flat-Dialog-Android:1.0.5'
+    implementation 'com.github.uzairiqbal91:CircularTimerView:1.0'
 
     // firebase
     implementation platform('com.google.firebase:firebase-bom:30.4.1')

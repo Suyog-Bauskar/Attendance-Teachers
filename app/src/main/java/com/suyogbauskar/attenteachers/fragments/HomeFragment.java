@@ -1,11 +1,9 @@
 package com.suyogbauskar.attenteachers.fragments;
 
 import static android.content.Context.MODE_PRIVATE;
-import static androidx.constraintlayout.helper.widget.MotionEffect.TAG;
 
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.View;
@@ -28,6 +26,9 @@ import com.google.firebase.database.ValueEventListener;
 import com.suyogbauskar.attenteachers.R;
 import com.suyogbauskar.attenteachers.pojos.SubjectInformation;
 import com.suyogbauskar.attenteachers.utils.ProgressDialog;
+import com.uzairiqbal.circulartimerview.CircularTimerListener;
+import com.uzairiqbal.circulartimerview.CircularTimerView;
+import com.uzairiqbal.circulartimerview.TimeFormatEnum;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -45,9 +46,11 @@ public class HomeFragment extends Fragment {
     private String firstnameDB, lastnameDB, monthStr, selectedSubjectCode, selectedSubjectName, selectedSubjectShortName, selectedAttendanceOf, statusMessage;
     private TextView codeView, statusView;
     private Button generateCodeAndStopBtn, deleteBtn;
-    private int randomNo, date, year, selectedSemester, count;
+    private int randomNo, date, year, selectedSemester;
+    private long timerTime, endTime;
     private FirebaseUser user;
-    private boolean wasAttendanceRunning;
+    private CircularTimerView progressBar;
+    private SharedPreferences.Editor edit2;
     private final Map<String, SubjectInformation> allSubjects = new TreeMap<>();
     private final ProgressDialog progressDialog = new ProgressDialog();
 
@@ -58,6 +61,23 @@ public class HomeFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_home, container, false);
         getActivity().setTitle("Attendance");
+
+        progressBar = view.findViewById(R.id.timer);
+
+//        progressBar.setCircularTimerListener(new CircularTimerListener() {
+//            @Override
+//            public String updateDataOnTick(long remainingTimeInMs) {
+//                return String.valueOf((int)Math.ceil((remainingTimeInMs / 1000.f)));
+//            }
+//
+//            @Override
+//            public void onTimerFinished() {
+//                progressBar.setText("FINISHED");
+//                progressBar.setSuffix("");
+//            }
+//        }, 40, TimeFormatEnum.SECONDS, 10);
+
+//        progressBar.startTimer();
 
         init(view);
         setOnClickListeners();
@@ -75,8 +95,7 @@ public class HomeFragment extends Fragment {
         selectedSubjectName = sharedPreferences.getString("subjectName", "");
         selectedSubjectShortName = sharedPreferences.getString("subjectShortName", "");
         selectedSemester = sharedPreferences.getInt("subjectSemester", 0);
-        count = sharedPreferences.getInt("count", 0);
-        Log.d(TAG, "Attendance: " + selectedAttendanceOf);
+
         findAllViews(view);
     }
 
@@ -283,17 +302,44 @@ public class HomeFragment extends Fragment {
         super.onStart();
 
         SharedPreferences prefs = getActivity().getSharedPreferences("attendanceStatusPref", MODE_PRIVATE);
-        wasAttendanceRunning = prefs.getBoolean("wasAttendanceRunning", false);
+        boolean wasAttendanceRunning = prefs.getBoolean("wasAttendanceRunning", false);
         randomNo = prefs.getInt("code", 0);
         statusMessage = prefs.getString("statusMessage", "");
 
         if (wasAttendanceRunning) {
+            endTime = prefs.getLong("endTime", 0);
+            timerTime = endTime - System.currentTimeMillis();
+            if (timerTime < 0) {
+                stopAttendanceBtn();
+                return;
+            }
+            timerTime = timerTime / 1000;
             codeView.setText("Code - " + randomNo);
             deleteBtn.setVisibility(View.VISIBLE);
             generateCodeAndStopBtn.setText("Stop");
             statusView.setText(statusMessage);
             statusView.setVisibility(View.VISIBLE);
+
+            progressBar.setCircularTimerListener(new CircularTimerListener() {
+                @Override
+                public String updateDataOnTick(long remainingTimeInMs) {
+                    return String.valueOf((int)Math.ceil((remainingTimeInMs / 1000.f)));
+                }
+
+                @Override
+                public void onTimerFinished() {
+                    progressBar.setText("FINISHED");
+                    progressBar.setSuffix("");
+                }
+            }, timerTime, TimeFormatEnum.SECONDS, 10);
+            progressBar.startTimer();
         }
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        edit2.apply();
     }
 
     private void getCurrentTime() {
@@ -392,11 +438,28 @@ public class HomeFragment extends Fragment {
                 generateCodeAndStopBtn.setText("Stop");
 
                 SharedPreferences prefs = getActivity().getSharedPreferences("attendanceStatusPref", MODE_PRIVATE);
-                SharedPreferences.Editor edit2 = prefs.edit();
+                edit2 = prefs.edit();
                 edit2.putBoolean("wasAttendanceRunning", true);
                 edit2.putString("statusMessage", statusMessage);
                 edit2.putInt("code", randomNo);
+                edit2.putLong("endTime", System.currentTimeMillis() + 180000L);
                 edit2.apply();
+
+                progressBar.setCircularTimerListener(new CircularTimerListener() {
+                    @Override
+                    public String updateDataOnTick(long remainingTimeInMs) {
+                        edit2.putLong("time", Long.valueOf(remainingTimeInMs));
+                        return String.valueOf((int)Math.ceil((remainingTimeInMs / 1000.f)));
+                    }
+
+                    @Override
+                    public void onTimerFinished() {
+                        progressBar.setText("FINISHED");
+                        progressBar.setSuffix("");
+                    }
+                }, 180, TimeFormatEnum.SECONDS, 10);
+                progressBar.startTimer();
+
                 return true;
             });
             return true;
