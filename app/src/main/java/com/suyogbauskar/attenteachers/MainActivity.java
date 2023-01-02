@@ -82,7 +82,7 @@ public class MainActivity extends AppCompatActivity {
 
             if (!resetEmail.isEmpty()) {
                 mAuth.sendPasswordResetEmail(resetEmail)
-                        .addOnSuccessListener(unused -> Toast.makeText(MainActivity.this, "Reset Link Sent To Your Email.", Toast.LENGTH_SHORT).show())
+                        .addOnSuccessListener(unused -> Toast.makeText(MainActivity.this, "Reset link sent to " + resetEmail, Toast.LENGTH_SHORT).show())
                         .addOnFailureListener(e -> Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show());
             } else {
                 Toast.makeText(getApplicationContext(), "Invalid email", Toast.LENGTH_LONG).show();
@@ -119,8 +119,6 @@ public class MainActivity extends AppCompatActivity {
                     progressDialog.hide();
                     if (task.isSuccessful()) {
                         startActivity(new Intent(MainActivity.this, HomeActivity.class));
-                    } else {
-                        Toast.makeText(MainActivity.this, "Try again!", Toast.LENGTH_SHORT).show();
                     }
                 })
                 .addOnFailureListener(e -> Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show());

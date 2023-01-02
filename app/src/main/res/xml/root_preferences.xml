@@ -3,6 +3,10 @@
     <PreferenceCategory app:title="Account">
 
         <Preference
+            app:key="change_password"
+            app:title="Change Password" />
+
+        <Preference
             app:key="sign_out"
             app:title="Sign Out" />
 
