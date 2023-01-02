@@ -4,6 +4,8 @@ import static android.content.Context.MODE_PRIVATE;
 
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.View;
@@ -47,7 +49,6 @@ public class HomeFragment extends Fragment {
     private TextView codeView, statusView;
     private Button generateCodeAndStopBtn, deleteBtn;
     private int randomNo, date, year, selectedSemester;
-    private long timerTime, endTime;
     private FirebaseUser user;
     private CircularTimerView progressBar;
     private SharedPreferences.Editor edit2;
@@ -62,25 +63,7 @@ public class HomeFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_home, container, false);
         getActivity().setTitle("Attendance");
 
-        progressBar = view.findViewById(R.id.timer);
-
-//        progressBar.setCircularTimerListener(new CircularTimerListener() {
-//            @Override
-//            public String updateDataOnTick(long remainingTimeInMs) {
-//                return String.valueOf((int)Math.ceil((remainingTimeInMs / 1000.f)));
-//            }
-//
-//            @Override
-//            public void onTimerFinished() {
-//                progressBar.setText("FINISHED");
-//                progressBar.setSuffix("");
-//            }
-//        }, 40, TimeFormatEnum.SECONDS, 10);
-
-//        progressBar.startTimer();
-
         init(view);
-        setOnClickListeners();
         getCurrentTime();
         fetchDataFromDatabase();
 
@@ -89,6 +72,7 @@ public class HomeFragment extends Fragment {
 
     private void init(View view) {
         user = FirebaseAuth.getInstance().getCurrentUser();
+
         SharedPreferences sharedPreferences = getActivity().getSharedPreferences("DBPathPref", MODE_PRIVATE);
         selectedAttendanceOf = sharedPreferences.getString("attendanceOf", "");
         selectedSubjectCode = sharedPreferences.getString("subjectCode", "");
@@ -96,7 +80,11 @@ public class HomeFragment extends Fragment {
         selectedSubjectShortName = sharedPreferences.getString("subjectShortName", "");
         selectedSemester = sharedPreferences.getInt("subjectSemester", 0);
 
+        SharedPreferences prefs = getActivity().getSharedPreferences("attendanceStatusPref", MODE_PRIVATE);
+        edit2 = prefs.edit();
+
         findAllViews(view);
+        setOnClickListeners();
     }
 
     private void fetchDataFromDatabase() {
@@ -122,6 +110,7 @@ public class HomeFragment extends Fragment {
         codeView = view.findViewById(R.id.codeView);
         deleteBtn = view.findViewById(R.id.deleteBtn);
         statusView = view.findViewById(R.id.statusView);
+        progressBar = view.findViewById(R.id.timer);
     }
 
     private void setOnClickListeners() {
@@ -149,10 +138,9 @@ public class HomeFragment extends Fragment {
                                     snapshot.child(dsp.getKey()).child("subject_name").getValue(String.class),
                                     snapshot.child(dsp.getKey()).child("subject_short_name").getValue(String.class),
                                     snapshot.child(dsp.getKey()).child("semester").getValue(Integer.class)));
-
-                            refreshDaily(dsp);
                         }
                         allSubjects.putAll(unsorted);
+                        refreshDaily();
                     }
 
                     @Override
@@ -238,13 +226,14 @@ public class HomeFragment extends Fragment {
 
         randomNo = 0;
 
-        statusView.setVisibility(View.GONE);
-        deleteBtn.setVisibility(View.GONE);
-        codeView.setText("Generate\nCode");
-        generateCodeAndStopBtn.setText("Generate");
+        Handler uiHandler = new Handler(Looper.getMainLooper());
+        uiHandler.post(() -> {
+            getActivity().getSupportFragmentManager().beginTransaction().detach(HomeFragment.this).commitNow();
+            getActivity().getSupportFragmentManager().beginTransaction().attach(HomeFragment.this).commitNow();
+        });
     }
 
-    private void refreshDaily(DataSnapshot snapshot) {
+    private void refreshDaily() {
         SharedPreferences sharedPreferences = getActivity().getSharedPreferences("dailyPref", MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
 
@@ -256,13 +245,15 @@ public class HomeFragment extends Fragment {
         editor.apply();
 
         if (hasDayChanged) {
-            snapshot.child("A_count").getRef().setValue(0);
-            snapshot.child("B_count").getRef().setValue(0);
-            snapshot.child("A1_count").getRef().setValue(0);
-            snapshot.child("A2_count").getRef().setValue(0);
-            snapshot.child("A3_count").getRef().setValue(0);
-            snapshot.child("B1_count").getRef().setValue(0);
-            snapshot.child("B2_count").getRef().setValue(0);
+            for (Map.Entry<String, SubjectInformation> entry1: allSubjects.entrySet()) {
+                FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects/" + entry1.getKey() + "/A_count").setValue(0);
+                FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects/" + entry1.getKey() + "/B_count").setValue(0);
+                FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects/" + entry1.getKey() + "/A1_count").setValue(0);
+                FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects/" + entry1.getKey() + "/A2_count").setValue(0);
+                FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects/" + entry1.getKey() + "/A3_count").setValue(0);
+                FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects/" + entry1.getKey() + "/B1_count").setValue(0);
+                FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects/" + entry1.getKey() + "/B2_count").setValue(0);
+            }
         }
     }
 
@@ -283,6 +274,8 @@ public class HomeFragment extends Fragment {
 
                                     FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects/" + selectedSubjectCode + "/" + selectedAttendanceOf + "_count")
                                             .setValue(ServerValue.increment(-1));
+
+                                    stopAttendanceBtn();
                                 }
 
                                 @Override
@@ -290,8 +283,6 @@ public class HomeFragment extends Fragment {
                                     Toast.makeText(getContext(), error.getMessage(), Toast.LENGTH_LONG).show();
                                 }
                             });
-
-                    stopAttendanceBtn();
                 })
                 .setCancelButton("No", SweetAlertDialog::dismissWithAnimation)
                 .show();
@@ -307,8 +298,8 @@ public class HomeFragment extends Fragment {
         statusMessage = prefs.getString("statusMessage", "");
 
         if (wasAttendanceRunning) {
-            endTime = prefs.getLong("endTime", 0);
-            timerTime = endTime - System.currentTimeMillis();
+            long endTime = prefs.getLong("endTime", 0);
+            long timerTime = endTime - System.currentTimeMillis();
             if (timerTime < 0) {
                 stopAttendanceBtn();
                 return;
@@ -323,13 +314,13 @@ public class HomeFragment extends Fragment {
             progressBar.setCircularTimerListener(new CircularTimerListener() {
                 @Override
                 public String updateDataOnTick(long remainingTimeInMs) {
+                    edit2.putLong("time", remainingTimeInMs);
                     return String.valueOf((int)Math.ceil((remainingTimeInMs / 1000.f)));
                 }
 
                 @Override
                 public void onTimerFinished() {
-                    progressBar.setText("FINISHED");
-                    progressBar.setSuffix("");
+                    stopAttendanceBtn();
                 }
             }, timerTime, TimeFormatEnum.SECONDS, 10);
             progressBar.startTimer();
@@ -437,8 +428,6 @@ public class HomeFragment extends Fragment {
                 deleteBtn.setVisibility(View.VISIBLE);
                 generateCodeAndStopBtn.setText("Stop");
 
-                SharedPreferences prefs = getActivity().getSharedPreferences("attendanceStatusPref", MODE_PRIVATE);
-                edit2 = prefs.edit();
                 edit2.putBoolean("wasAttendanceRunning", true);
                 edit2.putString("statusMessage", statusMessage);
                 edit2.putInt("code", randomNo);
@@ -448,14 +437,13 @@ public class HomeFragment extends Fragment {
                 progressBar.setCircularTimerListener(new CircularTimerListener() {
                     @Override
                     public String updateDataOnTick(long remainingTimeInMs) {
-                        edit2.putLong("time", Long.valueOf(remainingTimeInMs));
+                        edit2.putLong("time", remainingTimeInMs);
                         return String.valueOf((int)Math.ceil((remainingTimeInMs / 1000.f)));
                     }
 
                     @Override
                     public void onTimerFinished() {
-                        progressBar.setText("FINISHED");
-                        progressBar.setSuffix("");
+                        stopAttendanceBtn();
                     }
                 }, 180, TimeFormatEnum.SECONDS, 10);
                 progressBar.startTimer();
