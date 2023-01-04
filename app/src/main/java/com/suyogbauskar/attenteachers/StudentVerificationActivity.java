@@ -19,6 +19,10 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.suyogbauskar.attenteachers.pojos.StudentData;
+
+import java.util.Map;
+import java.util.TreeMap;
 
 import cn.pedant.SweetAlert.SweetAlertDialog;
 
@@ -46,6 +50,7 @@ public class StudentVerificationActivity extends AppCompatActivity {
                 .addValueEventListener(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        Map<Long, StudentData> tempMap = new TreeMap<>();
                         table.removeAllViews();
                         if (snapshot.getChildrenCount() == 0) {
                             allStudentsVerifiedView.setVisibility(View.VISIBLE);
@@ -54,7 +59,11 @@ public class StudentVerificationActivity extends AppCompatActivity {
                         drawTableHeader();
                         allStudentsVerifiedView.setVisibility(View.GONE);
                         for (DataSnapshot ds : snapshot.getChildren()) {
-                            createTableRow(ds.child("rollNo").getValue(Integer.class), ds.child("firstname").getValue(String.class) + " " + ds.child("lastname").getValue(String.class), ds.child("enrollNo").getValue(Long.class));
+                            tempMap.put(ds.child("enrollNo").getValue(Long.class),
+                                    new StudentData(ds.child("rollNo").getValue(Integer.class), ds.child("batch").getValue(Integer.class),ds.child("semester").getValue(Integer.class), ds.child("enrollNo").getValue(Long.class), ds.child("firstname").getValue(String.class), ds.child("lastname").getValue(String.class), ds.child("division").getValue(String.class)));
+                        }
+                        for (Map.Entry<Long, StudentData> entry1: tempMap.entrySet()) {
+                            createTableRow(entry1.getValue().getRollNo(), entry1.getValue().getFirstname() + " " + entry1.getValue().getLastname(),entry1.getValue().getSemester(), entry1.getValue().getEnrollNo(), entry1.getValue().getDivision(), entry1.getValue().getBatch());
                         }
                     }
 
@@ -77,115 +86,169 @@ public class StudentVerificationActivity extends AppCompatActivity {
         TextView tv1 = new TextView(StudentVerificationActivity.this);
         TextView tv2 = new TextView(StudentVerificationActivity.this);
         TextView tv3 = new TextView(StudentVerificationActivity.this);
+        TextView tv4 = new TextView(StudentVerificationActivity.this);
+        TextView tv5 = new TextView(StudentVerificationActivity.this);
+        TextView tv6 = new TextView(StudentVerificationActivity.this);
 
         tv0.setText("Roll No.");
         tv1.setText("Name");
-        tv2.setText("Enroll No.");
-        tv3.setText("Verified");
+        tv2.setText("Semester");
+        tv3.setText("Enroll No.");
+        tv4.setText("Division");
+        tv5.setText("Batch");
+        tv6.setText("Verified");
 
         tv0.setTypeface(Typeface.DEFAULT_BOLD);
         tv1.setTypeface(Typeface.DEFAULT_BOLD);
         tv2.setTypeface(Typeface.DEFAULT_BOLD);
         tv3.setTypeface(Typeface.DEFAULT_BOLD);
+        tv4.setTypeface(Typeface.DEFAULT_BOLD);
+        tv5.setTypeface(Typeface.DEFAULT_BOLD);
+        tv6.setTypeface(Typeface.DEFAULT_BOLD);
 
         tv0.setTextSize(18);
         tv1.setTextSize(18);
         tv2.setTextSize(18);
         tv3.setTextSize(18);
+        tv4.setTextSize(18);
+        tv5.setTextSize(18);
+        tv6.setTextSize(18);
 
         tv0.setPadding(30, 30, 15, 30);
         tv1.setPadding(30, 30, 15, 30);
         tv2.setPadding(30, 30, 15, 30);
         tv3.setPadding(30, 30, 15, 30);
+        tv4.setPadding(30, 30, 15, 30);
+        tv5.setPadding(30, 30, 15, 30);
+        tv6.setPadding(30, 30, 15, 30);
 
         tv0.setGravity(Gravity.CENTER);
         tv1.setGravity(Gravity.CENTER);
         tv2.setGravity(Gravity.CENTER);
         tv3.setGravity(Gravity.CENTER);
+        tv4.setGravity(Gravity.CENTER);
+        tv5.setGravity(Gravity.CENTER);
+        tv6.setGravity(Gravity.CENTER);
 
         tv0.setTextColor(Color.BLACK);
         tv1.setTextColor(Color.BLACK);
         tv2.setTextColor(Color.BLACK);
         tv3.setTextColor(Color.BLACK);
+        tv4.setTextColor(Color.BLACK);
+        tv5.setTextColor(Color.BLACK);
+        tv6.setTextColor(Color.BLACK);
 
         tv0.setBackgroundColor(getResources().getColor(R.color.table_header));
         tv1.setBackgroundColor(getResources().getColor(R.color.table_header));
         tv2.setBackgroundColor(getResources().getColor(R.color.table_header));
         tv3.setBackgroundColor(getResources().getColor(R.color.table_header));
+        tv4.setBackgroundColor(getResources().getColor(R.color.table_header));
+        tv5.setBackgroundColor(getResources().getColor(R.color.table_header));
+        tv6.setBackgroundColor(getResources().getColor(R.color.table_header));
 
         tbRow.addView(tv0);
         tbRow.addView(tv1);
         tbRow.addView(tv2);
         tbRow.addView(tv3);
+        tbRow.addView(tv4);
+        tbRow.addView(tv5);
+        tbRow.addView(tv6);
 
         table.addView(tbRow);
     }
 
-    private void createTableRow(int rollNo, String name, long enrollNo) {
+    private void createTableRow(int rollNo, String name,int semester, long enrollNo, String division, int batch) {
         TableRow tbRow = new TableRow(StudentVerificationActivity.this);
 
-        tbRow.setTag(rollNo);
+        tbRow.setTag(enrollNo);
 
         TextView tv0 = new TextView(StudentVerificationActivity.this);
         TextView tv1 = new TextView(StudentVerificationActivity.this);
         TextView tv2 = new TextView(StudentVerificationActivity.this);
         TextView tv3 = new TextView(StudentVerificationActivity.this);
+        TextView tv4 = new TextView(StudentVerificationActivity.this);
+        TextView tv5 = new TextView(StudentVerificationActivity.this);
+        TextView tv6 = new TextView(StudentVerificationActivity.this);
 
         tv0.setText(String.valueOf(rollNo));
         tv1.setText(name);
-        tv2.setText(String.valueOf(enrollNo));
-        tv3.setText("❌");
+        tv2.setText(String.valueOf(semester));
+        tv3.setText(String.valueOf(enrollNo));
+        tv4.setText(division);
+        tv5.setText(String.valueOf(batch));
+        tv6.setText("❌");
 
         tv0.setTextSize(16);
         tv1.setTextSize(16);
         tv2.setTextSize(16);
         tv3.setTextSize(16);
+        tv4.setTextSize(16);
+        tv5.setTextSize(16);
+        tv6.setTextSize(16);
 
         tv0.setPadding(30, 30, 15, 30);
         tv1.setPadding(30, 30, 15, 30);
         tv2.setPadding(30, 30, 15, 30);
         tv3.setPadding(30, 30, 15, 30);
+        tv4.setPadding(30, 30, 15, 30);
+        tv5.setPadding(30, 30, 15, 30);
+        tv6.setPadding(30, 30, 15, 30);
 
         tv0.setGravity(Gravity.CENTER);
         tv1.setGravity(Gravity.CENTER);
         tv2.setGravity(Gravity.CENTER);
         tv3.setGravity(Gravity.CENTER);
+        tv4.setGravity(Gravity.CENTER);
+        tv5.setGravity(Gravity.CENTER);
+        tv6.setGravity(Gravity.CENTER);
 
         tv0.setBackgroundResource(R.drawable.borders);
         tv1.setBackgroundResource(R.drawable.borders);
         tv2.setBackgroundResource(R.drawable.borders);
         tv3.setBackgroundResource(R.drawable.borders);
+        tv4.setBackgroundResource(R.drawable.borders);
+        tv5.setBackgroundResource(R.drawable.borders);
+        tv6.setBackgroundResource(R.drawable.borders);
 
         tv0.setTextColor(Color.BLACK);
         tv1.setTextColor(Color.BLACK);
         tv2.setTextColor(Color.BLACK);
         tv3.setTextColor(Color.BLACK);
+        tv4.setTextColor(Color.BLACK);
+        tv5.setTextColor(Color.BLACK);
+        tv6.setTextColor(Color.BLACK);
 
         if (isFirstRow) {
             tv0.setBackgroundColor(getResources().getColor(R.color.white));
             tv1.setBackgroundColor(getResources().getColor(R.color.white));
             tv2.setBackgroundColor(getResources().getColor(R.color.white));
             tv3.setBackgroundColor(getResources().getColor(R.color.white));
+            tv4.setBackgroundColor(getResources().getColor(R.color.white));
+            tv5.setBackgroundColor(getResources().getColor(R.color.white));
+            tv6.setBackgroundColor(getResources().getColor(R.color.white));
             isFirstRow = false;
         } else {
             tv0.setBackgroundColor(getResources().getColor(R.color.light_gray));
             tv1.setBackgroundColor(getResources().getColor(R.color.light_gray));
             tv2.setBackgroundColor(getResources().getColor(R.color.light_gray));
             tv3.setBackgroundColor(getResources().getColor(R.color.light_gray));
+            tv4.setBackgroundColor(getResources().getColor(R.color.light_gray));
+            tv5.setBackgroundColor(getResources().getColor(R.color.light_gray));
+            tv6.setBackgroundColor(getResources().getColor(R.color.light_gray));
             isFirstRow = true;
         }
 
         tbRow.setOnClickListener(view -> new SweetAlertDialog(StudentVerificationActivity.this, SweetAlertDialog.NORMAL_TYPE)
                 .setTitleText("Verify Student?")
-                .setContentText("Roll no. " + tbRow.getTag().toString() + " will be verified")
+                .setContentText("Enroll no. " + tbRow.getTag().toString() + " will be verified")
                 .setConfirmText("Verify")
                 .setConfirmClickListener(sweetAlertDialog -> {
                     sweetAlertDialog.dismiss();
-                    int rollNoOfTag = Integer.parseInt(tbRow.getTag().toString());
+                    int enrollNoOfTag = Integer.parseInt(tbRow.getTag().toString());
 
                     FirebaseDatabase.getInstance().getReference("students_data")
-                            .orderByChild("rollNo")
-                            .equalTo(rollNoOfTag)
+                            .orderByChild("enrollNo")
+                            .equalTo(enrollNoOfTag)
                             .addListenerForSingleValueEvent(new ValueEventListener() {
                                 @Override
                                 public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -237,6 +300,9 @@ public class StudentVerificationActivity extends AppCompatActivity {
         tbRow.addView(tv1);
         tbRow.addView(tv2);
         tbRow.addView(tv3);
+        tbRow.addView(tv4);
+        tbRow.addView(tv5);
+        tbRow.addView(tv6);
 
         table.addView(tbRow);
     }
