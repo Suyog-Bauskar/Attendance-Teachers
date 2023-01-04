@@ -267,29 +267,32 @@ public class StudentVerificationActivity extends AppCompatActivity {
                 .show());
 
         tbRow.setOnLongClickListener(view -> {
-            int rollNoFromTag = Integer.parseInt(tbRow.getTag().toString());
+            int enrollNoFromTag = Integer.parseInt(tbRow.getTag().toString());
 
             new SweetAlertDialog(StudentVerificationActivity.this, SweetAlertDialog.WARNING_TYPE)
                     .setTitleText("Delete student?")
-                    .setContentText("Roll no. " + rollNoFromTag + " will be deleted")
+                    .setContentText("Enroll no. " + enrollNoFromTag + " will be deleted")
                     .setConfirmText("Delete")
-                    .setConfirmClickListener(sweetAlertDialog -> FirebaseDatabase.getInstance().getReference("students_data")
-                            .orderByChild("rollNo")
-                            .equalTo(rollNoFromTag)
-                            .addListenerForSingleValueEvent(new ValueEventListener() {
-                                @Override
-                                public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                    for (DataSnapshot ds: snapshot.getChildren()) {
-                                        //TODO : Delete student from authentication using cloud function
-                                        ds.getRef().removeValue();
+                    .setConfirmClickListener(sweetAlertDialog -> {
+                        sweetAlertDialog.dismissWithAnimation();
+                        FirebaseDatabase.getInstance().getReference("students_data")
+                                .orderByChild("enrollNo")
+                                .equalTo(enrollNoFromTag)
+                                .addListenerForSingleValueEvent(new ValueEventListener() {
+                                    @Override
+                                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                        for (DataSnapshot ds: snapshot.getChildren()) {
+                                            //TODO : Delete student from authentication using cloud function
+                                            ds.getRef().removeValue();
+                                        }
                                     }
-                                }
 
-                                @Override
-                                public void onCancelled(@NonNull DatabaseError error) {
-                                    Toast.makeText(StudentVerificationActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
-                                }
-                            }))
+                                    @Override
+                                    public void onCancelled(@NonNull DatabaseError error) {
+                                        Toast.makeText(StudentVerificationActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                    })
                     .setCancelText("No")
                     .setCancelClickListener(Dialog::dismiss).show();
 
