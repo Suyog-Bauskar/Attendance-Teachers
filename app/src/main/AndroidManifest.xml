@@ -54,7 +54,7 @@
             </intent-filter>
         </activity>
 
-        <service android:name=".excelfiles.CreateExcelFileCO5I_A" />
+        <service android:name=".excelfiles.CreateExcelFileOfAttendance" />
         <service android:name=".excelfiles.CreateExcelFileCO5I_B" />
         <service android:name=".excelfiles.CreateExcelFileCO5I_1" />
         <service android:name=".excelfiles.CreateExcelFileCO5I_2" />

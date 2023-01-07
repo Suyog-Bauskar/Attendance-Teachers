@@ -13,13 +13,9 @@ import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 import com.suyogbauskar.attenteachers.R;
 import com.suyogbauskar.attenteachers.pojos.Student;
@@ -43,16 +39,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-public class CreateExcelFileCO5I_A extends Service {
+public class CreateExcelFileOfAttendance extends Service {
 
-    private List<Student> students;
-    private final FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-    private Map<String, Map<String, Map<String, Map<String, Object>>>> allMonthsAndChildren;
-    private XSSFWorkbook xssfWorkbook;
-    private XSSFSheet xssfSheet;
-    private XSSFRow xssfRow;
-    private XSSFCell xssfCell;
-    private final Map<String, Map<String, List<Student>>> requiredPresentData = new HashMap<>();
+    private String year, subjectCode, subjectName;
+    private int semester, i;
 
     @Nullable
     @Override
@@ -63,8 +53,16 @@ public class CreateExcelFileCO5I_A extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
 
-        students = new ArrayList<>();
-        xssfWorkbook = new XSSFWorkbook();
+        //TODO: change ids of notifications
+        //TODO: get year from teacher
+        SharedPreferences sharedPreferences = getSharedPreferences("yearPref", MODE_PRIVATE);
+        year = sharedPreferences.getString("year", "");
+        //TODO: get subject code from teacher
+        subjectCode = "";
+        //TODO: get subject name from teacher
+        subjectName = "";
+        //TODO: get semester from teacher
+        semester = 0;
 
         getAllStudentsData();
 
@@ -72,118 +70,151 @@ public class CreateExcelFileCO5I_A extends Service {
     }
 
     private void getAllStudentsData() {
-
-        DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference("/students_data");
-        Query rollNoQuery = databaseRef.orderByChild("rollNo");
-
-        rollNoQuery.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                for (DataSnapshot dsp : snapshot.getChildren()) {
-                    String firstname = dsp.child("firstname").getValue(String.class);
-                    String lastname = dsp.child("lastname").getValue(String.class);
-                    int rollNo = dsp.child("rollNo").getValue(Integer.class);
-                    if (rollNo >= 1 && rollNo <= 69) {
-                        students.add(new Student(firstname, lastname, rollNo));
-                    }
-                }
-                getAllMonthsAndChildren();
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                sendErrorNotification(error.getMessage(), 11);
-            }
-        });
-    }
-
-    private void getAllMonthsAndChildren() {
-        FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid())
+        FirebaseDatabase.getInstance().getReference("/students_data")
+                .orderByChild("semester").equalTo(semester)
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        SharedPreferences sharedPreferences = getSharedPreferences("yearPref", MODE_PRIVATE);
-                        String year = sharedPreferences.getString("year", "");
+                        List<Student> studentsListA = new ArrayList<>();
+                        List<Student> studentsListB = new ArrayList<>();
+                        List<Student> studentsListA1 = new ArrayList<>();
+                        List<Student> studentsListA2 = new ArrayList<>();
+                        List<Student> studentsListA3 = new ArrayList<>();
+                        List<Student> studentsListB1 = new ArrayList<>();
+                        List<Student> studentsListB2 = new ArrayList<>();
 
-                        FirebaseDatabase.getInstance().getReference("attendance/CO5I-A/" +
-                                        snapshot.child("subject_code").getValue(String.class) + "/" + year)
-                                .addListenerForSingleValueEvent(new ValueEventListener() {
-                                    @Override
-                                    public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                        if (!snapshot.exists()) {
-                                            sendErrorNotification("No attendance found of CO5I-A " + year, 12);
-                                            return;
-                                        }
-                                        int counter = 0;
-                                        Map<String, List<Student>> tempMap = new HashMap<>();
-                                        String monthName, firstname = "", lastname = "", dayName = "";
-                                        int rollNo = 0;
-                                        List<Student> tempStudentList = new ArrayList<>();
+                        for (DataSnapshot dsp : snapshot.getChildren()) {
+                            String firstname = dsp.child("firstname").getValue(String.class);
+                            String lastname = dsp.child("lastname").getValue(String.class);
+                            int rollNo = dsp.child("rollNo").getValue(Integer.class);
 
-                                        allMonthsAndChildren = (Map<String, Map<String, Map<String, Map<String, Object>>>>) snapshot.getValue();
+                            if (dsp.child("division").getValue(String.class).equals("A")) {
+                                studentsListA.add(new Student(firstname, lastname, rollNo));
+                            }
+                            if (dsp.child("division").getValue(String.class).equals("B")) {
+                                studentsListB.add(new Student(firstname, lastname, rollNo));
+                            }
+                            if (dsp.child("batch").getValue(Integer.class) == 1) {
+                                studentsListA1.add(new Student(firstname, lastname, rollNo));
+                            }
+                            if (dsp.child("batch").getValue(Integer.class) == 2) {
+                                studentsListA2.add(new Student(firstname, lastname, rollNo));
+                            }
+                            if (dsp.child("batch").getValue(Integer.class) == 3) {
+                                studentsListA3.add(new Student(firstname, lastname, rollNo));
+                            }
+                            if (dsp.child("batch").getValue(Integer.class) == 4) {
+                                studentsListB1.add(new Student(firstname, lastname, rollNo));
+                            }
+                            if (dsp.child("batch").getValue(Integer.class) == 5) {
+                                studentsListB2.add(new Student(firstname, lastname, rollNo));
+                            }
+                        }
 
-                                        for (Map.Entry<String, Map<String, Map<String, Map<String, Object>>>> entry1 : allMonthsAndChildren.entrySet()) {
-                                            //Month
-                                            monthName = entry1.getKey();
+                        studentsListA.sort(Comparator.comparingInt(Student::getRollNo));
+                        studentsListB.sort(Comparator.comparingInt(Student::getRollNo));
+                        studentsListA1.sort(Comparator.comparingInt(Student::getRollNo));
+                        studentsListA2.sort(Comparator.comparingInt(Student::getRollNo));
+                        studentsListA3.sort(Comparator.comparingInt(Student::getRollNo));
+                        studentsListB1.sort(Comparator.comparingInt(Student::getRollNo));
+                        studentsListB2.sort(Comparator.comparingInt(Student::getRollNo));
 
-                                            for (Map.Entry<String, Map<String, Map<String, Object>>> entry2 : entry1.getValue().entrySet()) {
-                                                //Day
-                                                dayName = entry2.getKey();
-
-                                                for (Map.Entry<String, Map<String, Object>> entry3 : entry2.getValue().entrySet()) {
-                                                    //UID
-
-                                                    for (Map.Entry<String, Object> entry4 : entry3.getValue().entrySet()) {
-                                                        if (entry4.getKey().equals("firstname")) {
-                                                            firstname = entry4.getValue().toString();
-                                                            counter++;
-                                                        } else if (entry4.getKey().equals("lastname")) {
-                                                            lastname = entry4.getValue().toString();
-                                                            counter++;
-                                                        } else if (entry4.getKey().equals("rollNo")) {
-                                                            rollNo = Integer.parseInt(entry4.getValue().toString());
-                                                            counter++;
-                                                        }
-
-                                                        if (counter % 3 == 0) {
-                                                            tempStudentList.add(new Student(firstname, lastname, rollNo));
-                                                        }
-                                                    }
-
-                                                }
-                                                tempMap.put(dayName, tempStudentList);
-                                                tempStudentList = new ArrayList<>();
-                                            }
-                                            requiredPresentData.put(monthName, tempMap);
-                                            tempMap = new HashMap<>();
-                                        }
-                                        fillStaticData();
-                                        fillAttendance();
-                                        calculatePercentage();
-                                        autoSizeAllColumns(xssfWorkbook);
-                                        writeExcelDataToFile(year);
-                                        sendNotificationOfExcelFileCreated(11);
-                                        stopService(new Intent(getApplicationContext(), CreateExcelFileCO5I_A.class));
-                                    }
-
-                                    @Override
-                                    public void onCancelled(@NonNull DatabaseError error) {
-                                        sendErrorNotification(error.getMessage(), 13);
-                                    }
-                                });
+                        createExcelFile(studentsListA, new XSSFWorkbook());
+                        createExcelFile(studentsListB, new XSSFWorkbook());
+                        createExcelFile(studentsListA1, new XSSFWorkbook());
+                        createExcelFile(studentsListA2, new XSSFWorkbook());
+                        createExcelFile(studentsListA3, new XSSFWorkbook());
+                        createExcelFile(studentsListB1, new XSSFWorkbook());
+                        createExcelFile(studentsListB2, new XSSFWorkbook());
                     }
 
                     @Override
                     public void onCancelled(@NonNull DatabaseError error) {
-                        sendErrorNotification(error.getMessage(), 14);
+                        sendErrorNotification(error.getMessage(), 7);
                     }
                 });
     }
 
-    private void fillAttendance() {
+    private void createExcelFile(List<Student> studentsList, XSSFWorkbook xssfWorkbook) {
+        String[] classNames = new String[]{"A", "B", "A1", "A2", "A3", "B1", "B2"};
+        for (i = 0; i < classNames.length; i++) {
+            FirebaseDatabase.getInstance().getReference("attendance/CO" + semester + "-" + classNames[i] + "/" + subjectCode + "/" + year)
+                    .addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot snapshot) {
+                            Map<String, Map<String, List<Student>>> requiredPresentData = new HashMap<>();
+
+                            if (!snapshot.exists()) {
+                                sendErrorNotification("No attendance found of CO" + semester + "-" + classNames[i] + " " + year, 12);
+                                return;
+                            }
+                            int counter = 0;
+                            Map<String, List<Student>> tempMap = new HashMap<>();
+                            String monthName, firstname = "", lastname = "", dayName = "";
+                            int rollNo = 0;
+                            List<Student> tempStudentList = new ArrayList<>();
+
+                            Map<String, Map<String, Map<String, Map<String, Object>>>> allMonthsAndChildren = (Map<String, Map<String, Map<String, Map<String, Object>>>>) snapshot.getValue();
+
+                            for (Map.Entry<String, Map<String, Map<String, Map<String, Object>>>> entry1 : allMonthsAndChildren.entrySet()) {
+                                //Month
+                                monthName = entry1.getKey();
+
+                                for (Map.Entry<String, Map<String, Map<String, Object>>> entry2 : entry1.getValue().entrySet()) {
+                                    //Day
+                                    dayName = entry2.getKey();
+
+                                    for (Map.Entry<String, Map<String, Object>> entry3 : entry2.getValue().entrySet()) {
+                                        //UID
+
+                                        for (Map.Entry<String, Object> entry4 : entry3.getValue().entrySet()) {
+                                            if (entry4.getKey().equals("firstname")) {
+                                                firstname = entry4.getValue().toString();
+                                                counter++;
+                                            } else if (entry4.getKey().equals("lastname")) {
+                                                lastname = entry4.getValue().toString();
+                                                counter++;
+                                            } else if (entry4.getKey().equals("rollNo")) {
+                                                rollNo = Integer.parseInt(entry4.getValue().toString());
+                                                counter++;
+                                            }
+
+                                            if (counter % 3 == 0) {
+                                                tempStudentList.add(new Student(firstname, lastname, rollNo));
+                                            }
+                                        }
+
+                                    }
+                                    tempMap.put(dayName, tempStudentList);
+                                    tempStudentList = new ArrayList<>();
+                                }
+                                requiredPresentData.put(monthName, tempMap);
+                                tempMap = new HashMap<>();
+                            }
+                            fillStaticData(allMonthsAndChildren, studentsList, xssfWorkbook, i);
+                            fillAttendance(requiredPresentData, xssfWorkbook);
+                            calculatePercentage(requiredPresentData, xssfWorkbook);
+                            autoSizeAllColumns(xssfWorkbook);
+                            writeExcelDataToFile(year, xssfWorkbook, i);
+                            sendNotificationOfExcelFileCreated(i);
+                            stopService(new Intent(getApplicationContext(), CreateExcelFileOfAttendance.class));
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError error) {
+                            sendErrorNotification(error.getMessage(), i);
+                        }
+                    });
+        }
+    }
+
+    private void fillAttendance(Map<String, Map<String, List<Student>>> requiredPresentData, XSSFWorkbook xssfWorkbook) {
         int excelRollNo, rollNoFromList, listRollNoIndex, totalRows, columnNo = 0, rowNo;
         String excelDayName;
         List<Student> tempStudentList = new ArrayList<>();
+        XSSFSheet xssfSheet;
+        XSSFRow xssfRow;
+        XSSFCell xssfCell;
 
         for (Map.Entry<String, Map<String, List<Student>>> entry1 : requiredPresentData.entrySet()) {
             //Month names
@@ -235,13 +266,15 @@ public class CreateExcelFileCO5I_A extends Service {
                 columnNo++;
             }
         }
-
     }
 
-    private void calculatePercentage() {
+    private void calculatePercentage(Map<String, Map<String, List<Student>>> requiredPresentData, XSSFWorkbook xssfWorkbook) {
         int totalLectures, studentAttendance, totalRows, totalColumns, rowNo, columnNo;
         float percentage;
         String cellValue;
+        XSSFSheet xssfSheet;
+        XSSFRow xssfRow;
+        XSSFCell xssfCell;
 
         for (Map.Entry<String, Map<String, List<Student>>> entry1 : requiredPresentData.entrySet()) {
             //Month names
@@ -275,44 +308,40 @@ public class CreateExcelFileCO5I_A extends Service {
         }
     }
 
-    private void writeExcelDataToFile(String year) {
-        FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid())
-                .addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        String filename = snapshot.child("subject_name").getValue(String.class) + " CO5I-A Attendance " + year;
+    private void writeExcelDataToFile(String year, XSSFWorkbook xssfWorkbook, int errorCode) {
+        String filename = subjectName + " " + year;
 
-                        try {
-                            File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/Atten Teachers");
-                            dir.mkdir();
-                        } catch (Exception e) {
-                            sendErrorNotification(e.getMessage(), 15);
-                        }
-                        File filePath = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/Atten Teachers/" + filename + ".xlsx");
+        try {
+            File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/Atten Teachers");
+            dir.mkdir();
+            dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/Atten Teachers/Attendance");
+            dir.mkdir();
+            dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/Atten Teachers/Attendance/CO" + semester);
+            dir.mkdir();
+        } catch (Exception e) {
+            sendErrorNotification(e.getMessage(), errorCode + 8);
+        }
+        File filePath = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/Atten Teachers/Attendance/CO" + semester + "/" + filename + ".xlsx");
 
-                        try {
+        try {
 
-                            filePath.createNewFile();
+            filePath.createNewFile();
 
-                            FileOutputStream outputStream = new FileOutputStream(filePath);
-                            xssfWorkbook.write(outputStream);
-                            outputStream.flush();
-                            outputStream.close();
+            FileOutputStream outputStream = new FileOutputStream(filePath);
+            xssfWorkbook.write(outputStream);
+            outputStream.flush();
+            outputStream.close();
 
-                        } catch (Exception e) {
-                            sendErrorNotification(e.getMessage(), 16);
-                        }
-                    }
-
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError error) {
-                        sendErrorNotification(error.getMessage(), 17);
-                    }
-                });
+        } catch (Exception e) {
+            sendErrorNotification(e.getMessage(), errorCode + 15);
+        }
     }
 
-    private void fillStaticData() {
+    private void fillStaticData(Map<String, Map<String, Map<String, Map<String, Object>>>> allMonthsAndChildren, List<Student> students, XSSFWorkbook xssfWorkbook, int errorCode) {
         int rowNo, columnNo;
+        XSSFSheet xssfSheet;
+        XSSFRow xssfRow;
+        XSSFCell xssfCell;
 
         for (Map.Entry<String, Map<String, Map<String, Map<String, Object>>>> entry1 : allMonthsAndChildren.entrySet()) {
 
@@ -322,7 +351,7 @@ public class CreateExcelFileCO5I_A extends Service {
             try {
                 xssfSheet = xssfWorkbook.createSheet(entry1.getKey());
             } catch (IllegalArgumentException e) {
-                sendErrorNotification(e.getMessage(), 18);
+                sendErrorNotification(e.getMessage(), errorCode + 29);
                 return;
             }
 
@@ -407,7 +436,7 @@ public class CreateExcelFileCO5I_A extends Service {
     }
 
     private void sendNotificationOfExcelFileCreated(int id) {
-        Uri selectedUri = Uri.parse(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/Atten Teachers");
+        Uri selectedUri = Uri.parse(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/Atten Teachers/Attendance/CO" + semester);
         Intent intent = new Intent(Intent.ACTION_VIEW);
         intent.setDataAndType(selectedUri, "resource/folder");
 
@@ -415,9 +444,9 @@ public class CreateExcelFileCO5I_A extends Service {
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "File")
                 .setSmallIcon(R.drawable.raw_logo)
-                .setContentText("Excel file of CO5I-A saved in downloads folder")
+                .setContentText("Excel file of " + subjectName + " " + year + " saved in downloads folder")
                 .setStyle(new NotificationCompat.BigTextStyle()
-                        .bigText("Excel file of CO5I-A saved in downloads folder"))
+                        .bigText("Excel file of " + subjectName + " " + year + " saved in downloads folder"))
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setContentIntent(pendingIntent)
                 .setAutoCancel(true);
