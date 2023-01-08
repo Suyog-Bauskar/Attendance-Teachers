@@ -55,12 +55,6 @@
         </activity>
 
         <service android:name=".excelfiles.CreateExcelFileOfAttendance" />
-        <service android:name=".excelfiles.CreateExcelFileCO5I_B" />
-        <service android:name=".excelfiles.CreateExcelFileCO5I_1" />
-        <service android:name=".excelfiles.CreateExcelFileCO5I_2" />
-        <service android:name=".excelfiles.CreateExcelFileCO5I_3" />
-        <service android:name=".excelfiles.CreateExcelFileCO5I_4" />
-        <service android:name=".excelfiles.CreateExcelFileCO5I_5" />
     </application>
 
 </manifest>

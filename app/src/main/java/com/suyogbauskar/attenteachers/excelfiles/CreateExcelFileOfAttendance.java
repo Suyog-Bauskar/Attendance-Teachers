@@ -53,14 +53,10 @@ public class CreateExcelFileOfAttendance extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
 
-        //TODO: get year from teacher
         SharedPreferences sharedPreferences = getSharedPreferences("excelValuesPref", MODE_PRIVATE);
         year = sharedPreferences.getString("year", "");
-        //TODO: get subject code from teacher
         subjectCode = sharedPreferences.getString("subjectCode", "");
-        //TODO: get subject name from teacher
         subjectName = sharedPreferences.getString("subjectName", "");
-        //TODO: get semester from teacher
         semester = sharedPreferences.getInt("semester", 0);
 
         getAllStudentsData();

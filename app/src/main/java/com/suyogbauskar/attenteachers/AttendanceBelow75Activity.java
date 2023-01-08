@@ -18,11 +18,8 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.kal.rackmonthpicker.RackMonthPicker;
@@ -37,11 +34,9 @@ import java.util.Map;
 
 public class AttendanceBelow75Activity extends AppCompatActivity {
 
-    private FirebaseUser user;
     private TableLayout table;
     private boolean isFirstRow;
-    private int startMonth = 0, startYear = 0, endMonth = 0, endYear = 0;
-    private DatabaseReference dbRef;
+    private int startMonth, startYear, endMonth, endYear;
     private long totalLectures = 0;
     private Map<String, Integer> studentsAttendance;
     private Map<String, Map<String, Map<String, Object>>> allDataOfMonths;
@@ -49,6 +44,7 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
     private Map<String, Float> studentsBelow75List;
     private Map<String, Student> allStudents;
     private final ProgressDialog progressDialog = new ProgressDialog();
+    private int semester;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,20 +56,24 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
     }
 
     private void init() {
-
-        user = FirebaseAuth.getInstance().getCurrentUser();
         studentsAttendance = new HashMap<>();
         allDataOfMonths = new HashMap<>();
         studentsBelow75List = new HashMap<>();
         allStudents = new HashMap<>();
-        SharedPreferences sharedPreferences = getSharedPreferences("classPref", MODE_PRIVATE);
+        SharedPreferences sharedPreferences = getSharedPreferences("attendanceBelow75Pref", MODE_PRIVATE);
         whichClass = sharedPreferences.getString("class", "");
-        getMonthRange();
+        semester = sharedPreferences.getInt("semester", 0);
+        subjectCode = sharedPreferences.getString("subjectCode", "");
+        startMonth = sharedPreferences.getInt("startMonth", 0);
+        startYear = sharedPreferences.getInt("startYear", 0);
+        endMonth = sharedPreferences.getInt("endMonth", 0);
+        endYear = sharedPreferences.getInt("endYear", 0);
 
         table = findViewById(R.id.table);
         isFirstRow = true;
-
         drawTableHeader();
+
+        getMonthRange();
     }
 
     private void getMonthRange() {
@@ -138,7 +138,39 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
                 Toast.makeText(this, "Range too long", Toast.LENGTH_SHORT).show();
                 startActivity(new Intent(AttendanceBelow75Activity.this, HomeActivity.class));
             } else {
-                mainCode();
+                String startingPath = "CO" + semester + "-";
+                switch (whichClass) {
+                    case "All":
+                        mainCode(startingPath + "A");
+                        mainCode(startingPath + "B");
+                        mainCode(startingPath + "A1");
+                        mainCode(startingPath + "A2");
+                        mainCode(startingPath + "A3");
+                        mainCode(startingPath + "B1");
+                        mainCode(startingPath + "B2");
+                        break;
+                    case "A":
+                        mainCode(startingPath + "A");
+                        break;
+                    case "B":
+                        mainCode(startingPath + "B");
+                        break;
+                    case "A1":
+                        mainCode(startingPath + "A1");
+                        break;
+                    case "A2":
+                        mainCode(startingPath + "A2");
+                        break;
+                    case "A3":
+                        mainCode(startingPath + "A3");
+                        break;
+                    case "B1":
+                        mainCode(startingPath + "B1");
+                        break;
+                    case "B2":
+                        mainCode(startingPath + "B2");
+                        break;
+                }
             }
         });
 
@@ -147,9 +179,8 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
         alert.show();
     }
 
-    private void mainCode() {
+    private void mainCode(String attendanceOf) {
         progressDialog.show(this);
-        dbRef = FirebaseDatabase.getInstance().getReference("teachers_data").child(user.getUid()).child("subject_code");
         List<String> monthsName = new ArrayList<>();
 
         if (startYear == endYear) {
@@ -208,15 +239,17 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
                 }
             }
 
-            dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(@NonNull DataSnapshot snapshot) {
-                    dbRef = FirebaseDatabase.getInstance().getReference("attendance/" + whichClass + "/")
-                            .child(snapshot.getValue(String.class)).child(String.valueOf(startYear));
-
-                    dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            FirebaseDatabase.getInstance().getReference("attendance/" + attendanceOf + "/")
+                    .child(subjectCode).child(String.valueOf(startYear))
+                    .addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(@NonNull DataSnapshot snapshot) {
+                            if (!snapshot.exists()) {
+                                Toast.makeText(AttendanceBelow75Activity.this, "No Attendance Found", Toast.LENGTH_SHORT).show();
+                                progressDialog.hide();
+                                startActivity(new Intent(AttendanceBelow75Activity.this, HomeActivity.class));
+                                return;
+                            }
                             allDataOfMonths = (Map<String, Map<String, Map<String, Object>>>) snapshot.getValue();
 
                             for (Map.Entry<String, Map<String, Map<String, Object>>> entry1 : allDataOfMonths.entrySet()) {
@@ -247,14 +280,7 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
                             progressDialog.hide();
                         }
                     });
-                }
 
-                @Override
-                public void onCancelled(@NonNull DatabaseError error) {
-                    Toast.makeText(AttendanceBelow75Activity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
-                    progressDialog.hide();
-                }
-            });
         } else {
             for (int i = startMonth; i <= 12; i++) {
                 switch (i) {
@@ -311,16 +337,17 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
                 }
             }
 
-            dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(@NonNull DataSnapshot snapshot) {
-                    subjectCode = snapshot.getValue(String.class);
-                    dbRef = FirebaseDatabase.getInstance().getReference("attendance/" + whichClass + "/")
-                            .child(subjectCode).child(String.valueOf(startYear));
-
-                    dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            FirebaseDatabase.getInstance().getReference("attendance/" + attendanceOf + "/")
+                    .child(subjectCode).child(String.valueOf(startYear))
+                    .addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(@NonNull DataSnapshot snapshot) {
+                            if (!snapshot.exists()) {
+                                Toast.makeText(AttendanceBelow75Activity.this, "No Attendance Found", Toast.LENGTH_SHORT).show();
+                                progressDialog.hide();
+                                startActivity(new Intent(AttendanceBelow75Activity.this, HomeActivity.class));
+                                return;
+                            }
                             allDataOfMonths = (Map<String, Map<String, Map<String, Object>>>) snapshot.getValue();
 
                             for (Map.Entry<String, Map<String, Map<String, Object>>> entry1 : allDataOfMonths.entrySet()) {
@@ -400,46 +427,51 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
                                 }
                             }
 
-                            dbRef = FirebaseDatabase.getInstance().getReference("attendance/" + whichClass + "/")
-                                    .child(subjectCode).child(String.valueOf(endYear));
+                            FirebaseDatabase.getInstance().getReference("attendance/" + attendanceOf + "/")
+                                    .child(subjectCode).child(String.valueOf(endYear))
+                                    .addListenerForSingleValueEvent(new ValueEventListener() {
+                                        @Override
+                                        public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                            if (!snapshot.exists()) {
+                                                Toast.makeText(AttendanceBelow75Activity.this, "No Attendance Found", Toast.LENGTH_SHORT).show();
+                                                progressDialog.hide();
+                                                startActivity(new Intent(AttendanceBelow75Activity.this, HomeActivity.class));
+                                                return;
+                                            }
+                                            if (allDataOfMonths.size() > 0) {
+                                                allDataOfMonths.clear();
+                                            }
 
-                            dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
-                                @Override
-                                public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                    if (allDataOfMonths.size() > 0) {
-                                        allDataOfMonths.clear();
-                                    }
+                                            allDataOfMonths = (Map<String, Map<String, Map<String, Object>>>) snapshot.getValue();
 
-                                    allDataOfMonths = (Map<String, Map<String, Map<String, Object>>>) snapshot.getValue();
-
-                                    for (Map.Entry<String, Map<String, Map<String, Object>>> entry1 : allDataOfMonths.entrySet()) {
-                                        //Month
-                                        if (monthsName.contains(entry1.getKey())) {
-                                            for (Map.Entry<String, Map<String, Object>> entry2 : entry1.getValue().entrySet()) {
-                                                //Day name
-                                                totalLectures += 1;
-                                                for (Map.Entry<String, Object> entry3 : entry2.getValue().entrySet()) {
-                                                    //UID
-                                                    if (studentsAttendance.containsKey(entry3.getKey())) {
-                                                        studentsAttendance.put(entry3.getKey(), studentsAttendance.get(entry3.getKey()) + 1);
-                                                    } else {
-                                                        studentsAttendance.put(entry3.getKey(), 1);
+                                            for (Map.Entry<String, Map<String, Map<String, Object>>> entry1 : allDataOfMonths.entrySet()) {
+                                                //Month
+                                                if (monthsName.contains(entry1.getKey())) {
+                                                    for (Map.Entry<String, Map<String, Object>> entry2 : entry1.getValue().entrySet()) {
+                                                        //Day name
+                                                        totalLectures += 1;
+                                                        for (Map.Entry<String, Object> entry3 : entry2.getValue().entrySet()) {
+                                                            //UID
+                                                            if (studentsAttendance.containsKey(entry3.getKey())) {
+                                                                studentsAttendance.put(entry3.getKey(), studentsAttendance.get(entry3.getKey()) + 1);
+                                                            } else {
+                                                                studentsAttendance.put(entry3.getKey(), 1);
+                                                            }
+                                                        }
                                                     }
                                                 }
                                             }
+
+                                            calculatePercentageAndCreateRows();
+                                            progressDialog.hide();
                                         }
-                                    }
 
-                                    calculatePercentageAndCreateRows();
-                                    progressDialog.hide();
-                                }
-
-                                @Override
-                                public void onCancelled(@NonNull DatabaseError error) {
-                                    Toast.makeText(AttendanceBelow75Activity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
-                                    progressDialog.hide();
-                                }
-                            });
+                                        @Override
+                                        public void onCancelled(@NonNull DatabaseError error) {
+                                            Toast.makeText(AttendanceBelow75Activity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                                            progressDialog.hide();
+                                        }
+                                    });
                         }
 
                         @Override
@@ -449,14 +481,6 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
                         }
                     });
 
-                }
-
-                @Override
-                public void onCancelled(@NonNull DatabaseError error) {
-                    Toast.makeText(AttendanceBelow75Activity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
-                    progressDialog.hide();
-                }
-            });
         }
     }
 
@@ -470,8 +494,9 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
             }
         }
 
-        FirebaseDatabase.getInstance().getReference("/students_data")
-                .orderByChild("rollNo")
+        FirebaseDatabase.getInstance().getReference("students_data")
+                .orderByChild("semester")
+                .equalTo(semester)
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {

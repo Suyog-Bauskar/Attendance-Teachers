@@ -2,8 +2,6 @@ package com.suyogbauskar.attenteachers.fragments;
 
 import static android.content.Context.MODE_PRIVATE;
 
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -33,7 +31,7 @@ public class StatisticsFragment extends Fragment {
 
     private FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
     private Button excelBtn, attendanceBelow75Btn;
-    boolean subjectFound = false;
+    private boolean subjectFound;
 
     public StatisticsFragment() {
     }
@@ -43,8 +41,6 @@ public class StatisticsFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_statistics, container, false);
         getActivity().setTitle("Statistics");
 
-        createNotificationChannelForFile();
-        createNotificationChannelForError();
         findAllViews(view);
         setOnClickListeners();
 
@@ -59,7 +55,7 @@ public class StatisticsFragment extends Fragment {
     private void setOnClickListeners() {
         excelBtn.setOnClickListener(view -> showDialogForCreatingExcelFile());
 
-        attendanceBelow75Btn.setOnClickListener(view -> showClassPickerForFindingStudentsBelow75());
+        attendanceBelow75Btn.setOnClickListener(view -> showDialogForFindingStudentsBelow75());
     }
 
     private void showDialogForCreatingExcelFile() {
@@ -100,14 +96,15 @@ public class StatisticsFragment extends Fragment {
             editor.commit();
             dialog.dismiss();
 
+            subjectFound = false;
             FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects")
                     .addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(@NonNull DataSnapshot snapshot) {
                             for (DataSnapshot dsp : snapshot.getChildren()) {
                                 if (snapshot.child(dsp.getKey()).child("semester").getValue(Integer.class) == selectedSemester.get()) {
-                                    editor.putString("subjectName", snapshot.child(dsp.getKey()).child("subject_name").getValue(String.class));
                                     editor.putString("subjectCode", dsp.getKey());
+                                    editor.putString("subjectName", snapshot.child(dsp.getKey()).child("subject_name").getValue(String.class));
                                     editor.commit();
                                     subjectFound = true;
                                     break;
@@ -160,62 +157,109 @@ public class StatisticsFragment extends Fragment {
         semesterDialog.create().show();
     }
 
-    private void showClassPickerForFindingStudentsBelow75() {
-        AlertDialog.Builder alertDialog = new AlertDialog.Builder(getContext());
-        alertDialog.setTitle("Class");
-        String[] items = {"CO5I-A", "CO5I-B", "CO5I-1", "CO5I-2", "CO5I-3", "CO5I-4", "CO5I-5"};
+    private void showDialogForFindingStudentsBelow75() {
+        AlertDialog.Builder semesterDialog = new AlertDialog.Builder(getContext());
+        semesterDialog.setTitle("Semester");
+        String[] items = {"Semester 1", "Semester 2", "Semester 3", "Semester 4", "Semester 5", "Semester 6"};
         int checkedItem = 0;
-        alertDialog.setSingleChoiceItems(items, checkedItem, (dialog, which) -> {
-            SharedPreferences sharedPreferences = getActivity().getSharedPreferences("classPref",MODE_PRIVATE);
+        AtomicInteger selectedSemester = new AtomicInteger();
+        semesterDialog.setSingleChoiceItems(items, checkedItem, (dialog, which) -> {
+            SharedPreferences sharedPreferences = getActivity().getSharedPreferences("attendanceBelow75Pref",MODE_PRIVATE);
             SharedPreferences.Editor editor = sharedPreferences.edit();
             switch (which) {
                 case 0:
-                    editor.putString("class", items[0]);
+                    editor.putInt("semester", 1);
+                    selectedSemester.set(1);
                     break;
                 case 1:
-                    editor.putString("class", items[1]);
+                    editor.putInt("semester", 2);
+                    selectedSemester.set(2);
                     break;
                 case 2:
-                    editor.putString("class", items[2]);
+                    editor.putInt("semester", 3);
+                    selectedSemester.set(3);
                     break;
                 case 3:
-                    editor.putString("class", items[3]);
+                    editor.putInt("semester", 4);
+                    selectedSemester.set(4);
                     break;
                 case 4:
-                    editor.putString("class", items[4]);
+                    editor.putInt("semester", 5);
+                    selectedSemester.set(5);
                     break;
                 case 5:
-                    editor.putString("class", items[5]);
-                    break;
-                case 6:
-                    editor.putString("class", items[6]);
+                    editor.putInt("semester", 6);
+                    selectedSemester.set(6);
                     break;
             }
-            dialog.dismiss();
             editor.commit();
-            startActivity(new Intent(getActivity(), AttendanceBelow75Activity.class));
+            dialog.dismiss();
+
+            subjectFound = false;
+            FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects")
+                    .addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot snapshot) {
+                            for (DataSnapshot dsp : snapshot.getChildren()) {
+                                if (snapshot.child(dsp.getKey()).child("semester").getValue(Integer.class) == selectedSemester.get()) {
+                                    editor.putString("subjectCode", dsp.getKey());
+                                    editor.commit();
+                                    subjectFound = true;
+                                    break;
+                                }
+                            }
+
+                            if (!subjectFound) {
+                                Toast.makeText(getContext(), "You don't teach this semester", Toast.LENGTH_SHORT).show();
+                                return;
+                            }
+
+                            AlertDialog.Builder classDialog = new AlertDialog.Builder(getContext());
+                            classDialog.setTitle("Class");
+                            String[] items2 = {"All", "A Division", "B Division", "A1 Practical Batch", "A2 Practical Batch", "A3 Practical Batch", "B1 Practical Batch", "B2 Practical Batch"};
+                            int checkedItem2 = 0;
+                            classDialog.setSingleChoiceItems(items2, checkedItem2, (dialog2, which2) -> {
+                                SharedPreferences sharedPreferences2 = getActivity().getSharedPreferences("attendanceBelow75Pref",MODE_PRIVATE);
+                                SharedPreferences.Editor editor2 = sharedPreferences2.edit();
+                                switch (which2) {
+                                    case 0:
+                                        editor2.putString("class", "All");
+                                        break;
+                                    case 1:
+                                        editor2.putString("class", "A");
+                                        break;
+                                    case 2:
+                                        editor2.putString("class", "B");
+                                        break;
+                                    case 3:
+                                        editor2.putString("class", "A1");
+                                        break;
+                                    case 4:
+                                        editor2.putString("class", "A2");
+                                        break;
+                                    case 5:
+                                        editor2.putString("class", "A3");
+                                        break;
+                                    case 6:
+                                        editor2.putString("class", "B1");
+                                        break;
+                                    case 7:
+                                        editor2.putString("class", "B2");
+                                        break;
+                                }
+                                dialog2.dismiss();
+                                editor2.commit();
+                                startActivity(new Intent(getActivity(), AttendanceBelow75Activity.class));
+                            });
+                            classDialog.create().show();
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError error) {
+                            Toast.makeText(getContext(), error.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
         });
-        AlertDialog alert = alertDialog.create();
-        alert.show();
-    }
-
-    private void createNotificationChannelForFile() {
-        String name = "File";
-        String description = "File Notifications";
-        int importance = NotificationManager.IMPORTANCE_DEFAULT;
-        NotificationChannel channel = new NotificationChannel("File", name, importance);
-        channel.setDescription(description);
-        NotificationManager notificationManager = getActivity().getSystemService(NotificationManager.class);
-        notificationManager.createNotificationChannel(channel);
-    }
-
-    private void createNotificationChannelForError() {
-        String name = "Error";
-        String description = "Error Notifications";
-        int importance = NotificationManager.IMPORTANCE_DEFAULT;
-        NotificationChannel channel = new NotificationChannel("Error", name, importance);
-        channel.setDescription(description);
-        NotificationManager notificationManager = getActivity().getSystemService(NotificationManager.class);
-        notificationManager.createNotificationChannel(channel);
+        semesterDialog.create().show();
     }
 }
