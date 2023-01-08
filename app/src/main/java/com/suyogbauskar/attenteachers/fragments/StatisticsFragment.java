@@ -13,21 +13,27 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.suyogbauskar.attenteachers.AttendanceBelow75Activity;
 import com.suyogbauskar.attenteachers.R;
-import com.suyogbauskar.attenteachers.excelfiles.CreateExcelFileCO5I_1;
-import com.suyogbauskar.attenteachers.excelfiles.CreateExcelFileCO5I_2;
-import com.suyogbauskar.attenteachers.excelfiles.CreateExcelFileCO5I_3;
-import com.suyogbauskar.attenteachers.excelfiles.CreateExcelFileCO5I_4;
-import com.suyogbauskar.attenteachers.excelfiles.CreateExcelFileCO5I_5;
 import com.suyogbauskar.attenteachers.excelfiles.CreateExcelFileOfAttendance;
-import com.suyogbauskar.attenteachers.excelfiles.CreateExcelFileCO5I_B;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class StatisticsFragment extends Fragment {
+
+    private FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
     private Button excelBtn, attendanceBelow75Btn;
+    boolean subjectFound = false;
 
     public StatisticsFragment() {
     }
@@ -51,49 +57,107 @@ public class StatisticsFragment extends Fragment {
     }
 
     private void setOnClickListeners() {
-        excelBtn.setOnClickListener(view -> showYearPickerForCreatingExcelFile());
+        excelBtn.setOnClickListener(view -> showDialogForCreatingExcelFile());
 
         attendanceBelow75Btn.setOnClickListener(view -> showClassPickerForFindingStudentsBelow75());
     }
 
-    private void showYearPickerForCreatingExcelFile() {
-        AlertDialog.Builder alertDialog = new AlertDialog.Builder(getContext());
-        alertDialog.setTitle("Year");
-        String[] items = {"2022", "2023", "2024", "2025", "2026"};
+    private void showDialogForCreatingExcelFile() {
+        AlertDialog.Builder semesterDialog = new AlertDialog.Builder(getContext());
+        semesterDialog.setTitle("Semester");
+        String[] items = {"Semester 1", "Semester 2", "Semester 3", "Semester 4", "Semester 5", "Semester 6"};
         int checkedItem = 0;
-        alertDialog.setSingleChoiceItems(items, checkedItem, (dialog, which) -> {
-            SharedPreferences sharedPreferences = getActivity().getSharedPreferences("yearPref",MODE_PRIVATE);
+        AtomicInteger selectedSemester = new AtomicInteger();
+        semesterDialog.setSingleChoiceItems(items, checkedItem, (dialog, which) -> {
+            SharedPreferences sharedPreferences = getActivity().getSharedPreferences("excelValuesPref",MODE_PRIVATE);
             SharedPreferences.Editor editor = sharedPreferences.edit();
             switch (which) {
                 case 0:
-                    editor.putString("year", items[0]);
+                    editor.putInt("semester", 1);
+                    selectedSemester.set(1);
                     break;
                 case 1:
-                    editor.putString("year", items[1]);
+                    editor.putInt("semester", 2);
+                    selectedSemester.set(2);
                     break;
                 case 2:
-                    editor.putString("year", items[2]);
+                    editor.putInt("semester", 3);
+                    selectedSemester.set(3);
                     break;
                 case 3:
-                    editor.putString("year", items[3]);
+                    editor.putInt("semester", 4);
+                    selectedSemester.set(4);
                     break;
                 case 4:
-                    editor.putString("year", items[4]);
+                    editor.putInt("semester", 5);
+                    selectedSemester.set(5);
+                    break;
+                case 5:
+                    editor.putInt("semester", 6);
+                    selectedSemester.set(6);
                     break;
             }
-            Toast.makeText(getContext(), "Creating Excel File...", Toast.LENGTH_SHORT).show();
-            dialog.dismiss();
             editor.commit();
-            requireActivity().startService(new Intent(getContext(), CreateExcelFileOfAttendance.class));
-            requireActivity().startService(new Intent(getContext(), CreateExcelFileCO5I_B.class));
-            requireActivity().startService(new Intent(getContext(), CreateExcelFileCO5I_1.class));
-            requireActivity().startService(new Intent(getContext(), CreateExcelFileCO5I_2.class));
-            requireActivity().startService(new Intent(getContext(), CreateExcelFileCO5I_3.class));
-            requireActivity().startService(new Intent(getContext(), CreateExcelFileCO5I_4.class));
-            requireActivity().startService(new Intent(getContext(), CreateExcelFileCO5I_5.class));
+            dialog.dismiss();
+
+            FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects")
+                    .addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot snapshot) {
+                            for (DataSnapshot dsp : snapshot.getChildren()) {
+                                if (snapshot.child(dsp.getKey()).child("semester").getValue(Integer.class) == selectedSemester.get()) {
+                                    editor.putString("subjectName", snapshot.child(dsp.getKey()).child("subject_name").getValue(String.class));
+                                    editor.putString("subjectCode", dsp.getKey());
+                                    editor.commit();
+                                    subjectFound = true;
+                                    break;
+                                }
+                            }
+
+                            if (!subjectFound) {
+                                Toast.makeText(getContext(), "You don't teach this semester", Toast.LENGTH_SHORT).show();
+                                return;
+                            }
+
+                            AlertDialog.Builder yearDialog = new AlertDialog.Builder(getContext());
+                            yearDialog.setTitle("Year");
+                            String[] items2 = {"2023", "2024", "2025", "2026", "2027"};
+                            int checkedItem2 = 0;
+                            yearDialog.setSingleChoiceItems(items2, checkedItem2, (dialog2, which2) -> {
+                                SharedPreferences sharedPreferences2 = getActivity().getSharedPreferences("excelValuesPref",MODE_PRIVATE);
+                                SharedPreferences.Editor editor2 = sharedPreferences2.edit();
+                                switch (which2) {
+                                    case 0:
+                                        editor2.putString("year", items2[0]);
+                                        break;
+                                    case 1:
+                                        editor2.putString("year", items2[1]);
+                                        break;
+                                    case 2:
+                                        editor2.putString("year", items2[2]);
+                                        break;
+                                    case 3:
+                                        editor2.putString("year", items2[3]);
+                                        break;
+                                    case 4:
+                                        editor2.putString("year", items2[4]);
+                                        break;
+                                }
+                                Toast.makeText(getContext(), "Creating Excel File...", Toast.LENGTH_SHORT).show();
+                                dialog2.dismiss();
+                                editor2.commit();
+                                requireActivity().startService(new Intent(getContext(), CreateExcelFileOfAttendance.class));
+                            });
+                            yearDialog.create().show();
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError error) {
+                            Toast.makeText(getContext(), error.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
         });
-        AlertDialog alert = alertDialog.create();
-        alert.show();
+        semesterDialog.create().show();
     }
 
     private void showClassPickerForFindingStudentsBelow75() {

@@ -42,7 +42,7 @@ import java.util.Map;
 public class CreateExcelFileOfAttendance extends Service {
 
     private String year, subjectCode, subjectName;
-    private int semester, i;
+    private int semester;
 
     @Nullable
     @Override
@@ -53,16 +53,15 @@ public class CreateExcelFileOfAttendance extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
 
-        //TODO: change ids of notifications
         //TODO: get year from teacher
-        SharedPreferences sharedPreferences = getSharedPreferences("yearPref", MODE_PRIVATE);
+        SharedPreferences sharedPreferences = getSharedPreferences("excelValuesPref", MODE_PRIVATE);
         year = sharedPreferences.getString("year", "");
         //TODO: get subject code from teacher
-        subjectCode = "";
+        subjectCode = sharedPreferences.getString("subjectCode", "");
         //TODO: get subject name from teacher
-        subjectName = "";
+        subjectName = sharedPreferences.getString("subjectName", "");
         //TODO: get semester from teacher
-        semester = 0;
+        semester = sharedPreferences.getInt("semester", 0);
 
         getAllStudentsData();
 
@@ -119,13 +118,13 @@ public class CreateExcelFileOfAttendance extends Service {
                         studentsListB1.sort(Comparator.comparingInt(Student::getRollNo));
                         studentsListB2.sort(Comparator.comparingInt(Student::getRollNo));
 
-                        createExcelFile(studentsListA, new XSSFWorkbook());
-                        createExcelFile(studentsListB, new XSSFWorkbook());
-                        createExcelFile(studentsListA1, new XSSFWorkbook());
-                        createExcelFile(studentsListA2, new XSSFWorkbook());
-                        createExcelFile(studentsListA3, new XSSFWorkbook());
-                        createExcelFile(studentsListB1, new XSSFWorkbook());
-                        createExcelFile(studentsListB2, new XSSFWorkbook());
+                        createExcelFile(studentsListA,"A",0, new XSSFWorkbook());
+                        createExcelFile(studentsListB,"B",10, new XSSFWorkbook());
+                        createExcelFile(studentsListA1,"A1",20, new XSSFWorkbook());
+                        createExcelFile(studentsListA2,"A2",30, new XSSFWorkbook());
+                        createExcelFile(studentsListA3,"A3",40, new XSSFWorkbook());
+                        createExcelFile(studentsListB1,"B1",50, new XSSFWorkbook());
+                        createExcelFile(studentsListB2,"B2",60, new XSSFWorkbook());
                     }
 
                     @Override
@@ -135,17 +134,15 @@ public class CreateExcelFileOfAttendance extends Service {
                 });
     }
 
-    private void createExcelFile(List<Student> studentsList, XSSFWorkbook xssfWorkbook) {
-        String[] classNames = new String[]{"A", "B", "A1", "A2", "A3", "B1", "B2"};
-        for (i = 0; i < classNames.length; i++) {
-            FirebaseDatabase.getInstance().getReference("attendance/CO" + semester + "-" + classNames[i] + "/" + subjectCode + "/" + year)
+    private void createExcelFile(List<Student> studentsList, String className, int errorCode, XSSFWorkbook xssfWorkbook) {
+            FirebaseDatabase.getInstance().getReference("attendance/CO" + semester + "-" + className + "/" + subjectCode + "/" + year)
                     .addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(@NonNull DataSnapshot snapshot) {
                             Map<String, Map<String, List<Student>>> requiredPresentData = new HashMap<>();
 
                             if (!snapshot.exists()) {
-                                sendErrorNotification("No attendance found of CO" + semester + "-" + classNames[i] + " " + year, 12);
+                                sendErrorNotification("No attendance found of CO" + semester + "-" + className + " " + year, errorCode + 1);
                                 return;
                             }
                             int counter = 0;
@@ -191,21 +188,20 @@ public class CreateExcelFileOfAttendance extends Service {
                                 requiredPresentData.put(monthName, tempMap);
                                 tempMap = new HashMap<>();
                             }
-                            fillStaticData(allMonthsAndChildren, studentsList, xssfWorkbook, i);
+                            fillStaticData(allMonthsAndChildren, studentsList, xssfWorkbook, errorCode);
                             fillAttendance(requiredPresentData, xssfWorkbook);
                             calculatePercentage(requiredPresentData, xssfWorkbook);
                             autoSizeAllColumns(xssfWorkbook);
-                            writeExcelDataToFile(year, xssfWorkbook, i);
-                            sendNotificationOfExcelFileCreated(i);
+                            writeExcelDataToFile(year, xssfWorkbook, errorCode);
+                            sendNotificationOfExcelFileCreated(errorCode);
                             stopService(new Intent(getApplicationContext(), CreateExcelFileOfAttendance.class));
                         }
 
                         @Override
                         public void onCancelled(@NonNull DatabaseError error) {
-                            sendErrorNotification(error.getMessage(), i);
+                            sendErrorNotification(error.getMessage(), errorCode + 4);
                         }
                     });
-        }
     }
 
     private void fillAttendance(Map<String, Map<String, List<Student>>> requiredPresentData, XSSFWorkbook xssfWorkbook) {
@@ -318,12 +314,8 @@ public class CreateExcelFileOfAttendance extends Service {
             dir.mkdir();
             dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/Atten Teachers/Attendance/CO" + semester);
             dir.mkdir();
-        } catch (Exception e) {
-            sendErrorNotification(e.getMessage(), errorCode + 8);
-        }
-        File filePath = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/Atten Teachers/Attendance/CO" + semester + "/" + filename + ".xlsx");
 
-        try {
+            File filePath = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/Atten Teachers/Attendance/CO" + semester + "/" + filename + ".xlsx");
 
             filePath.createNewFile();
 
@@ -331,9 +323,8 @@ public class CreateExcelFileOfAttendance extends Service {
             xssfWorkbook.write(outputStream);
             outputStream.flush();
             outputStream.close();
-
         } catch (Exception e) {
-            sendErrorNotification(e.getMessage(), errorCode + 15);
+            sendErrorNotification(e.getMessage(), errorCode + 3);
         }
     }
 
@@ -351,7 +342,7 @@ public class CreateExcelFileOfAttendance extends Service {
             try {
                 xssfSheet = xssfWorkbook.createSheet(entry1.getKey());
             } catch (IllegalArgumentException e) {
-                sendErrorNotification(e.getMessage(), errorCode + 29);
+                sendErrorNotification(e.getMessage(), errorCode + 2);
                 return;
             }
 
