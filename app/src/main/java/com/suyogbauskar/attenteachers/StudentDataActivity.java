@@ -40,7 +40,6 @@ public class StudentDataActivity extends AppCompatActivity {
     private TextView noStudentsFoundView;
     private Button selectSemesterBtn;
     private String firstnameStr, lastnameStr;
-    private int selectedSemester;
     private long studentEnrollNo = 0;
 
     @Override
@@ -64,7 +63,6 @@ public class StudentDataActivity extends AppCompatActivity {
         semesterMenu.show();
 
         semesterMenu.setOnMenuItemClickListener(item -> {
-            selectedSemester = item.getItemId();
             showAllStudentsData(item.getItemId());
             return true;
         });
@@ -236,7 +234,7 @@ public class StudentDataActivity extends AppCompatActivity {
         }
 
         tbRow.setOnClickListener(view -> {
-            int enrollNoFromTag = Integer.parseInt(tbRow.getTag().toString());
+            long enrollNoFromTag = Long.parseLong(tbRow.getTag().toString());
 
             FirebaseDatabase.getInstance().getReference("students_data")
                     .orderByChild("enrollNo")
@@ -373,7 +371,7 @@ public class StudentDataActivity extends AppCompatActivity {
         });
 
         tbRow.setOnLongClickListener(view -> {
-            int enrollNoFromTag = Integer.parseInt(tbRow.getTag().toString());
+            long enrollNoFromTag = Long.parseLong(tbRow.getTag().toString());
 
             new SweetAlertDialog(StudentDataActivity.this, SweetAlertDialog.WARNING_TYPE)
                     .setTitleText("Delete student?")

@@ -188,8 +188,8 @@ public class CreateExcelFileOfAttendance extends Service {
                             fillAttendance(requiredPresentData, xssfWorkbook);
                             calculatePercentage(requiredPresentData, xssfWorkbook);
                             autoSizeAllColumns(xssfWorkbook);
-                            writeExcelDataToFile(year, xssfWorkbook, errorCode);
-                            sendNotificationOfExcelFileCreated(errorCode);
+                            writeExcelDataToFile(year, xssfWorkbook, errorCode, className);
+                            sendNotificationOfExcelFileCreated(errorCode, className);
                             stopService(new Intent(getApplicationContext(), CreateExcelFileOfAttendance.class));
                         }
 
@@ -300,8 +300,8 @@ public class CreateExcelFileOfAttendance extends Service {
         }
     }
 
-    private void writeExcelDataToFile(String year, XSSFWorkbook xssfWorkbook, int errorCode) {
-        String filename = subjectName + " " + year;
+    private void writeExcelDataToFile(String year, XSSFWorkbook xssfWorkbook, int errorCode, String className) {
+        String filename = subjectName + " " + year + " CO" + semester + "-" + className;
 
         try {
             File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/Atten Teachers");
@@ -422,7 +422,7 @@ public class CreateExcelFileOfAttendance extends Service {
         }
     }
 
-    private void sendNotificationOfExcelFileCreated(int id) {
+    private void sendNotificationOfExcelFileCreated(int id, String className) {
         Uri selectedUri = Uri.parse(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/Atten Teachers/Attendance/CO" + semester);
         Intent intent = new Intent(Intent.ACTION_VIEW);
         intent.setDataAndType(selectedUri, "resource/folder");
@@ -431,9 +431,9 @@ public class CreateExcelFileOfAttendance extends Service {
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "File")
                 .setSmallIcon(R.drawable.raw_logo)
-                .setContentText("Excel file of " + subjectName + " " + year + " saved in downloads folder")
+                .setContentText("Excel file of " + subjectName + " " + year + " CO" + semester + "-" + className + " saved in downloads folder")
                 .setStyle(new NotificationCompat.BigTextStyle()
-                        .bigText("Excel file of " + subjectName + " " + year + " saved in downloads folder"))
+                        .bigText("Excel file of " + subjectName + " " + year + " CO" + semester + "-" + className + " saved in downloads folder"))
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setContentIntent(pendingIntent)
                 .setAutoCancel(true);

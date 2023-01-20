@@ -244,7 +244,7 @@ public class StudentVerificationActivity extends AppCompatActivity {
                 .setConfirmText("Verify")
                 .setConfirmClickListener(sweetAlertDialog -> {
                     sweetAlertDialog.dismiss();
-                    int enrollNoOfTag = Integer.parseInt(tbRow.getTag().toString());
+                    long enrollNoOfTag = Long.parseLong(tbRow.getTag().toString());
 
                     FirebaseDatabase.getInstance().getReference("students_data")
                             .orderByChild("enrollNo")
@@ -267,7 +267,7 @@ public class StudentVerificationActivity extends AppCompatActivity {
                 .show());
 
         tbRow.setOnLongClickListener(view -> {
-            int enrollNoFromTag = Integer.parseInt(tbRow.getTag().toString());
+            long enrollNoFromTag = Long.parseLong(tbRow.getTag().toString());
 
             new SweetAlertDialog(StudentVerificationActivity.this, SweetAlertDialog.WARNING_TYPE)
                     .setTitleText("Delete student?")

@@ -9,6 +9,10 @@
         android:title="Verification"
         android:icon="@drawable/ic_baseline_verified_24" />
 
+    <item android:id="@+id/submission"
+        android:title="Submission"
+        android:icon="@drawable/ic_baseline_library_books_24" />
+
     <item android:id="@+id/settings"
         android:title="Settings"
         android:icon="@drawable/ic_baseline_settings_24" />

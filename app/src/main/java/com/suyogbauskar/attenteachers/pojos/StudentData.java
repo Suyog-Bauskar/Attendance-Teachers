@@ -4,10 +4,7 @@ public class StudentData {
     private int rollNo, batch, semester;
     private long enrollNo;
     private String firstname, lastname, division;
-
-    public int getSemester() {
-        return semester;
-    }
+    private boolean manual, microProject;
 
     public StudentData(int rollNo, int batch, int semester, long enrollNo, String firstname, String lastname, String division) {
         this.rollNo = rollNo;
@@ -17,6 +14,23 @@ public class StudentData {
         this.firstname = firstname;
         this.lastname = lastname;
         this.division = division;
+    }
+
+    public StudentData(int rollNo, String firstname, String lastname, long enrollNo, boolean manual, boolean microProject) {
+        this.rollNo = rollNo;
+        this.enrollNo = enrollNo;
+        this.firstname = firstname;
+        this.lastname = lastname;
+        this.manual = manual;
+        this.microProject = microProject;
+    }
+
+    public boolean isManual() {
+        return manual;
+    }
+
+    public boolean isMicroProject() {
+        return microProject;
     }
 
     public int getBatch() {
@@ -41,5 +55,9 @@ public class StudentData {
 
     public String getLastname() {
         return lastname;
+    }
+
+    public int getSemester() {
+        return semester;
     }
 }

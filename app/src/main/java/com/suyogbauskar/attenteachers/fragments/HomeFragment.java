@@ -96,6 +96,12 @@ public class HomeFragment extends Fragment {
                     DataSnapshot document = task.getResult();
                     firstnameDB = document.child("firstname").getValue(String.class);
                     lastnameDB = document.child("lastname").getValue(String.class);
+
+                    SharedPreferences sharedPreferences = getActivity().getSharedPreferences("teacherDataPref", MODE_PRIVATE);
+                    SharedPreferences.Editor editor = sharedPreferences.edit();
+                    editor.putBoolean("isAdmin", document.child("isAdmin").getValue(Boolean.class));
+                    editor.commit();
+
                     getSubjectInformation();
 
                 })

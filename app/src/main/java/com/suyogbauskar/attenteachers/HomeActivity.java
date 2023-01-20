@@ -172,6 +172,10 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                 startActivity(new Intent(HomeActivity.this, StudentVerificationActivity.class));
                 break;
 
+            case R.id.submission:
+                startActivity(new Intent(HomeActivity.this, SubmissionActivity.class));
+                break;
+
             case R.id.settings:
                 getSupportFragmentManager().beginTransaction().replace(R.id.frameLayout, new SettingsFragment()).commit();
                 break;
