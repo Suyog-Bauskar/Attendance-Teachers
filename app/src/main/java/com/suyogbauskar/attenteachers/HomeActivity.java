@@ -48,6 +48,10 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
 
+        init();
+    }
+
+    private void init() {
         user = FirebaseAuth.getInstance().getCurrentUser();
 
         createNotificationChannelForError();
@@ -56,32 +60,11 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         drawerLayout = findViewById(R.id.drawerLayout);
         navigationView = findViewById(R.id.navigation_view);
 
-        View header = navigationView.getHeaderView(0);
-        nameView = header.findViewById(R.id.nameView);
-        emailView = header.findViewById(R.id.emailView);
+        setLeftNavigationDrawer();
+        setBottomNav();
+    }
 
-        FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid())
-                        .addListenerForSingleValueEvent(new ValueEventListener() {
-                            @Override
-                            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                nameView.setText(snapshot.child("firstname").getValue(String.class) + " " + snapshot.child("lastname").getValue(String.class));
-                                emailView.setText(user.getEmail());
-                            }
-
-                            @Override
-                            public void onCancelled(@NonNull DatabaseError error) {
-                                Toast.makeText(HomeActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
-                            }
-                        });
-
-        toggle = new ActionBarDrawerToggle(this, drawerLayout, R.string.start, R.string.close);
-        drawerLayout.addDrawerListener(toggle);
-        toggle.syncState();
-
-        Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
-
-        navigationView.setNavigationItemSelectedListener(this);
-
+    private void setBottomNav() {
         BottomNavigationView bottomNav = findViewById(R.id.bottomNav_view);
         bottomNav.setOnItemSelectedListener(item -> {
             switch (item.getItemId()) {
@@ -100,6 +83,33 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             return true;
         });
         getSupportFragmentManager().beginTransaction().replace(R.id.frameLayout, new HomeFragment()).commit();
+    }
+
+    private void setLeftNavigationDrawer() {
+        View header = navigationView.getHeaderView(0);
+        nameView = header.findViewById(R.id.nameView);
+        emailView = header.findViewById(R.id.emailView);
+
+        FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid())
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        nameView.setText(snapshot.child("firstname").getValue(String.class) + " " + snapshot.child("lastname").getValue(String.class));
+                        emailView.setText(user.getEmail());
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        Toast.makeText(HomeActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+
+        toggle = new ActionBarDrawerToggle(this, drawerLayout, R.string.start, R.string.close);
+        drawerLayout.addDrawerListener(toggle);
+        toggle.syncState();
+
+        Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
+        navigationView.setNavigationItemSelectedListener(this);
     }
 
     private void requestStoragePermission() {
