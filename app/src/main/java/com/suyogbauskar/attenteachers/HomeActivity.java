@@ -182,6 +182,10 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                 startActivity(new Intent(HomeActivity.this, StudentVerificationActivity.class));
                 break;
 
+            case R.id.unitTestMarks:
+                startActivity(new Intent(HomeActivity.this, UnitTestMarksActivity.class));
+                break;
+
             case R.id.submission:
                 startActivity(new Intent(HomeActivity.this, SubmissionActivity.class));
                 break;

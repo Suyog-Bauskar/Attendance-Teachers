@@ -70,6 +70,7 @@ public class SubmissionActivity extends AppCompatActivity {
                                 if (item.getItemId() == snapshot.child(dsp.getKey()).child("semester").getValue(Integer.class)) {
                                     rightSemester = true;
                                     subjectCodeTeacher = dsp.getKey();
+                                    break;
                                 }
                             }
 

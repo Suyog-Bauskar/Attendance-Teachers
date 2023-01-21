@@ -22,24 +22,29 @@
         android:theme="@style/Theme.AttenTeachers"
         tools:targetApi="31">
         <activity
+            android:name=".UnitTestMarksActivity"
+            android:exported="false"/>
+        <activity
             android:name=".SubmissionActivity"
-            android:exported="false">
-            <meta-data
-                android:name="android.app.lib_name"
-                android:value="" />
-        </activity>
+            android:exported="false"
+            android:noHistory="true"/>
         <activity
             android:name=".StudentDataActivity"
-            android:exported="false"></activity>
+            android:exported="false"
+            android:noHistory="true"/>
         <activity
             android:name=".StudentVerificationActivity"
-            android:exported="false"></activity>
+            android:exported="false"
+            android:noHistory="true"/>
         <activity
             android:name=".LiveAttendanceActivity"
-            android:exported="false"></activity>
+            android:exported="false"
+            android:noHistory="true"
+            android:screenOrientation="portrait"/>
         <activity
             android:name=".AttendanceBelow75Activity"
-            android:exported="false"></activity>
+            android:exported="false"
+            android:noHistory="true"/>
         <activity
             android:name=".HomeActivity"
             android:exported="false"
