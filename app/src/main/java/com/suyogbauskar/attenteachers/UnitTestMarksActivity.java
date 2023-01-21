@@ -1,9 +1,15 @@
 package com.suyogbauskar.attenteachers;
 
+import static androidx.constraintlayout.helper.widget.MotionEffect.TAG;
+
+import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.View;
@@ -13,7 +19,10 @@ import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.PopupMenu;
 
@@ -24,13 +33,19 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.suyogbauskar.attenteachers.pojos.StudentData;
+import com.suyogbauskar.attenteachers.pojos.UnitTestMarks;
 
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.TreeMap;
 
 public class UnitTestMarksActivity extends AppCompatActivity {
 
-    private Button selectSemesterBtn;
+    private Button selectSemesterBtn, uploadBtn, deleteBtn;
     private int selectedSemester;
     private FirebaseUser user;
     private TableLayout table;
@@ -52,11 +67,15 @@ public class UnitTestMarksActivity extends AppCompatActivity {
         isFirstRow = true;
         findAllViews();
         selectSemesterBtn.setOnClickListener(view -> showSemesterAndUnitTestPickerDialog());
+        uploadBtn.setOnClickListener(view -> uploadFile());
+        deleteBtn.setOnClickListener(view -> deleteMarks());
     }
 
     private void findAllViews() {
         selectSemesterBtn = findViewById(R.id.selectSemesterBtn);
         table = findViewById(R.id.table);
+        uploadBtn = findViewById(R.id.uploadBtn);
+        deleteBtn = findViewById(R.id.deleteBtn);
     }
 
     private void showSemesterAndUnitTestPickerDialog() {
@@ -91,6 +110,8 @@ public class UnitTestMarksActivity extends AppCompatActivity {
 
                             selectedSemester = item.getItemId();
                             selectSemesterBtn.setVisibility(View.GONE);
+                            uploadBtn.setVisibility(View.VISIBLE);
+                            deleteBtn.setVisibility(View.VISIBLE);
 
                             FirebaseDatabase.getInstance().getReference("students_data")
                                     .orderByChild("semester")
@@ -142,6 +163,31 @@ public class UnitTestMarksActivity extends AppCompatActivity {
                     });
             return true;
         });
+    }
+
+    private void uploadFile() {
+        AlertDialog.Builder alertDialog = new AlertDialog.Builder(UnitTestMarksActivity.this);
+        alertDialog.setTitle("Choose Unit Test");
+        final String[] listItems = new String[]{"Unit Test 1", "Unit Test 2"};
+        alertDialog.setSingleChoiceItems(listItems, -1, (dialog, which) -> {
+            int selectedUnitTest;
+
+            if (which == 0) {
+                selectedUnitTest = 1;
+            } else {
+                selectedUnitTest = 2;
+            }
+
+            openFilePickerDialog(selectedUnitTest);
+
+            dialog.dismiss();
+        });
+        alertDialog.setNegativeButton("Cancel", (dialog, which) -> {});
+        alertDialog.create().show();
+    }
+
+    private void deleteMarks() {
+
     }
 
     private void drawTableHeader() {
@@ -253,6 +299,46 @@ public class UnitTestMarksActivity extends AppCompatActivity {
         tbRow.addView(tv3);
 
         table.addView(tbRow);
+    }
+
+    ActivityResultLauncher<Intent> activityResultLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == Activity.RESULT_OK) {
+                    readCSVFile(result.getData().getData());
+                }
+            }
+    );
+
+    private void readCSVFile(Uri uri) {
+        try {
+            List<UnitTestMarks> unitTestMarksList = new ArrayList<>();
+            InputStream inputStream = getContentResolver().openInputStream(uri);
+            InputStreamReader isr = new InputStreamReader(inputStream);
+
+            Scanner scanner = new Scanner(isr);
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine();
+                String[] splitted = line.split(",");
+                unitTestMarksList.add(new UnitTestMarks(splitted[0], splitted[1], splitted[2]));
+//                for (String s : splitted) {
+//                    Log.d(TAG, s);
+//                }
+            }
+            for (UnitTestMarks mark: unitTestMarksList) {
+                Log.d(TAG, "Roll No: " + mark.getRollNo() + ", First: " + mark.getUnitTest1Marks() + ", Second: " + mark.getUnitTest2Marks());
+            }
+        } catch (Exception e) {
+            Log.d(TAG, "Error: " + e.getMessage());
+        }
+    }
+
+    private void openFilePickerDialog(int whichUnitTest) {
+        Intent data = new Intent(Intent.ACTION_GET_CONTENT);
+        Uri uri = Uri.parse(Environment.getExternalStorageDirectory().getPath());
+        data.setDataAndType(uri, "text/csv");
+        data = Intent.createChooser(data, "Choose unit test " + whichUnitTest + " marks");
+        activityResultLauncher.launch(data);
     }
 
     @Override
