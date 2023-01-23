@@ -6,7 +6,6 @@ import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.view.Gravity;
-import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TableLayout;
@@ -51,6 +50,7 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_attendance_below75);
         setTitle("Statistics");
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         init();
     }
@@ -609,14 +609,6 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
             tv2.setBackgroundColor(getResources().getColor(R.color.light_gray));
             isFirstRow = true;
         }
-
-        tbRow.setOnLongClickListener(new View.OnLongClickListener() {
-            @Override
-            public boolean onLongClick(View view) {
-
-                return true;
-            }
-        });
 
         tbRow.addView(tv0);
         tbRow.addView(tv1);

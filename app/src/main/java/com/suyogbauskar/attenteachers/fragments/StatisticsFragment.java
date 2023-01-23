@@ -23,6 +23,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.suyogbauskar.attenteachers.AttendanceBelow75Activity;
 import com.suyogbauskar.attenteachers.R;
+import com.suyogbauskar.attenteachers.SubjectsActivity;
 import com.suyogbauskar.attenteachers.excelfiles.CreateExcelFileOfAttendance;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -30,7 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class StatisticsFragment extends Fragment {
 
     private FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-    private Button excelBtn, attendanceBelow75Btn;
+    private Button excelBtn, attendanceBelow75Btn, subjectsBtn;
     private boolean subjectFound;
 
     public StatisticsFragment() {
@@ -50,12 +51,13 @@ public class StatisticsFragment extends Fragment {
     private void findAllViews(View view) {
         excelBtn = view.findViewById(R.id.excelBtn);
         attendanceBelow75Btn = view.findViewById(R.id.attendanceBelow75Btn);
+        subjectsBtn = view.findViewById(R.id.subjectsBtn);
     }
 
     private void setOnClickListeners() {
         excelBtn.setOnClickListener(view -> showDialogForCreatingExcelFile());
-
         attendanceBelow75Btn.setOnClickListener(view -> showDialogForFindingStudentsBelow75());
+        subjectsBtn.setOnClickListener(view -> startActivity(new Intent(getActivity(), SubjectsActivity.class)));
     }
 
     private void showDialogForCreatingExcelFile() {
@@ -161,7 +163,7 @@ public class StatisticsFragment extends Fragment {
         AlertDialog.Builder semesterDialog = new AlertDialog.Builder(getContext());
         semesterDialog.setTitle("Semester");
         String[] items = {"Semester 1", "Semester 2", "Semester 3", "Semester 4", "Semester 5", "Semester 6"};
-        
+
         AtomicInteger selectedSemester = new AtomicInteger();
         semesterDialog.setSingleChoiceItems(items, -1, (dialog, which) -> {
             SharedPreferences sharedPreferences = getActivity().getSharedPreferences("attendanceBelow75Pref",MODE_PRIVATE);

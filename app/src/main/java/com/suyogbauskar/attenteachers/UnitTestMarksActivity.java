@@ -205,8 +205,8 @@ public class UnitTestMarksActivity extends AppCompatActivity {
 
         tv0.setText("Roll No.");
         tv1.setText("Name");
-        tv2.setText("Unit Test 1");
-        tv3.setText("Unit Test 2");
+        tv2.setText("Test 1");
+        tv3.setText("Test 2");
 
         tv0.setTypeface(Typeface.DEFAULT_BOLD);
         tv1.setTypeface(Typeface.DEFAULT_BOLD);

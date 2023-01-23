@@ -79,6 +79,7 @@ public class StudentDataActivity extends AppCompatActivity {
 
                         selectSemesterBtn.setVisibility(View.GONE);
                         table.removeAllViews();
+                        isFirstRow = true;
                         if (snapshot.getChildrenCount() == 0) {
                             noStudentsFoundView.setVisibility(View.VISIBLE);
                             return;
