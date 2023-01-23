@@ -1,7 +1,5 @@
 package com.suyogbauskar.attenteachers;
 
-import static androidx.constraintlayout.helper.widget.MotionEffect.TAG;
-
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Color;
@@ -9,7 +7,6 @@ import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.View;
@@ -22,7 +19,6 @@ import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.PopupMenu;
 
@@ -37,11 +33,12 @@ import com.suyogbauskar.attenteachers.pojos.UnitTestMarks;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.TreeMap;
+
+import cn.pedant.SweetAlert.SweetAlertDialog;
 
 public class UnitTestMarksActivity extends AppCompatActivity {
 
@@ -165,29 +162,37 @@ public class UnitTestMarksActivity extends AppCompatActivity {
         });
     }
 
-    private void uploadFile() {
-        AlertDialog.Builder alertDialog = new AlertDialog.Builder(UnitTestMarksActivity.this);
-        alertDialog.setTitle("Choose Unit Test");
-        final String[] listItems = new String[]{"Unit Test 1", "Unit Test 2"};
-        alertDialog.setSingleChoiceItems(listItems, -1, (dialog, which) -> {
-            int selectedUnitTest;
-
-            if (which == 0) {
-                selectedUnitTest = 1;
-            } else {
-                selectedUnitTest = 2;
-            }
-
-            openFilePickerDialog(selectedUnitTest);
-
-            dialog.dismiss();
-        });
-        alertDialog.setNegativeButton("Cancel", (dialog, which) -> {});
-        alertDialog.create().show();
-    }
-
     private void deleteMarks() {
+        new SweetAlertDialog(UnitTestMarksActivity.this, SweetAlertDialog.WARNING_TYPE)
+                .setTitleText("Are you sure?")
+                .setContentText("Both unit test marks will be removed!")
+                .setConfirmText("Remove")
+                .setConfirmClickListener(sDialog -> {
+                    FirebaseDatabase.getInstance().getReference("students_data")
+                            .orderByChild("semester")
+                            .equalTo(selectedSemester)
+                            .addListenerForSingleValueEvent(new ValueEventListener() {
+                                @Override
+                                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                    for (DataSnapshot ds : snapshot.getChildren()) {
+                                        ds.child("subjects").child(subjectCodeTeacher).child("unitTest1Marks").getRef().setValue(-1);
+                                        ds.child("subjects").child(subjectCodeTeacher).child("unitTest2Marks").getRef().setValue(-1);
+                                    }
+                                }
 
+                                @Override
+                                public void onCancelled(@NonNull DatabaseError error) {
+                                    Toast.makeText(UnitTestMarksActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                    sDialog
+                            .setTitleText("Removed!")
+                            .setContentText("All students marks have been removed")
+                            .setConfirmText("OK")
+                            .setConfirmClickListener(null)
+                            .changeAlertType(SweetAlertDialog.SUCCESS_TYPE);
+                })
+                .show();
     }
 
     private void drawTableHeader() {
@@ -312,7 +317,7 @@ public class UnitTestMarksActivity extends AppCompatActivity {
 
     private void readCSVFile(Uri uri) {
         try {
-            List<UnitTestMarks> unitTestMarksList = new ArrayList<>();
+            Map<Integer, UnitTestMarks> unitTestMarksList = new HashMap<>();
             InputStream inputStream = getContentResolver().openInputStream(uri);
             InputStreamReader isr = new InputStreamReader(inputStream);
 
@@ -320,24 +325,47 @@ public class UnitTestMarksActivity extends AppCompatActivity {
             while (scanner.hasNextLine()) {
                 String line = scanner.nextLine();
                 String[] splitted = line.split(",");
-                unitTestMarksList.add(new UnitTestMarks(splitted[0], splitted[1], splitted[2]));
-//                for (String s : splitted) {
-//                    Log.d(TAG, s);
-//                }
+                try {
+                    if (Integer.parseInt(splitted[0]) > 0) {
+                        unitTestMarksList.put(Integer.parseInt(splitted[0]), new UnitTestMarks(splitted[1], splitted[2]));
+                    }
+                } catch (NumberFormatException ignored) {
+                }
             }
-            for (UnitTestMarks mark: unitTestMarksList) {
-                Log.d(TAG, "Roll No: " + mark.getRollNo() + ", First: " + mark.getUnitTest1Marks() + ", Second: " + mark.getUnitTest2Marks());
-            }
+
+            FirebaseDatabase.getInstance().getReference("students_data")
+                    .orderByChild("semester")
+                    .equalTo(selectedSemester)
+                    .addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot snapshot) {
+                            int testOneMarks, testTwoMarks;
+
+                            for (DataSnapshot ds : snapshot.getChildren()) {
+                                testOneMarks = Integer.parseInt(unitTestMarksList.get(ds.child("rollNo").getValue(Integer.class)).getUnitTest1Marks());
+                                testTwoMarks = Integer.parseInt(unitTestMarksList.get(ds.child("rollNo").getValue(Integer.class)).getUnitTest2Marks());
+
+                                ds.child("subjects").child(subjectCodeTeacher).child("unitTest1Marks").getRef().setValue(testOneMarks);
+                                ds.child("subjects").child(subjectCodeTeacher).child("unitTest2Marks").getRef().setValue(testTwoMarks);
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError error) {
+                            Toast.makeText(UnitTestMarksActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+
         } catch (Exception e) {
-            Log.d(TAG, "Error: " + e.getMessage());
+            Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
 
-    private void openFilePickerDialog(int whichUnitTest) {
+    private void uploadFile() {
         Intent data = new Intent(Intent.ACTION_GET_CONTENT);
         Uri uri = Uri.parse(Environment.getExternalStorageDirectory().getPath());
         data.setDataAndType(uri, "text/csv");
-        data = Intent.createChooser(data, "Choose unit test " + whichUnitTest + " marks");
+        data = Intent.createChooser(data, "Choose unit test marks");
         activityResultLauncher.launch(data);
     }
 
