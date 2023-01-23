@@ -62,9 +62,9 @@ public class StatisticsFragment extends Fragment {
         AlertDialog.Builder semesterDialog = new AlertDialog.Builder(getContext());
         semesterDialog.setTitle("Semester");
         String[] items = {"Semester 1", "Semester 2", "Semester 3", "Semester 4", "Semester 5", "Semester 6"};
-        int checkedItem = 0;
+
         AtomicInteger selectedSemester = new AtomicInteger();
-        semesterDialog.setSingleChoiceItems(items, checkedItem, (dialog, which) -> {
+        semesterDialog.setSingleChoiceItems(items, -1, (dialog, which) -> {
             SharedPreferences sharedPreferences = getActivity().getSharedPreferences("excelValuesPref",MODE_PRIVATE);
             SharedPreferences.Editor editor = sharedPreferences.edit();
             switch (which) {
@@ -119,8 +119,8 @@ public class StatisticsFragment extends Fragment {
                             AlertDialog.Builder yearDialog = new AlertDialog.Builder(getContext());
                             yearDialog.setTitle("Year");
                             String[] items2 = {"2023", "2024", "2025", "2026", "2027"};
-                            int checkedItem2 = 0;
-                            yearDialog.setSingleChoiceItems(items2, checkedItem2, (dialog2, which2) -> {
+
+                            yearDialog.setSingleChoiceItems(items2, -1, (dialog2, which2) -> {
                                 SharedPreferences sharedPreferences2 = getActivity().getSharedPreferences("excelValuesPref",MODE_PRIVATE);
                                 SharedPreferences.Editor editor2 = sharedPreferences2.edit();
                                 switch (which2) {
@@ -161,9 +161,9 @@ public class StatisticsFragment extends Fragment {
         AlertDialog.Builder semesterDialog = new AlertDialog.Builder(getContext());
         semesterDialog.setTitle("Semester");
         String[] items = {"Semester 1", "Semester 2", "Semester 3", "Semester 4", "Semester 5", "Semester 6"};
-        int checkedItem = 0;
+        
         AtomicInteger selectedSemester = new AtomicInteger();
-        semesterDialog.setSingleChoiceItems(items, checkedItem, (dialog, which) -> {
+        semesterDialog.setSingleChoiceItems(items, -1, (dialog, which) -> {
             SharedPreferences sharedPreferences = getActivity().getSharedPreferences("attendanceBelow75Pref",MODE_PRIVATE);
             SharedPreferences.Editor editor = sharedPreferences.edit();
             switch (which) {
