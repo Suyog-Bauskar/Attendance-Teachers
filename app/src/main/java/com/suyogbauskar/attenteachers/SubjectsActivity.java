@@ -6,6 +6,7 @@ import android.graphics.Typeface;
 import android.os.Bundle;
 import android.text.InputType;
 import android.view.Gravity;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TableLayout;
@@ -30,10 +31,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import cn.pedant.SweetAlert.SweetAlertDialog;
+
 public class SubjectsActivity extends AppCompatActivity {
 
     private FirebaseUser user;
     private TableLayout table;
+    private Button addSubjectBtn;
     private boolean isFirstRow;
     private final List<Integer> semesterList = new ArrayList<>();
 
@@ -46,7 +50,89 @@ public class SubjectsActivity extends AppCompatActivity {
 
         user = FirebaseAuth.getInstance().getCurrentUser();
         table = findViewById(R.id.table);
+        addSubjectBtn = findViewById(R.id.addSubjectBtn);
+        addSubjectBtn.setOnClickListener(view -> addSubject());
         showSubjects();
+    }
+
+    private void addSubject() {
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        params.setMargins((int) (15 * getResources().getDisplayMetrics().density + 0.5f), (int) (15 * getResources().getDisplayMetrics().density + 0.5f), (int) (15 * getResources().getDisplayMetrics().density + 0.5f), 0);
+
+        AlertDialog.Builder alert = new AlertDialog.Builder(SubjectsActivity.this);
+        alert.setTitle("Add Subject");
+
+        LinearLayout layout = new LinearLayout(SubjectsActivity.this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+
+        final EditText shortNameEditText = new EditText(SubjectsActivity.this);
+        shortNameEditText.setHint("Subject Short Name");
+        shortNameEditText.setInputType(InputType.TYPE_CLASS_TEXT);
+        shortNameEditText.setLayoutParams(params);
+        layout.addView(shortNameEditText);
+
+        final EditText nameEditText = new EditText(SubjectsActivity.this);
+        nameEditText.setHint("Subject Name");
+        nameEditText.setInputType(InputType.TYPE_CLASS_TEXT);
+        nameEditText.setLayoutParams(params);
+        layout.addView(nameEditText);
+
+        final EditText codeEditText = new EditText(SubjectsActivity.this);
+        codeEditText.setHint("Subject Code");
+        codeEditText.setInputType(InputType.TYPE_CLASS_NUMBER);
+        codeEditText.setLayoutParams(params);
+        layout.addView(codeEditText);
+
+        final EditText semesterEditText = new EditText(SubjectsActivity.this);
+        semesterEditText.setHint("Subject Semester");
+        semesterEditText.setInputType(InputType.TYPE_CLASS_NUMBER);
+        semesterEditText.setLayoutParams(params);
+        layout.addView(semesterEditText);
+
+        alert.setView(layout);
+
+        alert.setPositiveButton("Add", (dialog, whichButton) -> {
+            String shortNameStr = shortNameEditText.getText().toString().trim().toUpperCase();
+            String nameStr = capitalizeWord(nameEditText.getText().toString().trim().toLowerCase());
+            String codeStr = codeEditText.getText().toString().trim();
+            String semesterStr = semesterEditText.getText().toString().trim();
+            if (semesterStr.isEmpty()) {
+                Toast.makeText(getApplicationContext(), "Enter Semester", Toast.LENGTH_LONG).show();
+                return;
+            }
+            int semesterInt = Integer.parseInt(semesterStr);
+
+            if (shortNameStr.isEmpty()) {
+                Toast.makeText(getApplicationContext(), "Enter Short Name", Toast.LENGTH_LONG).show();
+            } else if (nameStr.isEmpty()) {
+                Toast.makeText(getApplicationContext(), "Enter Name", Toast.LENGTH_LONG).show();
+            } else if ((codeStr.length() != 5) || (Long.parseLong(codeStr) == 0)) {
+                Toast.makeText(getApplicationContext(), "Invalid Code", Toast.LENGTH_LONG).show();
+            } else if (semesterInt <= 0 || semesterInt > 6) {
+                Toast.makeText(getApplicationContext(), "Invalid Semester", Toast.LENGTH_LONG).show();
+            } else if (semesterList.contains(semesterInt)) {
+                Toast.makeText(getApplicationContext(), "You already teach this semester", Toast.LENGTH_LONG).show();
+            } else {
+                Map<String, Object> data = new HashMap<>();
+                data.put("A_count", 0);
+                data.put("A1_count", 0);
+                data.put("A2_count", 0);
+                data.put("A3_count", 0);
+                data.put("B_count", 0);
+                data.put("B1_count", 0);
+                data.put("B2_count", 0);
+                data.put("semester", semesterInt);
+                data.put("subject_name", nameStr);
+                data.put("subject_short_name", shortNameStr);
+
+                FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects/" + codeStr)
+                        .setValue(data)
+                        .addOnSuccessListener(unused -> Toast.makeText(SubjectsActivity.this, nameStr + " added successfully", Toast.LENGTH_SHORT).show())
+                        .addOnFailureListener(e -> Toast.makeText(SubjectsActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show());
+            }
+        });
+        alert.setNegativeButton("Cancel", (dialog, whichButton) -> dialog.dismiss());
+        alert.show();
     }
 
     private void showSubjects() {
@@ -106,7 +192,7 @@ public class SubjectsActivity extends AppCompatActivity {
         layout.addView(codeEditText);
 
         final EditText semesterEditText = new EditText(SubjectsActivity.this);
-        semesterEditText.setHint("Enroll no.");
+        semesterEditText.setHint("semester");
         semesterEditText.setText(String.valueOf(semester));
         semesterEditText.setInputType(InputType.TYPE_CLASS_NUMBER);
         semesterEditText.setLayoutParams(params);
@@ -136,15 +222,43 @@ public class SubjectsActivity extends AppCompatActivity {
                 }
 
                 if (!code.equals(codeStr)) {
+                    FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects/" + code)
+                                    .addListenerForSingleValueEvent(new ValueEventListener() {
+                                        @Override
+                                        public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                            FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects/" + code).removeValue();
+                                            Map<String, Object> data = new HashMap<>();
+                                            data.put("A_count", snapshot.child("A_count").getValue(Integer.class));
+                                            data.put("A1_count", snapshot.child("A1_count").getValue(Integer.class));
+                                            data.put("A2_count", snapshot.child("A2_count").getValue(Integer.class));
+                                            data.put("A3_count", snapshot.child("A3_count").getValue(Integer.class));
+                                            data.put("B_count", snapshot.child("B_count").getValue(Integer.class));
+                                            data.put("B1_count", snapshot.child("B1_count").getValue(Integer.class));
+                                            data.put("B2_count", snapshot.child("B2_count").getValue(Integer.class));
+                                            data.put("semester", semesterInt);
+                                            data.put("subject_name", nameStr);
+                                            data.put("subject_short_name", shortNameStr);
 
+                                            FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects/" + codeStr)
+                                                    .setValue(data)
+                                                    .addOnSuccessListener(unused -> Toast.makeText(SubjectsActivity.this, "Details updated successfully", Toast.LENGTH_SHORT).show())
+                                                    .addOnFailureListener(e -> Toast.makeText(SubjectsActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show());
+                                        }
+
+                                        @Override
+                                        public void onCancelled(@NonNull DatabaseError error) {
+                                            Toast.makeText(SubjectsActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                                        }
+                                    });
                 } else {
                     FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects/" + code)
-                            .addValueEventListener(new ValueEventListener() {
+                            .addListenerForSingleValueEvent(new ValueEventListener() {
                                 @Override
                                 public void onDataChange(@NonNull DataSnapshot snapshot) {
                                     snapshot.child("subject_short_name").getRef().setValue(shortNameStr);
                                     snapshot.child("subject_name").getRef().setValue(nameStr);
                                     snapshot.child("semester").getRef().setValue(semesterInt);
+                                    Toast.makeText(SubjectsActivity.this, "Details updated successfully", Toast.LENGTH_SHORT).show();
                                 }
 
                                 @Override
@@ -159,19 +273,24 @@ public class SubjectsActivity extends AppCompatActivity {
         alert.show();
     }
 
-    private void removeSubject() {
-
+    private void removeSubject(String code) {
+        FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects/" + code).removeValue()
+                .addOnSuccessListener(unused -> Toast.makeText(SubjectsActivity.this, code + " subject removed successfully", Toast.LENGTH_SHORT).show())
+                .addOnFailureListener(e -> Toast.makeText(SubjectsActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show());
     }
 
     private String capitalizeWord(String str) {
-        String words[] = str.split("\\s");
-        String capitalizeWord = "";
+        if (str.isEmpty()) {
+            return "";
+        }
+        String[] words = str.split("\\s");
+        StringBuilder capitalizeWord = new StringBuilder();
         for (String w : words) {
             String first = w.substring(0, 1);
             String afterFirst = w.substring(1);
-            capitalizeWord += first.toUpperCase() + afterFirst + " ";
+            capitalizeWord.append(first.toUpperCase()).append(afterFirst).append(" ");
         }
-        return capitalizeWord.trim();
+        return capitalizeWord.toString().trim();
     }
 
     private void drawTableHeader() {
@@ -279,6 +398,19 @@ public class SubjectsActivity extends AppCompatActivity {
         }
 
         tbRow.setOnClickListener(view -> editSubjectDetails(((Subject) tbRow.getTag()).getShortName(), ((Subject) tbRow.getTag()).getName(), ((Subject) tbRow.getTag()).getCode(), ((Subject) tbRow.getTag()).getSemester()));
+
+        tbRow.setOnLongClickListener(view -> {
+            new SweetAlertDialog(SubjectsActivity.this, SweetAlertDialog.WARNING_TYPE)
+                    .setTitleText("Are you sure?")
+                    .setContentText(((Subject) tbRow.getTag()).getCode() + " subject will be deleted!")
+                    .setConfirmText("Delete")
+                    .setConfirmClickListener(sDialog -> {
+                        sDialog.dismissWithAnimation();
+                        removeSubject(((Subject) tbRow.getTag()).getCode());
+                    })
+                    .show();
+            return true;
+        });
 
         tbRow.addView(tv0);
         tbRow.addView(tv1);

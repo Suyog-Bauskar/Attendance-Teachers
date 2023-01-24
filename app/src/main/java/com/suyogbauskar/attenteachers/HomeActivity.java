@@ -31,7 +31,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.suyogbauskar.attenteachers.fragments.HomeFragment;
 import com.suyogbauskar.attenteachers.fragments.SettingsFragment;
-import com.suyogbauskar.attenteachers.fragments.StatisticsFragment;
+import com.suyogbauskar.attenteachers.fragments.UtilityFragment;
 
 import java.util.Objects;
 
@@ -76,8 +76,8 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                     startActivity(new Intent(HomeActivity.this, LiveAttendanceActivity.class));
                     break;
 
-                case R.id.statistics:
-                    getSupportFragmentManager().beginTransaction().replace(R.id.frameLayout, new StatisticsFragment()).commit();
+                case R.id.utility:
+                    getSupportFragmentManager().beginTransaction().replace(R.id.frameLayout, new UtilityFragment()).commit();
                     break;
             }
             return true;

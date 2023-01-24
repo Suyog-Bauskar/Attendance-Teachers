@@ -283,19 +283,11 @@ public class LiveAttendanceActivity extends AppCompatActivity {
 
         tbRow.setOnLongClickListener(view -> {
             new SweetAlertDialog(LiveAttendanceActivity.this, SweetAlertDialog.WARNING_TYPE)
-                    .setTitleText("Remove Attendance?")
-                    .setContentText("Roll no. " + tbRow.getTag().toString() + " attendance will be removed")
-                    .setConfirmText("Remove")
+                    .setTitleText("Delete Attendance?")
+                    .setContentText("Roll no. " + tbRow.getTag().toString() + " attendance will be deleted!")
+                    .setConfirmText("Delete")
                     .setConfirmClickListener(sDialog -> {
                         sDialog.dismissWithAnimation();
-
-                        long currentDate = System.currentTimeMillis();
-                        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy/HH/mm/ss/MMMM", Locale.getDefault());
-                        String dateStr = dateFormat.format(currentDate);
-                        String[] dateArr = dateStr.split("/");
-                        int date = Integer.parseInt(dateArr[0]);
-                        int year = Integer.parseInt(dateArr[2]);
-                        String monthStr = dateArr[6];
 
                         FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid())
                                 .addListenerForSingleValueEvent(new ValueEventListener() {
@@ -309,8 +301,8 @@ public class LiveAttendanceActivity extends AppCompatActivity {
                                         int year = Integer.parseInt(dateArr[2]);
                                         String monthStr = dateArr[6];
 
-                                        FirebaseDatabase.getInstance().getReference("/attendance/" + snapshot.child("subject_code").getValue(String.class) + "/" +
-                                                        year + "/" + monthStr).child(date + "-" + snapshot.child("lectures_taken_today").getValue(Integer.class))
+                                        FirebaseDatabase.getInstance().getReference("attendance/CO" + semester + "-" + attendanceOf + "/" + subjectCode + "/" + year + "/" + monthStr)
+                                                .child(date + "-" + count)
                                                 .orderByChild("rollNo")
                                                 .equalTo(Integer.parseInt(tbRow.getTag().toString()))
                                                 .addListenerForSingleValueEvent(new ValueEventListener() {
@@ -326,7 +318,7 @@ public class LiveAttendanceActivity extends AppCompatActivity {
 
                                                     @Override
                                                     public void onCancelled(@NonNull DatabaseError error) {
-
+                                                        Toast.makeText(LiveAttendanceActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
                                                     }
                                                 });
                                     }

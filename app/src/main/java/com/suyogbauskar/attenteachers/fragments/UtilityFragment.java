@@ -28,19 +28,19 @@ import com.suyogbauskar.attenteachers.excelfiles.CreateExcelFileOfAttendance;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class StatisticsFragment extends Fragment {
+public class UtilityFragment extends Fragment {
 
     private FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
     private Button excelBtn, attendanceBelow75Btn, subjectsBtn;
     private boolean subjectFound;
 
-    public StatisticsFragment() {
+    public UtilityFragment() {
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_statistics, container, false);
-        getActivity().setTitle("Statistics");
+        View view = inflater.inflate(R.layout.fragment_utility, container, false);
+        getActivity().setTitle("Utility");
 
         findAllViews(view);
         setOnClickListeners();

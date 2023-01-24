@@ -165,8 +165,8 @@ public class UnitTestMarksActivity extends AppCompatActivity {
     private void deleteMarks() {
         new SweetAlertDialog(UnitTestMarksActivity.this, SweetAlertDialog.WARNING_TYPE)
                 .setTitleText("Are you sure?")
-                .setContentText("Both unit test marks will be removed!")
-                .setConfirmText("Remove")
+                .setContentText("Both unit test marks will be deleted!")
+                .setConfirmText("Delete")
                 .setConfirmClickListener(sDialog -> {
                     FirebaseDatabase.getInstance().getReference("students_data")
                             .orderByChild("semester")
@@ -178,6 +178,7 @@ public class UnitTestMarksActivity extends AppCompatActivity {
                                         ds.child("subjects").child(subjectCodeTeacher).child("unitTest1Marks").getRef().setValue(-1);
                                         ds.child("subjects").child(subjectCodeTeacher).child("unitTest2Marks").getRef().setValue(-1);
                                     }
+                                    Toast.makeText(UnitTestMarksActivity.this, "All students marks deleted successfully", Toast.LENGTH_SHORT).show();
                                 }
 
                                 @Override
@@ -185,12 +186,6 @@ public class UnitTestMarksActivity extends AppCompatActivity {
                                     Toast.makeText(UnitTestMarksActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
                                 }
                             });
-                    sDialog
-                            .setTitleText("Removed!")
-                            .setContentText("All students marks have been removed")
-                            .setConfirmText("OK")
-                            .setConfirmClickListener(null)
-                            .changeAlertType(SweetAlertDialog.SUCCESS_TYPE);
                 })
                 .show();
     }

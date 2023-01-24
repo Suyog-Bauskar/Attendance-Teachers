@@ -9,8 +9,8 @@
         android:icon="@drawable/pencil"
         android:id="@+id/attendance"/>
 
-    <item android:title="Statistics"
+    <item android:title="Utility"
         android:icon="@drawable/ic_baseline_data_usage_24"
-        android:id="@+id/statistics"/>
+        android:id="@+id/utility"/>
 
 </menu>
