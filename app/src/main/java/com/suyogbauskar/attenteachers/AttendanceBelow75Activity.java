@@ -619,6 +619,6 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        startActivity(new Intent(AttendanceBelow75Activity.this, HomeActivity.class));
+        startActivity(new Intent(AttendanceBelow75Activity.this, UtilityActivity.class));
     }
 }

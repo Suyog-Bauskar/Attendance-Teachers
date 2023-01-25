@@ -428,6 +428,6 @@ public class SubjectsActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        startActivity(new Intent(SubjectsActivity.this, HomeActivity.class));
+        startActivity(new Intent(SubjectsActivity.this, UtilityActivity.class));
     }
 }

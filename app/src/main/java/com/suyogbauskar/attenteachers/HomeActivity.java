@@ -31,7 +31,6 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.suyogbauskar.attenteachers.fragments.HomeFragment;
 import com.suyogbauskar.attenteachers.fragments.SettingsFragment;
-import com.suyogbauskar.attenteachers.fragments.UtilityFragment;
 
 import java.util.Objects;
 
@@ -77,7 +76,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                     break;
 
                 case R.id.utility:
-                    getSupportFragmentManager().beginTransaction().replace(R.id.frameLayout, new UtilityFragment()).commit();
+                    startActivity(new Intent(HomeActivity.this, UtilityActivity.class));
                     break;
             }
             return true;

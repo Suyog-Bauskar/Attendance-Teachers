@@ -304,7 +304,7 @@ public class UnitTestMarksActivity extends AppCompatActivity {
     ActivityResultLauncher<Intent> activityResultLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
-                if (result.getResultCode() == Activity.RESULT_OK) {
+                if ((result.getResultCode() == Activity.RESULT_OK) && (result.getData() != null)) {
                     readCSVFile(result.getData().getData());
                 }
             }

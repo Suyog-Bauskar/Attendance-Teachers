@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".fragments.UtilityFragment">
+    tools:context=".UtilityActivity">
 
     <Button
         android:id="@+id/attendanceBelow75Btn"
@@ -26,6 +25,18 @@
         android:layout_margin="15dp"
         android:text="Subjects"
         android:layout_below="@id/attendanceBelow75Btn"
+        android:layout_centerHorizontal="true"
+        android:textAllCaps="false"
+        android:textSize="16sp" />
+
+    <Button
+        android:id="@+id/uploadTimetableBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/rounded_rectangle"
+        android:layout_margin="15dp"
+        android:text="Upload Timetable"
+        android:layout_below="@id/subjectsBtn"
         android:layout_centerHorizontal="true"
         android:textAllCaps="false"
         android:textSize="16sp" />

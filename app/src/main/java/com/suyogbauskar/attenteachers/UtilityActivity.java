@@ -1,19 +1,21 @@
-package com.suyogbauskar.attenteachers.fragments;
+package com.suyogbauskar.attenteachers;
 
-import static android.content.Context.MODE_PRIVATE;
-
+import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
+import android.os.Environment;
+import android.provider.OpenableColumns;
 import android.widget.Button;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
-import androidx.fragment.app.Fragment;
+import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -21,53 +23,82 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-import com.suyogbauskar.attenteachers.AttendanceBelow75Activity;
-import com.suyogbauskar.attenteachers.R;
-import com.suyogbauskar.attenteachers.SubjectsActivity;
+import com.google.firebase.storage.FirebaseStorage;
 import com.suyogbauskar.attenteachers.excelfiles.CreateExcelFileOfAttendance;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class UtilityFragment extends Fragment {
+public class UtilityActivity extends AppCompatActivity {
 
-    private FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-    private Button excelBtn, attendanceBelow75Btn, subjectsBtn;
+    private final FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+    private Button excelBtn, attendanceBelow75Btn, subjectsBtn, uploadTimetableBtn;
     private boolean subjectFound;
 
-    public UtilityFragment() {
-    }
-
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_utility, container, false);
-        getActivity().setTitle("Utility");
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_utility);
+        setTitle("Utility");
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
-        findAllViews(view);
+        findAllViews();
         setOnClickListeners();
-
-        return view;
     }
 
-    private void findAllViews(View view) {
-        excelBtn = view.findViewById(R.id.excelBtn);
-        attendanceBelow75Btn = view.findViewById(R.id.attendanceBelow75Btn);
-        subjectsBtn = view.findViewById(R.id.subjectsBtn);
+    private void findAllViews() {
+        excelBtn = findViewById(R.id.excelBtn);
+        attendanceBelow75Btn = findViewById(R.id.attendanceBelow75Btn);
+        subjectsBtn = findViewById(R.id.subjectsBtn);
+        uploadTimetableBtn = findViewById(R.id.uploadTimetableBtn);
     }
 
     private void setOnClickListeners() {
         excelBtn.setOnClickListener(view -> showDialogForCreatingExcelFile());
         attendanceBelow75Btn.setOnClickListener(view -> showDialogForFindingStudentsBelow75());
-        subjectsBtn.setOnClickListener(view -> startActivity(new Intent(getActivity(), SubjectsActivity.class)));
+        subjectsBtn.setOnClickListener(view -> startActivity(new Intent(UtilityActivity.this, SubjectsActivity.class)));
+        uploadTimetableBtn.setOnClickListener(view -> chooseTimetable());
     }
 
+    private void uploadTimetable(Uri uri) {
+        try {
+            Cursor returnCursor = getContentResolver().query(uri, null, null, null, null);
+            int nameIndex = returnCursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+            returnCursor.moveToFirst();
+
+            FirebaseStorage.getInstance().getReference().child("CO").child("Students_Timetables").child(returnCursor.getString(nameIndex))
+                    .putFile(uri)
+                    .addOnSuccessListener(taskSnapshot -> Toast.makeText(UtilityActivity.this, "Timetable uploaded successfully", Toast.LENGTH_SHORT).show())
+                    .addOnFailureListener(e -> Toast.makeText(UtilityActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show());
+        } catch (Exception e) {
+            Toast.makeText(UtilityActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void chooseTimetable() {
+        Intent data = new Intent(Intent.ACTION_GET_CONTENT);
+        Uri uri = Uri.parse(Environment.getExternalStorageDirectory().getPath());
+        data.setDataAndType(uri, "text/csv");
+        data = Intent.createChooser(data, "Choose timetable");
+        activityResultLauncher.launch(data);
+    }
+
+    ActivityResultLauncher<Intent> activityResultLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if ((result.getResultCode() == Activity.RESULT_OK) && (result.getData() != null)) {
+                    uploadTimetable(result.getData().getData());
+                }
+            }
+    );
+
     private void showDialogForCreatingExcelFile() {
-        AlertDialog.Builder semesterDialog = new AlertDialog.Builder(getContext());
+        AlertDialog.Builder semesterDialog = new AlertDialog.Builder(UtilityActivity.this);
         semesterDialog.setTitle("Semester");
         String[] items = {"Semester 1", "Semester 2", "Semester 3", "Semester 4", "Semester 5", "Semester 6"};
 
         AtomicInteger selectedSemester = new AtomicInteger();
         semesterDialog.setSingleChoiceItems(items, -1, (dialog, which) -> {
-            SharedPreferences sharedPreferences = getActivity().getSharedPreferences("excelValuesPref",MODE_PRIVATE);
+            SharedPreferences sharedPreferences = getSharedPreferences("excelValuesPref",MODE_PRIVATE);
             SharedPreferences.Editor editor = sharedPreferences.edit();
             switch (which) {
                 case 0:
@@ -114,16 +145,16 @@ public class UtilityFragment extends Fragment {
                             }
 
                             if (!subjectFound) {
-                                Toast.makeText(getContext(), "You don't teach this semester", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(UtilityActivity.this, "You don't teach this semester", Toast.LENGTH_SHORT).show();
                                 return;
                             }
 
-                            AlertDialog.Builder yearDialog = new AlertDialog.Builder(getContext());
+                            AlertDialog.Builder yearDialog = new AlertDialog.Builder(UtilityActivity.this);
                             yearDialog.setTitle("Year");
                             String[] items2 = {"2023", "2024", "2025", "2026", "2027"};
 
                             yearDialog.setSingleChoiceItems(items2, -1, (dialog2, which2) -> {
-                                SharedPreferences sharedPreferences2 = getActivity().getSharedPreferences("excelValuesPref",MODE_PRIVATE);
+                                SharedPreferences sharedPreferences2 = getSharedPreferences("excelValuesPref",MODE_PRIVATE);
                                 SharedPreferences.Editor editor2 = sharedPreferences2.edit();
                                 switch (which2) {
                                     case 0:
@@ -142,17 +173,17 @@ public class UtilityFragment extends Fragment {
                                         editor2.putString("year", items2[4]);
                                         break;
                                 }
-                                Toast.makeText(getContext(), "Creating Excel File...", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(UtilityActivity.this, "Creating Excel File...", Toast.LENGTH_SHORT).show();
                                 dialog2.dismiss();
                                 editor2.commit();
-                                requireActivity().startService(new Intent(getContext(), CreateExcelFileOfAttendance.class));
+                                startService(new Intent(UtilityActivity.this, CreateExcelFileOfAttendance.class));
                             });
                             yearDialog.create().show();
                         }
 
                         @Override
                         public void onCancelled(@NonNull DatabaseError error) {
-                            Toast.makeText(getContext(), error.getMessage(), Toast.LENGTH_SHORT).show();
+                            Toast.makeText(UtilityActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
                         }
                     });
         });
@@ -160,13 +191,13 @@ public class UtilityFragment extends Fragment {
     }
 
     private void showDialogForFindingStudentsBelow75() {
-        AlertDialog.Builder semesterDialog = new AlertDialog.Builder(getContext());
+        AlertDialog.Builder semesterDialog = new AlertDialog.Builder(UtilityActivity.this);
         semesterDialog.setTitle("Semester");
         String[] items = {"Semester 1", "Semester 2", "Semester 3", "Semester 4", "Semester 5", "Semester 6"};
 
         AtomicInteger selectedSemester = new AtomicInteger();
         semesterDialog.setSingleChoiceItems(items, -1, (dialog, which) -> {
-            SharedPreferences sharedPreferences = getActivity().getSharedPreferences("attendanceBelow75Pref",MODE_PRIVATE);
+            SharedPreferences sharedPreferences = getSharedPreferences("attendanceBelow75Pref",MODE_PRIVATE);
             SharedPreferences.Editor editor = sharedPreferences.edit();
             switch (which) {
                 case 0:
@@ -212,16 +243,16 @@ public class UtilityFragment extends Fragment {
                             }
 
                             if (!subjectFound) {
-                                Toast.makeText(getContext(), "You don't teach this semester", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(UtilityActivity.this, "You don't teach this semester", Toast.LENGTH_SHORT).show();
                                 return;
                             }
 
-                            AlertDialog.Builder classDialog = new AlertDialog.Builder(getContext());
+                            AlertDialog.Builder classDialog = new AlertDialog.Builder(UtilityActivity.this);
                             classDialog.setTitle("Class");
                             String[] items2 = {"All", "A Division", "B Division", "A1 Practical Batch", "A2 Practical Batch", "A3 Practical Batch", "B1 Practical Batch", "B2 Practical Batch"};
                             int checkedItem2 = 0;
                             classDialog.setSingleChoiceItems(items2, checkedItem2, (dialog2, which2) -> {
-                                SharedPreferences sharedPreferences2 = getActivity().getSharedPreferences("attendanceBelow75Pref",MODE_PRIVATE);
+                                SharedPreferences sharedPreferences2 = getSharedPreferences("attendanceBelow75Pref",MODE_PRIVATE);
                                 SharedPreferences.Editor editor2 = sharedPreferences2.edit();
                                 switch (which2) {
                                     case 0:
@@ -251,17 +282,28 @@ public class UtilityFragment extends Fragment {
                                 }
                                 dialog2.dismiss();
                                 editor2.commit();
-                                startActivity(new Intent(getActivity(), AttendanceBelow75Activity.class));
+                                startActivity(new Intent(UtilityActivity.this, AttendanceBelow75Activity.class));
                             });
                             classDialog.create().show();
                         }
 
                         @Override
                         public void onCancelled(@NonNull DatabaseError error) {
-                            Toast.makeText(getContext(), error.getMessage(), Toast.LENGTH_SHORT).show();
+                            Toast.makeText(UtilityActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
                         }
                     });
         });
         semesterDialog.create().show();
+    }
+
+    @Override
+    public boolean onSupportNavigateUp() {
+        onBackPressed();
+        return true;
+    }
+
+    @Override
+    public void onBackPressed() {
+        startActivity(new Intent(UtilityActivity.this, HomeActivity.class));
     }
 }
