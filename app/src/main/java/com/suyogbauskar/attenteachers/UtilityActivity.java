@@ -26,12 +26,15 @@ import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.suyogbauskar.attenteachers.excelfiles.CreateExcelFileOfAttendance;
 
+import java.time.LocalDate;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import cn.pedant.SweetAlert.SweetAlertDialog;
 
 public class UtilityActivity extends AppCompatActivity {
 
     private final FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-    private Button excelBtn, attendanceBelow75Btn, subjectsBtn, uploadTimetableBtn;
+    private Button excelBtn, attendanceBelow75Btn, subjectsBtn, uploadTimetableBtn, promoteStudentsBtn, demoteStudentsBtn;
     private boolean subjectFound;
 
     @Override
@@ -50,6 +53,8 @@ public class UtilityActivity extends AppCompatActivity {
         attendanceBelow75Btn = findViewById(R.id.attendanceBelow75Btn);
         subjectsBtn = findViewById(R.id.subjectsBtn);
         uploadTimetableBtn = findViewById(R.id.uploadTimetableBtn);
+        promoteStudentsBtn = findViewById(R.id.promoteStudentsBtn);
+        demoteStudentsBtn = findViewById(R.id.demoteStudentsBtn);
     }
 
     private void setOnClickListeners() {
@@ -57,6 +62,77 @@ public class UtilityActivity extends AppCompatActivity {
         attendanceBelow75Btn.setOnClickListener(view -> showDialogForFindingStudentsBelow75());
         subjectsBtn.setOnClickListener(view -> startActivity(new Intent(UtilityActivity.this, SubjectsActivity.class)));
         uploadTimetableBtn.setOnClickListener(view -> chooseTimetable());
+        promoteStudentsBtn.setOnClickListener(view -> showSemesterDialog(1));
+        demoteStudentsBtn.setOnClickListener(view -> showSemesterDialog(-1));
+    }
+
+    private void showSemesterDialog(int value) {
+        AlertDialog.Builder semesterDialog = new AlertDialog.Builder(UtilityActivity.this);
+        semesterDialog.setTitle("Select Semester");
+        String[] items = {"Semester 2", "Semester 3", "Semester 4", "Semester 5", "Semester 6"};
+        AtomicInteger selectedSemester = new AtomicInteger();
+
+        semesterDialog.setSingleChoiceItems(items, -1, (dialog, which) -> {
+            switch (which) {
+                case 0:
+                    selectedSemester.set(2);
+                    break;
+                case 1:
+                    selectedSemester.set(3);
+                    break;
+                case 2:
+                    selectedSemester.set(4);
+                    break;
+                case 3:
+                    selectedSemester.set(5);
+                    break;
+                case 4:
+                    selectedSemester.set(6);
+                    break;
+            }
+            dialog.dismiss();
+
+            if ((selectedSemester.get() == 6) && (value == 1)) {
+                new SweetAlertDialog(UtilityActivity.this, SweetAlertDialog.WARNING_TYPE)
+                        .setTitleText("Are you sure?")
+                        .setContentText("After completing 6th semester students will be removed")
+                        .setConfirmText("Remove")
+                        .setConfirmClickListener(sDialog -> {
+                            sDialog.dismissWithAnimation();
+                            changeStudentsSemester(value, selectedSemester.get(), true);
+                        })
+                        .setCancelButton("Cancel", SweetAlertDialog::dismissWithAnimation)
+                        .show();
+            } else {
+                changeStudentsSemester(value, selectedSemester.get(), false);
+            }
+        });
+        semesterDialog.create().show();
+    }
+
+    private void changeStudentsSemester(int value, int selectedSemester, boolean isLastSemester) {
+        FirebaseDatabase.getInstance().getReference("students_data")
+                .orderByChild("semester")
+                .equalTo(selectedSemester)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        if (isLastSemester) {
+                            for (DataSnapshot dsp : snapshot.getChildren()) {
+                                dsp.child("semester").getRef().setValue(LocalDate.now().getYear());
+                            }
+                        } else {
+                            for (DataSnapshot dsp : snapshot.getChildren()) {
+                                dsp.child("semester").getRef().setValue(selectedSemester + value);
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        Toast.makeText(UtilityActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     private void uploadTimetable(Uri uri) {
@@ -98,7 +174,7 @@ public class UtilityActivity extends AppCompatActivity {
 
         AtomicInteger selectedSemester = new AtomicInteger();
         semesterDialog.setSingleChoiceItems(items, -1, (dialog, which) -> {
-            SharedPreferences sharedPreferences = getSharedPreferences("excelValuesPref",MODE_PRIVATE);
+            SharedPreferences sharedPreferences = getSharedPreferences("excelValuesPref", MODE_PRIVATE);
             SharedPreferences.Editor editor = sharedPreferences.edit();
             switch (which) {
                 case 0:
@@ -154,7 +230,7 @@ public class UtilityActivity extends AppCompatActivity {
                             String[] items2 = {"2023", "2024", "2025", "2026", "2027"};
 
                             yearDialog.setSingleChoiceItems(items2, -1, (dialog2, which2) -> {
-                                SharedPreferences sharedPreferences2 = getSharedPreferences("excelValuesPref",MODE_PRIVATE);
+                                SharedPreferences sharedPreferences2 = getSharedPreferences("excelValuesPref", MODE_PRIVATE);
                                 SharedPreferences.Editor editor2 = sharedPreferences2.edit();
                                 switch (which2) {
                                     case 0:
@@ -197,7 +273,7 @@ public class UtilityActivity extends AppCompatActivity {
 
         AtomicInteger selectedSemester = new AtomicInteger();
         semesterDialog.setSingleChoiceItems(items, -1, (dialog, which) -> {
-            SharedPreferences sharedPreferences = getSharedPreferences("attendanceBelow75Pref",MODE_PRIVATE);
+            SharedPreferences sharedPreferences = getSharedPreferences("attendanceBelow75Pref", MODE_PRIVATE);
             SharedPreferences.Editor editor = sharedPreferences.edit();
             switch (which) {
                 case 0:
@@ -252,7 +328,7 @@ public class UtilityActivity extends AppCompatActivity {
                             String[] items2 = {"All", "A Division", "B Division", "A1 Practical Batch", "A2 Practical Batch", "A3 Practical Batch", "B1 Practical Batch", "B2 Practical Batch"};
                             int checkedItem2 = 0;
                             classDialog.setSingleChoiceItems(items2, checkedItem2, (dialog2, which2) -> {
-                                SharedPreferences sharedPreferences2 = getSharedPreferences("attendanceBelow75Pref",MODE_PRIVATE);
+                                SharedPreferences sharedPreferences2 = getSharedPreferences("attendanceBelow75Pref", MODE_PRIVATE);
                                 SharedPreferences.Editor editor2 = sharedPreferences2.edit();
                                 switch (which2) {
                                     case 0:

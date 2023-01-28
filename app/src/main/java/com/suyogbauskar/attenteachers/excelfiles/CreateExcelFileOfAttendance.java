@@ -18,7 +18,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.suyogbauskar.attenteachers.R;
-import com.suyogbauskar.attenteachers.pojos.Student;
+import com.suyogbauskar.attenteachers.pojos.StudentData;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -70,13 +70,13 @@ public class CreateExcelFileOfAttendance extends Service {
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        List<Student> studentsListA = new ArrayList<>();
-                        List<Student> studentsListB = new ArrayList<>();
-                        List<Student> studentsListA1 = new ArrayList<>();
-                        List<Student> studentsListA2 = new ArrayList<>();
-                        List<Student> studentsListA3 = new ArrayList<>();
-                        List<Student> studentsListB1 = new ArrayList<>();
-                        List<Student> studentsListB2 = new ArrayList<>();
+                        List<StudentData> studentsListA = new ArrayList<>();
+                        List<StudentData> studentsListB = new ArrayList<>();
+                        List<StudentData> studentsListA1 = new ArrayList<>();
+                        List<StudentData> studentsListA2 = new ArrayList<>();
+                        List<StudentData> studentsListA3 = new ArrayList<>();
+                        List<StudentData> studentsListB1 = new ArrayList<>();
+                        List<StudentData> studentsListB2 = new ArrayList<>();
 
                         for (DataSnapshot dsp : snapshot.getChildren()) {
                             String firstname = dsp.child("firstname").getValue(String.class);
@@ -84,35 +84,35 @@ public class CreateExcelFileOfAttendance extends Service {
                             int rollNo = dsp.child("rollNo").getValue(Integer.class);
 
                             if (dsp.child("division").getValue(String.class).equals("A")) {
-                                studentsListA.add(new Student(firstname, lastname, rollNo));
+                                studentsListA.add(new StudentData(rollNo, firstname, lastname));
                             }
                             if (dsp.child("division").getValue(String.class).equals("B")) {
-                                studentsListB.add(new Student(firstname, lastname, rollNo));
+                                studentsListB.add(new StudentData(rollNo, firstname, lastname));
                             }
                             if (dsp.child("batch").getValue(Integer.class) == 1) {
-                                studentsListA1.add(new Student(firstname, lastname, rollNo));
+                                studentsListA1.add(new StudentData(rollNo, firstname, lastname));
                             }
                             if (dsp.child("batch").getValue(Integer.class) == 2) {
-                                studentsListA2.add(new Student(firstname, lastname, rollNo));
+                                studentsListA2.add(new StudentData(rollNo, firstname, lastname));
                             }
                             if (dsp.child("batch").getValue(Integer.class) == 3) {
-                                studentsListA3.add(new Student(firstname, lastname, rollNo));
+                                studentsListA3.add(new StudentData(rollNo, firstname, lastname));
                             }
                             if (dsp.child("batch").getValue(Integer.class) == 4) {
-                                studentsListB1.add(new Student(firstname, lastname, rollNo));
+                                studentsListB1.add(new StudentData(rollNo, firstname, lastname));
                             }
                             if (dsp.child("batch").getValue(Integer.class) == 5) {
-                                studentsListB2.add(new Student(firstname, lastname, rollNo));
+                                studentsListB2.add(new StudentData(rollNo, firstname, lastname));
                             }
                         }
 
-                        studentsListA.sort(Comparator.comparingInt(Student::getRollNo));
-                        studentsListB.sort(Comparator.comparingInt(Student::getRollNo));
-                        studentsListA1.sort(Comparator.comparingInt(Student::getRollNo));
-                        studentsListA2.sort(Comparator.comparingInt(Student::getRollNo));
-                        studentsListA3.sort(Comparator.comparingInt(Student::getRollNo));
-                        studentsListB1.sort(Comparator.comparingInt(Student::getRollNo));
-                        studentsListB2.sort(Comparator.comparingInt(Student::getRollNo));
+                        studentsListA.sort(Comparator.comparingInt(StudentData::getRollNo));
+                        studentsListB.sort(Comparator.comparingInt(StudentData::getRollNo));
+                        studentsListA1.sort(Comparator.comparingInt(StudentData::getRollNo));
+                        studentsListA2.sort(Comparator.comparingInt(StudentData::getRollNo));
+                        studentsListA3.sort(Comparator.comparingInt(StudentData::getRollNo));
+                        studentsListB1.sort(Comparator.comparingInt(StudentData::getRollNo));
+                        studentsListB2.sort(Comparator.comparingInt(StudentData::getRollNo));
 
                         createExcelFile(studentsListA,"A",0, new XSSFWorkbook());
                         createExcelFile(studentsListB,"B",10, new XSSFWorkbook());
@@ -130,22 +130,22 @@ public class CreateExcelFileOfAttendance extends Service {
                 });
     }
 
-    private void createExcelFile(List<Student> studentsList, String className, int errorCode, XSSFWorkbook xssfWorkbook) {
+    private void createExcelFile(List<StudentData> studentsList, String className, int errorCode, XSSFWorkbook xssfWorkbook) {
             FirebaseDatabase.getInstance().getReference("attendance/CO" + semester + "-" + className + "/" + subjectCode + "/" + year)
                     .addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(@NonNull DataSnapshot snapshot) {
-                            Map<String, Map<String, List<Student>>> requiredPresentData = new HashMap<>();
+                            Map<String, Map<String, List<StudentData>>> requiredPresentData = new HashMap<>();
 
                             if (!snapshot.exists()) {
                                 sendErrorNotification("No attendance found of CO" + semester + "-" + className + " " + year, errorCode + 1);
                                 return;
                             }
                             int counter = 0;
-                            Map<String, List<Student>> tempMap = new HashMap<>();
+                            Map<String, List<StudentData>> tempMap = new HashMap<>();
                             String monthName, firstname = "", lastname = "", dayName = "";
                             int rollNo = 0;
-                            List<Student> tempStudentList = new ArrayList<>();
+                            List<StudentData> tempStudentList = new ArrayList<>();
 
                             Map<String, Map<String, Map<String, Map<String, Object>>>> allMonthsAndChildren = (Map<String, Map<String, Map<String, Map<String, Object>>>>) snapshot.getValue();
 
@@ -173,7 +173,7 @@ public class CreateExcelFileOfAttendance extends Service {
                                             }
 
                                             if (counter % 3 == 0) {
-                                                tempStudentList.add(new Student(firstname, lastname, rollNo));
+                                                tempStudentList.add(new StudentData(rollNo, firstname, lastname));
                                             }
                                         }
 
@@ -200,21 +200,21 @@ public class CreateExcelFileOfAttendance extends Service {
                     });
     }
 
-    private void fillAttendance(Map<String, Map<String, List<Student>>> requiredPresentData, XSSFWorkbook xssfWorkbook) {
+    private void fillAttendance(Map<String, Map<String, List<StudentData>>> requiredPresentData, XSSFWorkbook xssfWorkbook) {
         int excelRollNo, rollNoFromList, listRollNoIndex, totalRows, columnNo = 0, rowNo;
         String excelDayName;
-        List<Student> tempStudentList = new ArrayList<>();
+        List<StudentData> tempStudentList = new ArrayList<>();
         XSSFSheet xssfSheet;
         XSSFRow xssfRow;
         XSSFCell xssfCell;
 
-        for (Map.Entry<String, Map<String, List<Student>>> entry1 : requiredPresentData.entrySet()) {
+        for (Map.Entry<String, Map<String, List<StudentData>>> entry1 : requiredPresentData.entrySet()) {
             //Month names
             xssfSheet = xssfWorkbook.getSheet(entry1.getKey());
 
             totalRows = xssfSheet.getLastRowNum();
 
-            for (Map.Entry<String, List<Student>> entry2 : entry1.getValue().entrySet()) {
+            for (Map.Entry<String, List<StudentData>> entry2 : entry1.getValue().entrySet()) {
                 //Day names
                 listRollNoIndex = 0;
 
@@ -233,7 +233,7 @@ public class CreateExcelFileOfAttendance extends Service {
                     tempStudentList.clear();
                 }
                 tempStudentList.addAll(entry2.getValue());
-                tempStudentList.sort(Comparator.comparingInt(Student::getRollNo));
+                tempStudentList.sort(Comparator.comparingInt(StudentData::getRollNo));
 
                 for (rowNo = 1; rowNo < totalRows + 1; rowNo++) {
                     try {
@@ -260,7 +260,7 @@ public class CreateExcelFileOfAttendance extends Service {
         }
     }
 
-    private void calculatePercentage(Map<String, Map<String, List<Student>>> requiredPresentData, XSSFWorkbook xssfWorkbook) {
+    private void calculatePercentage(Map<String, Map<String, List<StudentData>>> requiredPresentData, XSSFWorkbook xssfWorkbook) {
         int totalLectures, studentAttendance, totalRows, totalColumns, rowNo, columnNo;
         float percentage;
         String cellValue;
@@ -268,7 +268,7 @@ public class CreateExcelFileOfAttendance extends Service {
         XSSFRow xssfRow;
         XSSFCell xssfCell;
 
-        for (Map.Entry<String, Map<String, List<Student>>> entry1 : requiredPresentData.entrySet()) {
+        for (Map.Entry<String, Map<String, List<StudentData>>> entry1 : requiredPresentData.entrySet()) {
             //Month names
             xssfSheet = xssfWorkbook.getSheet(entry1.getKey());
 
@@ -324,7 +324,7 @@ public class CreateExcelFileOfAttendance extends Service {
         }
     }
 
-    private void fillStaticData(Map<String, Map<String, Map<String, Map<String, Object>>>> allMonthsAndChildren, List<Student> students, XSSFWorkbook xssfWorkbook, int errorCode) {
+    private void fillStaticData(Map<String, Map<String, Map<String, Map<String, Object>>>> allMonthsAndChildren, List<StudentData> students, XSSFWorkbook xssfWorkbook, int errorCode) {
         int rowNo, columnNo;
         XSSFSheet xssfSheet;
         XSSFRow xssfRow;
@@ -384,7 +384,7 @@ public class CreateExcelFileOfAttendance extends Service {
             xssfCell.setCellValue("Percentage");
 
             //Filling All Students Data
-            for (Student student : students) {
+            for (StudentData student : students) {
                 rowNo++;
                 columnNo = 0;
 

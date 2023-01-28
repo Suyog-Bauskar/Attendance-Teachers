@@ -22,7 +22,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.kal.rackmonthpicker.RackMonthPicker;
-import com.suyogbauskar.attenteachers.pojos.Student;
+import com.suyogbauskar.attenteachers.pojos.StudentData;
 import com.suyogbauskar.attenteachers.utils.ProgressDialog;
 
 import java.util.ArrayList;
@@ -41,7 +41,7 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
     private Map<String, Map<String, Map<String, Object>>> allDataOfMonths;
     private String subjectCode, whichClass;
     private Map<String, Float> studentsBelow75List;
-    private Map<String, Student> allStudents;
+    private Map<String, StudentData> allStudents;
     private final ProgressDialog progressDialog = new ProgressDialog();
     private int semester;
 
@@ -504,7 +504,7 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
                             String firstname = dsp.child("firstname").getValue(String.class);
                             String lastname = dsp.child("lastname").getValue(String.class);
                             int rollNo = dsp.child("rollNo").getValue(Integer.class);
-                            allStudents.put(dsp.getKey(), new Student(firstname, lastname, rollNo));
+                            allStudents.put(dsp.getKey(), new StudentData(rollNo, firstname, lastname));
                         }
 
                         for (Map.Entry<String, Float> entry : studentsBelow75List.entrySet()) {

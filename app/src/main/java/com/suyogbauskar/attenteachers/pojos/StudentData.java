@@ -33,6 +33,12 @@ public class StudentData {
         this.lastname = lastname;
     }
 
+    public StudentData(int rollNo, String firstname, String lastname) {
+        this.rollNo = rollNo;
+        this.firstname = firstname;
+        this.lastname = lastname;
+    }
+
     public int getUnitTest1Marks() {
         return unitTest1Marks;
     }

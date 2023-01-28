@@ -41,6 +41,30 @@
         android:textAllCaps="false"
         android:textSize="16sp" />
 
+    <Button
+        android:id="@+id/promoteStudentsBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/rounded_rectangle"
+        android:layout_margin="15dp"
+        android:text="Promote Students"
+        android:layout_below="@id/uploadTimetableBtn"
+        android:layout_centerHorizontal="true"
+        android:textAllCaps="false"
+        android:textSize="16sp" />
+
+    <Button
+        android:id="@+id/demoteStudentsBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/rounded_rectangle"
+        android:layout_margin="15dp"
+        android:text="Demote Students"
+        android:layout_below="@id/promoteStudentsBtn"
+        android:layout_centerHorizontal="true"
+        android:textAllCaps="false"
+        android:textSize="16sp" />
+
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:id="@+id/excelBtn"
         android:layout_width="wrap_content"
