@@ -39,6 +39,14 @@ public class StudentData {
         this.lastname = lastname;
     }
 
+    public StudentData(int rollNo, int batch, int semester, long enrollNo, String division) {
+        this.rollNo = rollNo;
+        this.batch = batch;
+        this.semester = semester;
+        this.enrollNo = enrollNo;
+        this.division = division;
+    }
+
     public int getUnitTest1Marks() {
         return unitTest1Marks;
     }

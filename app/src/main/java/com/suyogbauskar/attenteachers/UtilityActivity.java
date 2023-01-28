@@ -25,8 +25,15 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.suyogbauskar.attenteachers.excelfiles.CreateExcelFileOfAttendance;
+import com.suyogbauskar.attenteachers.pojos.StudentData;
+import com.suyogbauskar.attenteachers.pojos.UnitTestMarks;
 
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import cn.pedant.SweetAlert.SweetAlertDialog;
@@ -34,8 +41,9 @@ import cn.pedant.SweetAlert.SweetAlertDialog;
 public class UtilityActivity extends AppCompatActivity {
 
     private final FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-    private Button excelBtn, attendanceBelow75Btn, subjectsBtn, uploadTimetableBtn, promoteStudentsBtn, demoteStudentsBtn;
+    private Button excelBtn, attendanceBelow75Btn, subjectsBtn, uploadTimetableBtn, removeLastSemesterStudentsBtn, updateAllStudentsDetailsBtn;
     private boolean subjectFound;
+    private int selectedSemester;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,8 +61,8 @@ public class UtilityActivity extends AppCompatActivity {
         attendanceBelow75Btn = findViewById(R.id.attendanceBelow75Btn);
         subjectsBtn = findViewById(R.id.subjectsBtn);
         uploadTimetableBtn = findViewById(R.id.uploadTimetableBtn);
-        promoteStudentsBtn = findViewById(R.id.promoteStudentsBtn);
-        demoteStudentsBtn = findViewById(R.id.demoteStudentsBtn);
+        removeLastSemesterStudentsBtn = findViewById(R.id.removeLastSemesterStudentsBtn);
+        updateAllStudentsDetailsBtn = findViewById(R.id.updateAllStudentsDetailsBtn);
     }
 
     private void setOnClickListeners() {
@@ -62,77 +70,158 @@ public class UtilityActivity extends AppCompatActivity {
         attendanceBelow75Btn.setOnClickListener(view -> showDialogForFindingStudentsBelow75());
         subjectsBtn.setOnClickListener(view -> startActivity(new Intent(UtilityActivity.this, SubjectsActivity.class)));
         uploadTimetableBtn.setOnClickListener(view -> chooseTimetable());
-        promoteStudentsBtn.setOnClickListener(view -> showSemesterDialog(1));
-        demoteStudentsBtn.setOnClickListener(view -> showSemesterDialog(-1));
+        removeLastSemesterStudentsBtn.setOnClickListener(view -> removeLastSemesterStudents());
+        updateAllStudentsDetailsBtn.setOnClickListener(view -> showSemesterDialog());
     }
 
-    private void showSemesterDialog(int value) {
+    private void removeLastSemesterStudents() {
+        new SweetAlertDialog(UtilityActivity.this, SweetAlertDialog.WARNING_TYPE)
+                .setTitleText("Are you sure?")
+                .setContentText("After completing 6th semester students will be removed")
+                .setConfirmText("Remove")
+                .setConfirmClickListener(sDialog -> {
+                    sDialog.dismissWithAnimation();
+                    FirebaseDatabase.getInstance().getReference("students_data")
+                            .orderByChild("semester")
+                            .equalTo(6)
+                            .addListenerForSingleValueEvent(new ValueEventListener() {
+                                @Override
+                                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                    for (DataSnapshot dsp : snapshot.getChildren()) {
+                                        dsp.child("semester").getRef().setValue(LocalDate.now().getYear());
+                                    }
+                                    Toast.makeText(UtilityActivity.this, "Last semester students removed successfully", Toast.LENGTH_SHORT).show();
+                                }
+
+                                @Override
+                                public void onCancelled(@NonNull DatabaseError error) {
+                                    Toast.makeText(UtilityActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                })
+                .setCancelButton("Cancel", SweetAlertDialog::dismissWithAnimation)
+                .show();
+    }
+
+    private void showSemesterDialog() {
         AlertDialog.Builder semesterDialog = new AlertDialog.Builder(UtilityActivity.this);
         semesterDialog.setTitle("Select Semester");
-        String[] items = {"Semester 2", "Semester 3", "Semester 4", "Semester 5", "Semester 6"};
-        AtomicInteger selectedSemester = new AtomicInteger();
+        String[] items = {"Semester 1", "Semester 2", "Semester 3", "Semester 4", "Semester 5", "Semester 6"};
 
         semesterDialog.setSingleChoiceItems(items, -1, (dialog, which) -> {
             switch (which) {
                 case 0:
-                    selectedSemester.set(2);
+                    selectedSemester = 1;
                     break;
                 case 1:
-                    selectedSemester.set(3);
+                    selectedSemester = 2;
                     break;
                 case 2:
-                    selectedSemester.set(4);
+                    selectedSemester = 3;
                     break;
                 case 3:
-                    selectedSemester.set(5);
+                    selectedSemester = 4;
                     break;
                 case 4:
-                    selectedSemester.set(6);
+                    selectedSemester = 5;
+                    break;
+                case 5:
+                    selectedSemester = 6;
                     break;
             }
             dialog.dismiss();
-
-            if ((selectedSemester.get() == 6) && (value == 1)) {
-                new SweetAlertDialog(UtilityActivity.this, SweetAlertDialog.WARNING_TYPE)
-                        .setTitleText("Are you sure?")
-                        .setContentText("After completing 6th semester students will be removed")
-                        .setConfirmText("Remove")
-                        .setConfirmClickListener(sDialog -> {
-                            sDialog.dismissWithAnimation();
-                            changeStudentsSemester(value, selectedSemester.get(), true);
-                        })
-                        .setCancelButton("Cancel", SweetAlertDialog::dismissWithAnimation)
-                        .show();
-            } else {
-                changeStudentsSemester(value, selectedSemester.get(), false);
-            }
+            uploadFile();
         });
         semesterDialog.create().show();
     }
 
-    private void changeStudentsSemester(int value, int selectedSemester, boolean isLastSemester) {
-        FirebaseDatabase.getInstance().getReference("students_data")
-                .orderByChild("semester")
-                .equalTo(selectedSemester)
-                .addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        if (isLastSemester) {
-                            for (DataSnapshot dsp : snapshot.getChildren()) {
-                                dsp.child("semester").getRef().setValue(LocalDate.now().getYear());
-                            }
-                        } else {
-                            for (DataSnapshot dsp : snapshot.getChildren()) {
-                                dsp.child("semester").getRef().setValue(selectedSemester + value);
+    ActivityResultLauncher<Intent> activityResultLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if ((result.getResultCode() == Activity.RESULT_OK) && (result.getData() != null)) {
+                    readCSVFile(result.getData().getData());
+                }
+            }
+    );
+
+    private void readCSVFile(Uri uri) {
+        try {
+            Map<Long, StudentData> studentsDetailsList = new HashMap<>();
+            int rollNo, batch, semester;
+            long enrollNo;
+            String division;
+            Scanner scanner = new Scanner(new InputStreamReader(getContentResolver().openInputStream(uri)));
+
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine();
+                String[] splitted = line.split(",");
+
+                enrollNo = Long.parseLong(splitted[0]);
+                rollNo = Integer.parseInt(splitted[1]);
+                semester = Integer.parseInt(splitted[2]);
+                division = splitted[3].toUpperCase();
+                batch = Integer.parseInt(splitted[4]);
+
+                if (String.valueOf(enrollNo).length() != 10) {
+                    Toast.makeText(this, "Invalid enrollment no.", Toast.LENGTH_SHORT).show();
+                    break;
+                } else if (String.valueOf(rollNo).length() > 3) {
+                    Toast.makeText(this, "Invalid roll no.", Toast.LENGTH_SHORT).show();
+                    break;
+                } else if (semester <= 0 || semester > 6) {
+                    Toast.makeText(this, "Invalid semester", Toast.LENGTH_SHORT).show();
+                    break;
+                } else if (!(division.equals("A") || division.equals("B"))) {
+                    Toast.makeText(this, "Invalid division", Toast.LENGTH_SHORT).show();
+                    break;
+                } else if (batch <= 0 || batch > 3) {
+                    Toast.makeText(this, "Invalid batch", Toast.LENGTH_SHORT).show();
+                    break;
+                } else {
+                    studentsDetailsList.put(enrollNo, new StudentData(rollNo, batch, semester, enrollNo, division));
+                }
+            }
+
+            FirebaseDatabase.getInstance().getReference("students_data")
+                    .orderByChild("semester")
+                    .equalTo(selectedSemester)
+                    .addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot snapshot) {
+                            int rollNo, batch, semester;
+                            long enrollNo;
+                            String division;
+
+                            for (DataSnapshot ds : snapshot.getChildren()) {
+                                enrollNo = studentsDetailsList.get(ds.child("enrollNo").getValue(Long.class)).getRollNo();
+
+                                testOneMarks = Integer.parseInt(unitTestMarksList.get(ds.child("rollNo").getValue(Integer.class)).getUnitTest1Marks());
+                                testTwoMarks = Integer.parseInt(unitTestMarksList.get(ds.child("rollNo").getValue(Integer.class)).getUnitTest2Marks());
+
+                                ds.child("subjects").child(subjectCodeTeacher).child("unitTest1Marks").getRef().setValue(testOneMarks);
+                                ds.child("subjects").child(subjectCodeTeacher).child("unitTest2Marks").getRef().setValue(testTwoMarks);
                             }
                         }
-                    }
 
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError error) {
-                        Toast.makeText(UtilityActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
-                    }
-                });
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError error) {
+                            Toast.makeText(UtilityActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+
+        } catch (NumberFormatException e) {
+            Toast.makeText(this, "Number Expected", Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void uploadFile() {
+        Intent data = new Intent(Intent.ACTION_GET_CONTENT);
+        Uri uri = Uri.parse(Environment.getExternalStorageDirectory().getPath());
+        data.setDataAndType(uri, "text/csv");
+        data = Intent.createChooser(data, "Choose students details");
+        activityResultLauncher.launch(data);
     }
 
     private void uploadTimetable(Uri uri) {
