@@ -26,9 +26,7 @@ import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.suyogbauskar.attenteachers.excelfiles.CreateExcelFileOfAttendance;
 import com.suyogbauskar.attenteachers.pojos.StudentData;
-import com.suyogbauskar.attenteachers.pojos.UnitTestMarks;
 
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.time.LocalDate;
 import java.util.HashMap;
@@ -43,7 +41,6 @@ public class UtilityActivity extends AppCompatActivity {
     private final FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
     private Button excelBtn, attendanceBelow75Btn, subjectsBtn, uploadTimetableBtn, removeLastSemesterStudentsBtn, updateAllStudentsDetailsBtn;
     private boolean subjectFound;
-    private int selectedSemester;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,13 +68,13 @@ public class UtilityActivity extends AppCompatActivity {
         subjectsBtn.setOnClickListener(view -> startActivity(new Intent(UtilityActivity.this, SubjectsActivity.class)));
         uploadTimetableBtn.setOnClickListener(view -> chooseTimetable());
         removeLastSemesterStudentsBtn.setOnClickListener(view -> removeLastSemesterStudents());
-        updateAllStudentsDetailsBtn.setOnClickListener(view -> showSemesterDialog());
+        updateAllStudentsDetailsBtn.setOnClickListener(view -> uploadFile());
     }
 
     private void removeLastSemesterStudents() {
         new SweetAlertDialog(UtilityActivity.this, SweetAlertDialog.WARNING_TYPE)
                 .setTitleText("Are you sure?")
-                .setContentText("After completing 6th semester students will be removed")
+                .setContentText("6th semester students will be removed")
                 .setConfirmText("Remove")
                 .setConfirmClickListener(sDialog -> {
                     sDialog.dismissWithAnimation();
@@ -103,42 +100,10 @@ public class UtilityActivity extends AppCompatActivity {
                 .show();
     }
 
-    private void showSemesterDialog() {
-        AlertDialog.Builder semesterDialog = new AlertDialog.Builder(UtilityActivity.this);
-        semesterDialog.setTitle("Select Semester");
-        String[] items = {"Semester 1", "Semester 2", "Semester 3", "Semester 4", "Semester 5", "Semester 6"};
-
-        semesterDialog.setSingleChoiceItems(items, -1, (dialog, which) -> {
-            switch (which) {
-                case 0:
-                    selectedSemester = 1;
-                    break;
-                case 1:
-                    selectedSemester = 2;
-                    break;
-                case 2:
-                    selectedSemester = 3;
-                    break;
-                case 3:
-                    selectedSemester = 4;
-                    break;
-                case 4:
-                    selectedSemester = 5;
-                    break;
-                case 5:
-                    selectedSemester = 6;
-                    break;
-            }
-            dialog.dismiss();
-            uploadFile();
-        });
-        semesterDialog.create().show();
-    }
-
     ActivityResultLauncher<Intent> activityResultLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
-                if ((result.getResultCode() == Activity.RESULT_OK) && (result.getData() != null)) {
+                if (result.getResultCode() == Activity.RESULT_OK) {
                     readCSVFile(result.getData().getData());
                 }
             }
@@ -151,6 +116,7 @@ public class UtilityActivity extends AppCompatActivity {
             long enrollNo;
             String division;
             Scanner scanner = new Scanner(new InputStreamReader(getContentResolver().openInputStream(uri)));
+            scanner.nextLine();
 
             while (scanner.hasNextLine()) {
                 String line = scanner.nextLine();
@@ -183,23 +149,14 @@ public class UtilityActivity extends AppCompatActivity {
             }
 
             FirebaseDatabase.getInstance().getReference("students_data")
-                    .orderByChild("semester")
-                    .equalTo(selectedSemester)
                     .addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(@NonNull DataSnapshot snapshot) {
-                            int rollNo, batch, semester;
-                            long enrollNo;
-                            String division;
-
                             for (DataSnapshot ds : snapshot.getChildren()) {
-                                enrollNo = studentsDetailsList.get(ds.child("enrollNo").getValue(Long.class)).getRollNo();
-
-                                testOneMarks = Integer.parseInt(unitTestMarksList.get(ds.child("rollNo").getValue(Integer.class)).getUnitTest1Marks());
-                                testTwoMarks = Integer.parseInt(unitTestMarksList.get(ds.child("rollNo").getValue(Integer.class)).getUnitTest2Marks());
-
-                                ds.child("subjects").child(subjectCodeTeacher).child("unitTest1Marks").getRef().setValue(testOneMarks);
-                                ds.child("subjects").child(subjectCodeTeacher).child("unitTest2Marks").getRef().setValue(testTwoMarks);
+                                ds.child("rollNo").getRef().setValue(studentsDetailsList.get(ds.child("enrollNo").getValue(Long.class)).getRollNo());
+                                ds.child("batch").getRef().setValue(studentsDetailsList.get(ds.child("enrollNo").getValue(Long.class)).getBatch());
+                                ds.child("semester").getRef().setValue(studentsDetailsList.get(ds.child("enrollNo").getValue(Long.class)).getSemester());
+                                ds.child("division").getRef().setValue(studentsDetailsList.get(ds.child("enrollNo").getValue(Long.class)).getDivision());
                             }
                         }
 
@@ -244,13 +201,13 @@ public class UtilityActivity extends AppCompatActivity {
         Uri uri = Uri.parse(Environment.getExternalStorageDirectory().getPath());
         data.setDataAndType(uri, "text/csv");
         data = Intent.createChooser(data, "Choose timetable");
-        activityResultLauncher.launch(data);
+        activityResultLauncherForUploadingTimetable.launch(data);
     }
 
-    ActivityResultLauncher<Intent> activityResultLauncher = registerForActivityResult(
+    ActivityResultLauncher<Intent> activityResultLauncherForUploadingTimetable = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
-                if ((result.getResultCode() == Activity.RESULT_OK) && (result.getData() != null)) {
+                if (result.getResultCode() == Activity.RESULT_OK) {
                     uploadTimetable(result.getData().getData());
                 }
             }

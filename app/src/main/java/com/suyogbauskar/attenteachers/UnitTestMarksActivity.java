@@ -304,7 +304,7 @@ public class UnitTestMarksActivity extends AppCompatActivity {
     ActivityResultLauncher<Intent> activityResultLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
-                if ((result.getResultCode() == Activity.RESULT_OK) && (result.getData() != null)) {
+                if (result.getResultCode() == Activity.RESULT_OK) {
                     readCSVFile(result.getData().getData());
                 }
             }
@@ -317,15 +317,12 @@ public class UnitTestMarksActivity extends AppCompatActivity {
             InputStreamReader isr = new InputStreamReader(inputStream);
 
             Scanner scanner = new Scanner(isr);
+            scanner.nextLine();
+
             while (scanner.hasNextLine()) {
                 String line = scanner.nextLine();
                 String[] splitted = line.split(",");
-                try {
-                    if (Integer.parseInt(splitted[0]) > 0) {
-                        unitTestMarksList.put(Integer.parseInt(splitted[0]), new UnitTestMarks(splitted[1], splitted[2]));
-                    }
-                } catch (NumberFormatException ignored) {
-                }
+                unitTestMarksList.put(Integer.parseInt(splitted[0]), new UnitTestMarks(splitted[1], splitted[2]));
             }
 
             FirebaseDatabase.getInstance().getReference("students_data")
@@ -334,14 +331,9 @@ public class UnitTestMarksActivity extends AppCompatActivity {
                     .addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(@NonNull DataSnapshot snapshot) {
-                            int testOneMarks, testTwoMarks;
-
                             for (DataSnapshot ds : snapshot.getChildren()) {
-                                testOneMarks = Integer.parseInt(unitTestMarksList.get(ds.child("rollNo").getValue(Integer.class)).getUnitTest1Marks());
-                                testTwoMarks = Integer.parseInt(unitTestMarksList.get(ds.child("rollNo").getValue(Integer.class)).getUnitTest2Marks());
-
-                                ds.child("subjects").child(subjectCodeTeacher).child("unitTest1Marks").getRef().setValue(testOneMarks);
-                                ds.child("subjects").child(subjectCodeTeacher).child("unitTest2Marks").getRef().setValue(testTwoMarks);
+                                ds.child("subjects").child(subjectCodeTeacher).child("unitTest1Marks").getRef().setValue(Integer.parseInt(unitTestMarksList.get(ds.child("rollNo").getValue(Integer.class)).getUnitTest1Marks()));
+                                ds.child("subjects").child(subjectCodeTeacher).child("unitTest2Marks").getRef().setValue(Integer.parseInt(unitTestMarksList.get(ds.child("rollNo").getValue(Integer.class)).getUnitTest2Marks()));
                             }
                         }
 
