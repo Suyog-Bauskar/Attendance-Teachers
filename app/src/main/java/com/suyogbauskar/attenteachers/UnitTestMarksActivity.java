@@ -1,12 +1,12 @@
 package com.suyogbauskar.attenteachers;
 
-import android.app.Activity;
+import static androidx.constraintlayout.helper.widget.MotionEffect.TAG;
+
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
-import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.View;
@@ -16,8 +16,6 @@ import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.PopupMenu;
@@ -31,8 +29,7 @@ import com.google.firebase.database.ValueEventListener;
 import com.suyogbauskar.attenteachers.pojos.StudentData;
 import com.suyogbauskar.attenteachers.pojos.UnitTestMarks;
 
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
@@ -64,7 +61,7 @@ public class UnitTestMarksActivity extends AppCompatActivity {
         isFirstRow = true;
         findAllViews();
         selectSemesterBtn.setOnClickListener(view -> showSemesterAndUnitTestPickerDialog());
-        uploadBtn.setOnClickListener(view -> uploadFile());
+        uploadBtn.setOnClickListener(view -> readCSVFile());
         deleteBtn.setOnClickListener(view -> deleteMarks());
     }
 
@@ -301,22 +298,10 @@ public class UnitTestMarksActivity extends AppCompatActivity {
         table.addView(tbRow);
     }
 
-    ActivityResultLauncher<Intent> activityResultLauncher = registerForActivityResult(
-            new ActivityResultContracts.StartActivityForResult(),
-            result -> {
-                if (result.getResultCode() == Activity.RESULT_OK) {
-                    readCSVFile(result.getData().getData());
-                }
-            }
-    );
-
-    private void readCSVFile(Uri uri) {
+    private void readCSVFile() {
         try {
             Map<Integer, UnitTestMarks> unitTestMarksList = new HashMap<>();
-            InputStream inputStream = getContentResolver().openInputStream(uri);
-            InputStreamReader isr = new InputStreamReader(inputStream);
-
-            Scanner scanner = new Scanner(isr);
+            Scanner scanner = new Scanner(new File(getApplicationContext().getExternalFilesDir(null), "CO" + selectedSemester + "_Unit_Test_Marks.csv"));
             scanner.nextLine();
 
             while (scanner.hasNextLine()) {
@@ -344,16 +329,8 @@ public class UnitTestMarksActivity extends AppCompatActivity {
                     });
 
         } catch (Exception e) {
-            Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
+            Log.d(TAG, "readCSVFile: " + e.getMessage());
         }
-    }
-
-    private void uploadFile() {
-        Intent data = new Intent(Intent.ACTION_GET_CONTENT);
-        Uri uri = Uri.parse(Environment.getExternalStorageDirectory().getPath());
-        data.setDataAndType(uri, "text/csv");
-        data = Intent.createChooser(data, "Choose unit test marks");
-        activityResultLauncher.launch(data);
     }
 
     @Override

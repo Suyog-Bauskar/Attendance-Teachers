@@ -1,18 +1,11 @@
 package com.suyogbauskar.attenteachers;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.database.Cursor;
-import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
-import android.provider.OpenableColumns;
 import android.widget.Button;
 import android.widget.Toast;
 
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -24,10 +17,12 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageMetadata;
 import com.suyogbauskar.attenteachers.excelfiles.CreateExcelFileOfAttendance;
 import com.suyogbauskar.attenteachers.pojos.StudentData;
 
-import java.io.InputStreamReader;
+import java.io.File;
+import java.io.FileInputStream;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
@@ -66,9 +61,9 @@ public class UtilityActivity extends AppCompatActivity {
         excelBtn.setOnClickListener(view -> showDialogForCreatingExcelFile());
         attendanceBelow75Btn.setOnClickListener(view -> showDialogForFindingStudentsBelow75());
         subjectsBtn.setOnClickListener(view -> startActivity(new Intent(UtilityActivity.this, SubjectsActivity.class)));
-        uploadTimetableBtn.setOnClickListener(view -> chooseTimetable());
+        uploadTimetableBtn.setOnClickListener(view -> showDialogOfSemester());
         removeLastSemesterStudentsBtn.setOnClickListener(view -> removeLastSemesterStudents());
-        updateAllStudentsDetailsBtn.setOnClickListener(view -> uploadFile());
+        updateAllStudentsDetailsBtn.setOnClickListener(view -> readCSVFile());
     }
 
     private void removeLastSemesterStudents() {
@@ -100,22 +95,13 @@ public class UtilityActivity extends AppCompatActivity {
                 .show();
     }
 
-    ActivityResultLauncher<Intent> activityResultLauncher = registerForActivityResult(
-            new ActivityResultContracts.StartActivityForResult(),
-            result -> {
-                if (result.getResultCode() == Activity.RESULT_OK) {
-                    readCSVFile(result.getData().getData());
-                }
-            }
-    );
-
-    private void readCSVFile(Uri uri) {
+    private void readCSVFile() {
         try {
             Map<Long, StudentData> studentsDetailsList = new HashMap<>();
             int rollNo, batch, semester;
             long enrollNo;
             String division;
-            Scanner scanner = new Scanner(new InputStreamReader(getContentResolver().openInputStream(uri)));
+            Scanner scanner = new Scanner(new File(getApplicationContext().getExternalFilesDir(null), "Students_Details.csv"));
             scanner.nextLine();
 
             while (scanner.hasNextLine()) {
@@ -173,22 +159,15 @@ public class UtilityActivity extends AppCompatActivity {
         }
     }
 
-    private void uploadFile() {
-        Intent data = new Intent(Intent.ACTION_GET_CONTENT);
-        Uri uri = Uri.parse(Environment.getExternalStorageDirectory().getPath());
-        data.setDataAndType(uri, "text/csv");
-        data = Intent.createChooser(data, "Choose students details");
-        activityResultLauncher.launch(data);
-    }
-
-    private void uploadTimetable(Uri uri) {
+    private void uploadTimetable(int selectedSemester) {
         try {
-            Cursor returnCursor = getContentResolver().query(uri, null, null, null, null);
-            int nameIndex = returnCursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
-            returnCursor.moveToFirst();
-
-            FirebaseStorage.getInstance().getReference().child("CO").child("Students_Timetables").child(returnCursor.getString(nameIndex))
-                    .putFile(uri)
+            String name = "CO" + selectedSemester + "_Timetable.csv";
+            File file = new File(getApplicationContext().getExternalFilesDir(null), name);
+            StorageMetadata metadata = new StorageMetadata.Builder()
+                    .setContentType("text/csv")
+                    .build();
+            FirebaseStorage.getInstance().getReference().child("CO").child("Students_Timetables").child(name)
+                    .putStream(new FileInputStream(file), metadata)
                     .addOnSuccessListener(taskSnapshot -> Toast.makeText(UtilityActivity.this, "Timetable uploaded successfully", Toast.LENGTH_SHORT).show())
                     .addOnFailureListener(e -> Toast.makeText(UtilityActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show());
         } catch (Exception e) {
@@ -196,22 +175,35 @@ public class UtilityActivity extends AppCompatActivity {
         }
     }
 
-    private void chooseTimetable() {
-        Intent data = new Intent(Intent.ACTION_GET_CONTENT);
-        Uri uri = Uri.parse(Environment.getExternalStorageDirectory().getPath());
-        data.setDataAndType(uri, "text/csv");
-        data = Intent.createChooser(data, "Choose timetable");
-        activityResultLauncherForUploadingTimetable.launch(data);
-    }
-
-    ActivityResultLauncher<Intent> activityResultLauncherForUploadingTimetable = registerForActivityResult(
-            new ActivityResultContracts.StartActivityForResult(),
-            result -> {
-                if (result.getResultCode() == Activity.RESULT_OK) {
-                    uploadTimetable(result.getData().getData());
-                }
+    private void showDialogOfSemester() {
+        AlertDialog.Builder semesterDialog = new AlertDialog.Builder(UtilityActivity.this);
+        semesterDialog.setTitle("Semester");
+        String[] items = {"Semester 1", "Semester 2", "Semester 3", "Semester 4", "Semester 5", "Semester 6"};
+        semesterDialog.setSingleChoiceItems(items, -1, (dialog, which) -> {
+            switch (which) {
+                case 0:
+                    uploadTimetable(1);
+                    break;
+                case 1:
+                    uploadTimetable(2);
+                    break;
+                case 2:
+                    uploadTimetable(3);
+                    break;
+                case 3:
+                    uploadTimetable(4);
+                    break;
+                case 4:
+                    uploadTimetable(5);
+                    break;
+                case 5:
+                    uploadTimetable(6);
+                    break;
             }
-    );
+            dialog.dismiss();
+        });
+        semesterDialog.create().show();
+    }
 
     private void showDialogForCreatingExcelFile() {
         AlertDialog.Builder semesterDialog = new AlertDialog.Builder(UtilityActivity.this);
