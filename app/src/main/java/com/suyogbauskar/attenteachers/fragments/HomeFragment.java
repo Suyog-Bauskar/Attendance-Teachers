@@ -232,8 +232,7 @@ public class HomeFragment extends Fragment {
 
         randomNo = 0;
 
-        Handler uiHandler = new Handler(Looper.getMainLooper());
-        uiHandler.post(() -> {
+        new Handler(Looper.getMainLooper()).post(() -> {
             getActivity().getSupportFragmentManager().beginTransaction().detach(HomeFragment.this).commitNow();
             getActivity().getSupportFragmentManager().beginTransaction().attach(HomeFragment.this).commitNow();
         });

@@ -3,7 +3,9 @@ package com.suyogbauskar.attenteachers;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -35,7 +37,8 @@ public class UtilityActivity extends AppCompatActivity {
 
     private final FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
     private Button excelBtn, attendanceBelow75Btn, subjectsBtn, uploadTimetableBtn, removeLastSemesterStudentsBtn, updateAllStudentsDetailsBtn;
-    private boolean subjectFound;
+    private boolean subjectFound, isAdmin;
+    private LinearLayout layout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,8 +47,18 @@ public class UtilityActivity extends AppCompatActivity {
         setTitle("Utility");
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
+        init();
+    }
+
+    private void init() {
         findAllViews();
         setOnClickListeners();
+
+        SharedPreferences sp = getSharedPreferences("teacherDataPref", MODE_PRIVATE);
+        isAdmin = sp.getBoolean("isAdmin", false);
+        if (isAdmin) {
+            layout.setVisibility(View.VISIBLE);
+        }
     }
 
     private void findAllViews() {
@@ -55,6 +68,7 @@ public class UtilityActivity extends AppCompatActivity {
         uploadTimetableBtn = findViewById(R.id.uploadTimetableBtn);
         removeLastSemesterStudentsBtn = findViewById(R.id.removeLastSemesterStudentsBtn);
         updateAllStudentsDetailsBtn = findViewById(R.id.updateAllStudentsDetailsBtn);
+        layout = findViewById(R.id.layout);
     }
 
     private void setOnClickListeners() {
