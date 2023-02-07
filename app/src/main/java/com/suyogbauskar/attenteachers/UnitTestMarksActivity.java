@@ -1,12 +1,10 @@
 package com.suyogbauskar.attenteachers;
 
-import static androidx.constraintlayout.helper.widget.MotionEffect.TAG;
-
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.View;
@@ -26,11 +24,18 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.molihuan.pathselector.PathSelector;
+import com.molihuan.pathselector.entity.FileBean;
+import com.molihuan.pathselector.fragment.BasePathSelectFragment;
+import com.molihuan.pathselector.fragment.impl.PathSelectFragment;
+import com.molihuan.pathselector.listener.CommonItemListener;
+import com.molihuan.pathselector.utils.MConstants;
 import com.suyogbauskar.attenteachers.pojos.StudentData;
 import com.suyogbauskar.attenteachers.pojos.UnitTestMarks;
 
 import java.io.File;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.TreeMap;
@@ -40,11 +45,12 @@ import cn.pedant.SweetAlert.SweetAlertDialog;
 public class UnitTestMarksActivity extends AppCompatActivity {
 
     private Button selectSemesterBtn, uploadBtn, deleteBtn;
-    private int selectedSemester;
     private FirebaseUser user;
     private TableLayout table;
     private boolean isFirstRow;
     private String subjectCodeTeacher;
+    private PathSelectFragment selector;
+    private int selectedSemester;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,8 +67,18 @@ public class UnitTestMarksActivity extends AppCompatActivity {
         isFirstRow = true;
         findAllViews();
         selectSemesterBtn.setOnClickListener(view -> showSemesterAndUnitTestPickerDialog());
-        uploadBtn.setOnClickListener(view -> readCSVFile());
+        uploadBtn.setOnClickListener(view -> selectFileForUpdatingTestMarks());
         deleteBtn.setOnClickListener(view -> deleteMarks());
+
+        SharedPreferences sh = getSharedPreferences("unitTestMarksPref", MODE_PRIVATE);
+        selectedSemester = sh.getInt("semester", 0);
+        if (selectedSemester != 0) {
+            SharedPreferences sharedPreferences = getSharedPreferences("unitTestMarksPref", MODE_PRIVATE);
+            SharedPreferences.Editor myEdit = sharedPreferences.edit();
+            myEdit.putInt("semester", 0);
+            myEdit.commit();
+            allStudentsData();
+        }
     }
 
     private void findAllViews() {
@@ -83,80 +99,82 @@ public class UnitTestMarksActivity extends AppCompatActivity {
         semesterMenu.show();
 
         semesterMenu.setOnMenuItemClickListener(item -> {
-            FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects")
-                    .addListenerForSingleValueEvent(new ValueEventListener() {
-                        @Override
-                        public void onDataChange(@NonNull DataSnapshot snapshot) {
-                            boolean rightSemester = false;
-
-                            for (DataSnapshot dsp : snapshot.getChildren()) {
-                                if (item.getItemId() == snapshot.child(dsp.getKey()).child("semester").getValue(Integer.class)) {
-                                    rightSemester = true;
-                                    subjectCodeTeacher = dsp.getKey();
-                                    break;
-                                }
-                            }
-
-                            if (!rightSemester) {
-                                Toast.makeText(UnitTestMarksActivity.this, "You don't teach this semester", Toast.LENGTH_SHORT).show();
-                                return;
-                            }
-
-                            selectedSemester = item.getItemId();
-                            selectSemesterBtn.setVisibility(View.GONE);
-                            uploadBtn.setVisibility(View.VISIBLE);
-                            deleteBtn.setVisibility(View.VISIBLE);
-
-                            FirebaseDatabase.getInstance().getReference("students_data")
-                                    .orderByChild("semester")
-                                    .equalTo(selectedSemester)
-                                    .addValueEventListener(new ValueEventListener() {
-                                        @Override
-                                        public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                            Map<Integer, StudentData> tempMap = new TreeMap<>();
-                                            isFirstRow = true;
-
-                                            table.removeAllViews();
-                                            drawTableHeader();
-
-                                            for (DataSnapshot ds : snapshot.getChildren()) {
-                                                if (ds.child("isVerified").getValue(Boolean.class)) {
-                                                    tempMap.put(ds.child("rollNo").getValue(Integer.class),
-                                                            new StudentData(ds.child("rollNo").getValue(Integer.class), ds.child("subjects").child(subjectCodeTeacher).child("unitTest1Marks").getValue(Integer.class), ds.child("subjects").child(subjectCodeTeacher).child("unitTest2Marks").getValue(Integer.class), ds.child("firstname").getValue(String.class), ds.child("lastname").getValue(String.class)));
-                                                }
-                                            }
-                                            for (Map.Entry<Integer, StudentData> entry1 : tempMap.entrySet()) {
-                                                int unitOneMarks = entry1.getValue().getUnitTest1Marks();
-                                                int unitTwoMarks = entry1.getValue().getUnitTest2Marks();
-
-                                                if (unitOneMarks == -1 && unitTwoMarks == -1) {
-                                                    createTableRow(entry1.getValue().getRollNo(), entry1.getValue().getFirstname() + " " + entry1.getValue().getLastname(), "-", "-");
-                                                } else if (unitOneMarks == -1) {
-                                                    createTableRow(entry1.getValue().getRollNo(), entry1.getValue().getFirstname() + " " + entry1.getValue().getLastname(), "-", String.valueOf(unitTwoMarks));
-                                                } else if (unitTwoMarks == -1) {
-                                                    createTableRow(entry1.getValue().getRollNo(), entry1.getValue().getFirstname() + " " + entry1.getValue().getLastname(), String.valueOf(unitOneMarks), "-");
-                                                } else {
-                                                    createTableRow(entry1.getValue().getRollNo(), entry1.getValue().getFirstname() + " " + entry1.getValue().getLastname(), String.valueOf(unitOneMarks), String.valueOf(unitTwoMarks));
-                                                }
-
-                                            }
-                                        }
-
-                                        @Override
-                                        public void onCancelled(@NonNull DatabaseError error) {
-                                            Toast.makeText(UnitTestMarksActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
-                                        }
-                                    });
-
-                        }
-
-                        @Override
-                        public void onCancelled(@NonNull DatabaseError error) {
-                            Toast.makeText(UnitTestMarksActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
-                        }
-                    });
+            selectedSemester = item.getItemId();
+            allStudentsData();
             return true;
         });
+    }
+
+    private void allStudentsData() {
+        FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects")
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        boolean rightSemester = false;
+
+                        for (DataSnapshot dsp : snapshot.getChildren()) {
+                            if (selectedSemester == snapshot.child(dsp.getKey()).child("semester").getValue(Integer.class)) {
+                                rightSemester = true;
+                                subjectCodeTeacher = dsp.getKey();
+                                break;
+                            }
+                        }
+
+                        if (!rightSemester) {
+                            Toast.makeText(UnitTestMarksActivity.this, "You don't teach this semester", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+                        selectSemesterBtn.setVisibility(View.GONE);
+                        uploadBtn.setVisibility(View.VISIBLE);
+                        deleteBtn.setVisibility(View.VISIBLE);
+
+                        FirebaseDatabase.getInstance().getReference("students_data")
+                                .orderByChild("semester")
+                                .equalTo(selectedSemester)
+                                .addValueEventListener(new ValueEventListener() {
+                                    @Override
+                                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                        Map<Integer, StudentData> studentDataMap = new TreeMap<>();
+                                        isFirstRow = true;
+
+                                        table.removeAllViews();
+                                        drawTableHeader();
+
+                                        for (DataSnapshot ds : snapshot.getChildren()) {
+                                            if (ds.child("isVerified").getValue(Boolean.class)) {
+                                                studentDataMap.put(ds.child("rollNo").getValue(Integer.class),
+                                                        new StudentData(ds.child("rollNo").getValue(Integer.class), ds.child("subjects").child(subjectCodeTeacher).child("unitTest1Marks").getValue(Integer.class), ds.child("subjects").child(subjectCodeTeacher).child("unitTest2Marks").getValue(Integer.class), ds.child("firstname").getValue(String.class), ds.child("lastname").getValue(String.class)));
+                                            }
+                                        }
+                                        for (Map.Entry<Integer, StudentData> entry1 : studentDataMap.entrySet()) {
+                                            int unitOneMarks = entry1.getValue().getUnitTest1Marks();
+                                            int unitTwoMarks = entry1.getValue().getUnitTest2Marks();
+
+                                            if (unitOneMarks == -1 && unitTwoMarks == -1) {
+                                                createTableRow(entry1.getValue().getRollNo(), entry1.getValue().getFirstname() + " " + entry1.getValue().getLastname(), "-", "-");
+                                            } else if (unitOneMarks == -1) {
+                                                createTableRow(entry1.getValue().getRollNo(), entry1.getValue().getFirstname() + " " + entry1.getValue().getLastname(), "-", String.valueOf(unitTwoMarks));
+                                            } else if (unitTwoMarks == -1) {
+                                                createTableRow(entry1.getValue().getRollNo(), entry1.getValue().getFirstname() + " " + entry1.getValue().getLastname(), String.valueOf(unitOneMarks), "-");
+                                            } else {
+                                                createTableRow(entry1.getValue().getRollNo(), entry1.getValue().getFirstname() + " " + entry1.getValue().getLastname(), String.valueOf(unitOneMarks), String.valueOf(unitTwoMarks));
+                                            }
+                                        }
+                                    }
+
+                                    @Override
+                                    public void onCancelled(@NonNull DatabaseError error) {
+                                        Toast.makeText(UnitTestMarksActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        Toast.makeText(UnitTestMarksActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     private void deleteMarks() {
@@ -165,6 +183,7 @@ public class UnitTestMarksActivity extends AppCompatActivity {
                 .setContentText("Both unit test marks will be deleted!")
                 .setConfirmText("Delete")
                 .setConfirmClickListener(sDialog -> {
+                    sDialog.dismissWithAnimation();
                     FirebaseDatabase.getInstance().getReference("students_data")
                             .orderByChild("semester")
                             .equalTo(selectedSemester)
@@ -298,10 +317,57 @@ public class UnitTestMarksActivity extends AppCompatActivity {
         table.addView(tbRow);
     }
 
-    private void readCSVFile() {
+    private void selectFileForUpdatingTestMarks() {
+        selector = PathSelector.build(this, MConstants.BUILD_ACTIVITY)
+                .setRootPath("/storage/emulated/0/Download/")
+                .setRequestCode(635)
+                .setShowFileTypes("csv")
+                .setSelectFileTypes("csv")
+                .setMaxCount(1)
+                .setShowTitlebarFragment(false)
+                .setShowTabbarFragment(false)
+                .setAlwaysShowHandleFragment(true)
+                .setHandleItemListeners(
+                        new CommonItemListener("Cancel") {
+                            @Override
+                            public boolean onClick(View v, TextView tv, List<FileBean> selectedFiles, String currentPath, BasePathSelectFragment pathSelectFragment) {
+                                if (selectedFiles.size() == 1) {
+                                    pathSelectFragment.openCloseMultipleMode(false);
+                                } else {
+                                    restartActivity();
+                                }
+                                return false;
+                            }
+                        },
+                        new CommonItemListener("OK") {
+                            @Override
+                            public boolean onClick(View v, TextView tv, List<FileBean> selectedFiles, String currentPath, BasePathSelectFragment pathSelectFragment) {
+                                if (selectedFiles.size() == 1) {
+                                    SharedPreferences sharedPreferences = getSharedPreferences("unitTestMarksPref", MODE_PRIVATE);
+                                    SharedPreferences.Editor myEdit = sharedPreferences.edit();
+                                    myEdit.putInt("semester", selectedSemester);
+                                    myEdit.commit();
+                                    readCSVFile(selectedFiles.get(0).getPath());
+                                    restartActivity();
+                                }
+                                return false;
+                            }
+                        }
+                )
+                .show();
+    }
+
+    private void restartActivity() {
+        finish();
+        overridePendingTransition(0, 0);
+        startActivity(getIntent());
+        overridePendingTransition(0, 0);
+    }
+
+    private void readCSVFile(String path) {
         try {
             Map<Integer, UnitTestMarks> unitTestMarksList = new HashMap<>();
-            Scanner scanner = new Scanner(new File(getApplicationContext().getExternalFilesDir(null), "CO" + selectedSemester + "_Unit_Test_Marks.csv"));
+            Scanner scanner = new Scanner(new File(path));
             scanner.nextLine();
 
             while (scanner.hasNextLine()) {
@@ -329,7 +395,7 @@ public class UnitTestMarksActivity extends AppCompatActivity {
                     });
 
         } catch (Exception e) {
-            Log.d(TAG, "readCSVFile: " + e.getMessage());
+            Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -341,6 +407,9 @@ public class UnitTestMarksActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
+        if (selector != null && selector.onBackPressed()) {
+            return;
+        }
         startActivity(new Intent(UnitTestMarksActivity.this, HomeActivity.class));
     }
 }
