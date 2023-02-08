@@ -11,11 +11,15 @@
 
     <item android:id="@+id/unitTestMarks"
         android:title="Unit Test"
-        android:icon="@drawable/test" />
+        android:icon="@drawable/unittest" />
 
     <item android:id="@+id/submission"
         android:title="Submission"
         android:icon="@drawable/ic_baseline_library_books_24" />
+
+    <item android:title="Utility"
+        android:icon="@drawable/ic_baseline_data_usage_24"
+        android:id="@+id/utility"/>
 
     <item android:id="@+id/settings"
         android:title="Settings"

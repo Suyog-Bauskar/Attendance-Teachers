@@ -75,8 +75,8 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                     startActivity(new Intent(HomeActivity.this, LiveAttendanceActivity.class));
                     break;
 
-                case R.id.utility:
-                    startActivity(new Intent(HomeActivity.this, UtilityActivity.class));
+                case R.id.today:
+                    startActivity(new Intent(HomeActivity.this, TodayAttendanceActivity.class));
                     break;
             }
             return true;
@@ -187,6 +187,10 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
 
             case R.id.submission:
                 startActivity(new Intent(HomeActivity.this, SubmissionActivity.class));
+                break;
+
+            case R.id.utility:
+                startActivity(new Intent(HomeActivity.this, UtilityActivity.class));
                 break;
 
             case R.id.settings:
