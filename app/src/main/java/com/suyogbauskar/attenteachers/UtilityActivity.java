@@ -44,7 +44,7 @@ import cn.pedant.SweetAlert.SweetAlertDialog;
 public class UtilityActivity extends AppCompatActivity {
 
     private final FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-    private Button excelBtn, attendanceBelow75Btn, subjectsBtn, uploadTimetableBtn, removeLastSemesterStudentsBtn, updateAllStudentsDetailsBtn;
+    private Button excelBtn, attendanceBelow75Btn, subjectsBtn, uploadTimetableBtn, removeLastSemesterStudentsBtn, updateAllStudentsDetailsBtn, modifySubjectsBtn;
     private boolean subjectFound, isAdmin;
     private LinearLayout layout;
     private PathSelectFragment selector;
@@ -78,6 +78,7 @@ public class UtilityActivity extends AppCompatActivity {
         removeLastSemesterStudentsBtn = findViewById(R.id.removeLastSemesterStudentsBtn);
         updateAllStudentsDetailsBtn = findViewById(R.id.updateAllStudentsDetailsBtn);
         layout = findViewById(R.id.layout);
+        modifySubjectsBtn = findViewById(R.id.modifySubjectsBtn);
     }
 
     private void setOnClickListeners() {
@@ -87,6 +88,7 @@ public class UtilityActivity extends AppCompatActivity {
         uploadTimetableBtn.setOnClickListener(view -> showDialogOfSemester());
         removeLastSemesterStudentsBtn.setOnClickListener(view -> removeLastSemesterStudents());
         updateAllStudentsDetailsBtn.setOnClickListener(view -> selectFileForUpdatingAllStudents());
+        modifySubjectsBtn.setOnClickListener(view -> startActivity(new Intent(UtilityActivity.this, ModifySubjectsActivity.class)));
     }
 
     private void removeLastSemesterStudents() {

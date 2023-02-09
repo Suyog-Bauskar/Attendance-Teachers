@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".SubjectsActivity">
+    tools:context=".ModifySubjectsActivity">
 
     <ScrollView
         android:id="@+id/scrollView"
@@ -25,5 +25,17 @@
             </TableLayout>
         </HorizontalScrollView>
     </ScrollView>
+
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+        android:id="@+id/addSubjectBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="15dp"
+        android:layout_marginTop="15dp"
+        android:layout_marginEnd="15dp"
+        android:layout_marginBottom="15dp"
+        app:icon="@drawable/ic_baseline_add_24" />
 
 </RelativeLayout>
