@@ -23,8 +23,10 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.suyogbauskar.attenteachers.pojos.Subject;
+import com.suyogbauskar.attenteachers.pojos.TableRowOfModifySubjects;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -170,10 +172,13 @@ public class ModifySubjectsActivity extends AppCompatActivity {
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        List<TableRowOfModifySubjects> allSubject = new ArrayList<>();
                         if (semesterList.size() != 0) {
                             semesterList.clear();
                         }
                         isFirstRow = true;
+                        final long[] counter = {0};
+                        long totalTeachers = snapshot.getChildrenCount();
                         table.removeAllViews();
                         drawTableHeader();
 
@@ -185,12 +190,19 @@ public class ModifySubjectsActivity extends AppCompatActivity {
                                     .addListenerForSingleValueEvent(new ValueEventListener() {
                                         @Override
                                         public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                            counter[0]++;
                                             Subject tempSubject;
                                             for (DataSnapshot dsp : snapshot.getChildren()) {
                                                 subjectCodes.add(dsp.getKey());
                                                 tempSubject = new Subject(dsp.child("subject_short_name").getValue(String.class), dsp.child("subject_name").getValue(String.class), dsp.getKey(), dsp.child("semester").getValue(Integer.class), teacherUID);
                                                 semesterList.add(dsp.child("semester").getValue(Integer.class));
-                                                createTableRow(teacherID, teacherName, dsp.child("subject_short_name").getValue(String.class), dsp.child("subject_name").getValue(String.class), dsp.getKey(), dsp.child("semester").getValue(Integer.class), tempSubject);
+                                                allSubject.add(new TableRowOfModifySubjects(teacherID, teacherName, dsp.child("subject_short_name").getValue(String.class), dsp.child("subject_name").getValue(String.class), dsp.getKey(), dsp.child("semester").getValue(Integer.class), tempSubject));
+                                            }
+                                            if (counter[0] == totalTeachers) {
+                                                allSubject.sort(Comparator.comparing(TableRowOfModifySubjects::getTeacherID));
+                                                for (TableRowOfModifySubjects subject: allSubject) {
+                                                    createTableRow(subject.getTeacherID(), subject.getTeacherName(), subject.getSubjectShortName(), subject.getSubjectName(), subject.getSubjectCode(), subject.getSemester(), subject.getSubject());
+                                                }
                                             }
                                         }
 
