@@ -470,44 +470,7 @@ public class UtilityActivity extends AppCompatActivity {
                                 return;
                             }
 
-                            AlertDialog.Builder classDialog = new AlertDialog.Builder(UtilityActivity.this);
-                            classDialog.setTitle("Class");
-                            String[] items2 = {"All", "A Division", "B Division", "A1 Practical Batch", "A2 Practical Batch", "A3 Practical Batch", "B1 Practical Batch", "B2 Practical Batch"};
-                            int checkedItem2 = 0;
-                            classDialog.setSingleChoiceItems(items2, checkedItem2, (dialog2, which2) -> {
-                                SharedPreferences sharedPreferences2 = getSharedPreferences("attendanceBelow75Pref", MODE_PRIVATE);
-                                SharedPreferences.Editor editor2 = sharedPreferences2.edit();
-                                switch (which2) {
-                                    case 0:
-                                        editor2.putString("class", "All");
-                                        break;
-                                    case 1:
-                                        editor2.putString("class", "A");
-                                        break;
-                                    case 2:
-                                        editor2.putString("class", "B");
-                                        break;
-                                    case 3:
-                                        editor2.putString("class", "A1");
-                                        break;
-                                    case 4:
-                                        editor2.putString("class", "A2");
-                                        break;
-                                    case 5:
-                                        editor2.putString("class", "A3");
-                                        break;
-                                    case 6:
-                                        editor2.putString("class", "B1");
-                                        break;
-                                    case 7:
-                                        editor2.putString("class", "B2");
-                                        break;
-                                }
-                                dialog2.dismiss();
-                                editor2.commit();
-                                startActivity(new Intent(UtilityActivity.this, AttendanceBelow75Activity.class));
-                            });
-                            classDialog.create().show();
+                            startActivity(new Intent(UtilityActivity.this, AttendanceBelow75Activity.class));
                         }
 
                         @Override

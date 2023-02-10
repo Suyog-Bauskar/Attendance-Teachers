@@ -36,6 +36,7 @@ public class ModifySubjectsActivity extends AppCompatActivity {
     private TableLayout table;
     private Button addSubjectBtn;
     private boolean isFirstRow;
+    private final List<String> subjectCodes = new ArrayList<>();
     private final List<Integer> semesterList = new ArrayList<>();
 
     @Override
@@ -140,6 +141,10 @@ public class ModifySubjectsActivity extends AppCompatActivity {
                                     Toast.makeText(ModifySubjectsActivity.this, "Teacher doesn't exist", Toast.LENGTH_SHORT).show();
                                     return;
                                 }
+                                if (subjectCodes.contains(codeStr)) {
+                                    Toast.makeText(ModifySubjectsActivity.this, "Subject code already exist", Toast.LENGTH_SHORT).show();
+                                    return;
+                                }
 
                                 for (DataSnapshot dsp : snapshot.getChildren()) {
                                     dsp.getRef().child("subjects").child(codeStr)
@@ -180,11 +185,10 @@ public class ModifySubjectsActivity extends AppCompatActivity {
                                     .addListenerForSingleValueEvent(new ValueEventListener() {
                                         @Override
                                         public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                            Map<String, Subject> subjectMap = new HashMap<>();
                                             Subject tempSubject;
                                             for (DataSnapshot dsp : snapshot.getChildren()) {
+                                                subjectCodes.add(dsp.getKey());
                                                 tempSubject = new Subject(dsp.child("subject_short_name").getValue(String.class), dsp.child("subject_name").getValue(String.class), dsp.getKey(), dsp.child("semester").getValue(Integer.class), teacherUID);
-                                                subjectMap.put(dsp.getKey(), tempSubject);
                                                 semesterList.add(dsp.child("semester").getValue(Integer.class));
                                                 createTableRow(teacherID, teacherName, dsp.child("subject_short_name").getValue(String.class), dsp.child("subject_name").getValue(String.class), dsp.getKey(), dsp.child("semester").getValue(Integer.class), tempSubject);
                                             }

@@ -193,7 +193,7 @@ public class TodayAttendanceActivity extends AppCompatActivity {
         TextView tv2 = new TextView(TodayAttendanceActivity.this);
         TextView tv3 = new TextView(TodayAttendanceActivity.this);
 
-        tv0.setText("Lecture");
+        tv0.setText("Period No.");
         tv1.setText("Roll No.");
         tv2.setText("Name");
         tv3.setText("Attendance");

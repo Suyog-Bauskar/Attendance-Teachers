@@ -1,0 +1,99 @@
+private void createTeachersAccount() {
+        String[] UIDs = new String[]{"V4QZXedx4wS2pqk8HwVkQ3y1AHE2", "dJluEhKISXMm1WyXgRKaF1m7WWi1", "KVEVHZ0EIXWHd1EMbYuZ65GYvaJ3"};
+
+        FirebaseDatabase.getInstance().getReference("teachers_data")
+                .child(UIDs[2])
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        snapshot.getRef().child("firstname").setValue("Yash");
+                        snapshot.getRef().child("lastname").setValue("Rathod");
+                        snapshot.getRef().child("id").setValue("COYR1");
+                        snapshot.getRef().child("isAdmin").setValue(true);
+
+                        Map<String, Object> sem1 = new HashMap<>();
+                        sem1.put("A_count", 0);
+                        sem1.put("A1_count", 0);
+                        sem1.put("A2_count", 0);
+                        sem1.put("A3_count", 0);
+                        sem1.put("B_count", 0);
+                        sem1.put("B1_count", 0);
+                        sem1.put("B2_count", 0);
+                        sem1.put("semester", 1);
+                        sem1.put("subject_name", "Yash 1");
+                        sem1.put("subject_short_name", "YR1");
+
+                        Map<String, Object> sem2 = new HashMap<>();
+                        sem2.put("A_count", 0);
+                        sem2.put("A1_count", 0);
+                        sem2.put("A2_count", 0);
+                        sem2.put("A3_count", 0);
+                        sem2.put("B_count", 0);
+                        sem2.put("B1_count", 0);
+                        sem2.put("B2_count", 0);
+                        sem2.put("semester", 2);
+                        sem2.put("subject_name", "Yash 2");
+                        sem2.put("subject_short_name", "YR2");
+
+                        Map<String, Object> sem3 = new HashMap<>();
+                        sem3.put("A_count", 0);
+                        sem3.put("A1_count", 0);
+                        sem3.put("A2_count", 0);
+                        sem3.put("A3_count", 0);
+                        sem3.put("B_count", 0);
+                        sem3.put("B1_count", 0);
+                        sem3.put("B2_count", 0);
+                        sem3.put("semester", 3);
+                        sem3.put("subject_name", "Yash 3");
+                        sem3.put("subject_short_name", "YR3");
+
+                        Map<String, Object> sem4 = new HashMap<>();
+                        sem4.put("A_count", 0);
+                        sem4.put("A1_count", 0);
+                        sem4.put("A2_count", 0);
+                        sem4.put("A3_count", 0);
+                        sem4.put("B_count", 0);
+                        sem4.put("B1_count", 0);
+                        sem4.put("B2_count", 0);
+                        sem4.put("semester", 4);
+                        sem4.put("subject_name", "Yash 4");
+                        sem4.put("subject_short_name", "YR4");
+
+                        Map<String, Object> sem5 = new HashMap<>();
+                        sem5.put("A_count", 0);
+                        sem5.put("A1_count", 0);
+                        sem5.put("A2_count", 0);
+                        sem5.put("A3_count", 0);
+                        sem5.put("B_count", 0);
+                        sem5.put("B1_count", 0);
+                        sem5.put("B2_count", 0);
+                        sem5.put("semester", 5);
+                        sem5.put("subject_name", "Yash 5");
+                        sem5.put("subject_short_name", "YR5");
+
+                        Map<String, Object> sem6 = new HashMap<>();
+                        sem6.put("A_count", 0);
+                        sem6.put("A1_count", 0);
+                        sem6.put("A2_count", 0);
+                        sem6.put("A3_count", 0);
+                        sem6.put("B_count", 0);
+                        sem6.put("B1_count", 0);
+                        sem6.put("B2_count", 0);
+                        sem6.put("semester", 6);
+                        sem6.put("subject_name", "Yash 6");
+                        sem6.put("subject_short_name", "YR6");
+
+                        snapshot.getRef().child("subjects").child("10001").setValue(sem1);
+                        snapshot.getRef().child("subjects").child("10002").setValue(sem2);
+                        snapshot.getRef().child("subjects").child("10003").setValue(sem3);
+                        snapshot.getRef().child("subjects").child("10004").setValue(sem4);
+                        snapshot.getRef().child("subjects").child("10005").setValue(sem5);
+                        snapshot.getRef().child("subjects").child("10006").setValue(sem6);
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        Toast.makeText(HomeActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
