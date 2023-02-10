@@ -23,8 +23,10 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.kal.rackmonthpicker.RackMonthPicker;
 import com.suyogbauskar.attenteachers.pojos.StudentData;
+import com.suyogbauskar.attenteachers.pojos.TableRowOfAttendanceBelow75;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -505,12 +507,13 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        List<TableRowOfAttendanceBelow75> tableRows = new ArrayList<>();
                         for (Map.Entry<String, Float> entry : studentsBelow75List.entrySet()) {
                             String firstname = allStudents.get(entry.getKey()).getFirstname();
                             String lastname = allStudents.get(entry.getKey()).getLastname();
                             int rollNo = allStudents.get(entry.getKey()).getRollNo();
 
-                            createTableRow(whichDivision, batch, rollNo, firstname + " " + lastname, entry.getValue());
+                            tableRows.add(new TableRowOfAttendanceBelow75(whichDivision, batch, firstname + " " + lastname, rollNo, entry.getValue()));
                         }
 
                         List<String> tempAllStudent = new ArrayList<>(allStudents.keySet());
@@ -522,7 +525,12 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
                             String lastname = allStudents.get(uid).getLastname();
                             int rollNo = allStudents.get(uid).getRollNo();
 
-                            createTableRow(whichDivision, batch, rollNo, firstname + " " + lastname, 0);
+                            tableRows.add(new TableRowOfAttendanceBelow75(whichDivision, batch, firstname + " " + lastname, rollNo, 0));
+                        }
+
+                        tableRows.sort(Comparator.comparing(TableRowOfAttendanceBelow75::getRollNo));
+                        for (TableRowOfAttendanceBelow75 student: tableRows) {
+                            createTableRow(student.getDivision(), student.getBatch(), student.getRollNo(), student.getName(), student.getPercentage());
                         }
                     }
 

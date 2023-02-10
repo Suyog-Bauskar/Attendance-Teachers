@@ -183,19 +183,19 @@ public class UtilityActivity extends AppCompatActivity {
 
                 if (String.valueOf(enrollNo).length() != 10) {
                     Toast.makeText(this, "Invalid enrollment no.", Toast.LENGTH_SHORT).show();
-                    break;
+                    return;
                 } else if (String.valueOf(rollNo).length() > 3) {
                     Toast.makeText(this, "Invalid roll no.", Toast.LENGTH_SHORT).show();
-                    break;
+                    return;
                 } else if (semester <= 0 || semester > 6) {
                     Toast.makeText(this, "Invalid semester", Toast.LENGTH_SHORT).show();
-                    break;
+                    return;
                 } else if (!(division.equals("A") || division.equals("B"))) {
                     Toast.makeText(this, "Invalid division", Toast.LENGTH_SHORT).show();
-                    break;
+                    return;
                 } else if (batch <= 0 || batch > 3) {
                     Toast.makeText(this, "Invalid batch", Toast.LENGTH_SHORT).show();
-                    break;
+                    return;
                 } else {
                     studentsDetailsList.put(enrollNo, new StudentData(rollNo, batch, semester, enrollNo, division));
                 }
