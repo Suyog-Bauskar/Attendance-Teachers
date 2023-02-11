@@ -95,34 +95,42 @@ public class LiveAttendanceActivity extends AppCompatActivity {
 
     private void addStudentToAttendance(int rollNo) {
         FirebaseDatabase.getInstance().getReference("students_data")
-                .orderByChild("rollNo")
-                .equalTo(rollNo)
+                .orderByChild("semester")
+                .equalTo(semester)
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
-
-                        if (!snapshot.exists()) {
-                            Toast.makeText(LiveAttendanceActivity.this, "Roll no. " + rollNo + " not found!", Toast.LENGTH_LONG).show();
-                            return;
-                        }
+                        boolean hasStudentFound = false;
 
                         for (DataSnapshot ds : snapshot.getChildren()) {
-                            studentUID = ds.getKey();
-                            studentFirstname = ds.child("firstname").getValue(String.class);
-                            studentLastname = ds.child("lastname").getValue(String.class);
+                            if (ds.child("rollNo").getValue(Integer.class) == rollNo) {
+                                studentUID = ds.getKey();
+                                studentFirstname = ds.child("firstname").getValue(String.class);
+                                studentLastname = ds.child("lastname").getValue(String.class);
+                                hasStudentFound = true;
+                                break;
+                            }
+                        }
+
+                        if (!hasStudentFound) {
+                            Toast.makeText(LiveAttendanceActivity.this, "Roll no. " + rollNo + " not found!", Toast.LENGTH_LONG).show();
+                            return;
                         }
 
                         studentData.put("firstname", studentFirstname);
                         studentData.put("lastname", studentLastname);
                         studentData.put("rollNo", rollNo);
 
-                        FirebaseDatabase.getInstance().getReference("attendance/CO" + semester + "-" + attendanceOf + "/" + subjectCode + "/" + year + "/" + monthStr)
+                        FirebaseDatabase.getInstance().getReference("attendance")
+                                .child("CO" + semester + "-" + attendanceOf)
+                                .child(subjectCode)
+                                .child(String.valueOf(year))
+                                .child(monthStr)
                                 .child(date + "-" + count)
                                 .child(studentUID)
                                 .setValue(studentData)
                                 .addOnSuccessListener(unused -> Toast.makeText(LiveAttendanceActivity.this, "Roll no. " + rollNo + " added successfully", Toast.LENGTH_SHORT).show())
                                 .addOnFailureListener(e -> Toast.makeText(LiveAttendanceActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show());
-
                     }
 
                     @Override
@@ -138,7 +146,7 @@ public class LiveAttendanceActivity extends AppCompatActivity {
         flatDialog.setTitle("Roll No")
                 .setSubtitle("Enter roll no to mark attendance")
                 .setFirstTextFieldInputType(InputType.TYPE_CLASS_NUMBER)
-                .setFirstTextFieldHint("Roll no")
+                .setFirstTextFieldHint("Roll no.")
                 .setFirstButtonText("OK")
                 .setSecondButtonText("CANCEL")
                 .withFirstButtonListner(view -> {
