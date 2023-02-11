@@ -282,7 +282,6 @@ public class StudentVerificationActivity extends AppCompatActivity {
                                     @Override
                                     public void onDataChange(@NonNull DataSnapshot snapshot) {
                                         for (DataSnapshot ds: snapshot.getChildren()) {
-                                            //TODO : Delete student from authentication using cloud function
                                             ds.getRef().removeValue();
                                         }
                                     }
