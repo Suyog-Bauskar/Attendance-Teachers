@@ -247,6 +247,7 @@ public class TodayAttendanceActivity extends AppCompatActivity {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
                         selectSemesterBtn.setVisibility(View.GONE);
+                        addStudentBtn.setVisibility(View.VISIBLE);
                         String dateStr;
                         final String[] lectureCount = new String[1];
                         drawTableHeader();

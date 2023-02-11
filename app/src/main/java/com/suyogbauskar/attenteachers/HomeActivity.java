@@ -54,6 +54,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         user = FirebaseAuth.getInstance().getCurrentUser();
 
         createNotificationChannelForError();
+        createNotificationChannelForFile();
         requestStoragePermission();
 
         drawerLayout = findViewById(R.id.drawerLayout);
@@ -136,6 +137,16 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         String description = "Error Notifications";
         int importance = NotificationManager.IMPORTANCE_DEFAULT;
         NotificationChannel channel = new NotificationChannel("Error", name, importance);
+        channel.setDescription(description);
+        NotificationManager notificationManager = getSystemService(NotificationManager.class);
+        notificationManager.createNotificationChannel(channel);
+    }
+
+    private void createNotificationChannelForFile() {
+        String name = "File";
+        String description = "File Notifications";
+        int importance = NotificationManager.IMPORTANCE_DEFAULT;
+        NotificationChannel channel = new NotificationChannel("File", name, importance);
         channel.setDescription(description);
         NotificationManager notificationManager = getSystemService(NotificationManager.class);
         notificationManager.createNotificationChannel(channel);
