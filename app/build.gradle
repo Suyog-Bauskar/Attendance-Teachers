@@ -11,8 +11,8 @@ android {
         applicationId "com.suyogbauskar.attenteachers"
         minSdk 26
         targetSdk 33
-        versionCode 9
-        versionName "1.0.7"
+        versionCode 10
+        versionName "1.0.8"
         resConfigs "en"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -32,7 +32,7 @@ android {
 
 dependencies {
 
-    implementation 'androidx.appcompat:appcompat:1.6.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.8.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     testImplementation 'junit:junit:4.13.2'
