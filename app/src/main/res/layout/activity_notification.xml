@@ -6,6 +6,12 @@
     android:layout_height="match_parent"
     tools:context=".NotificationActivity">
 
+    <ListView
+        android:id="@+id/notificationListView"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:dividerHeight="1dp"/>
+
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:id="@+id/sendNotificationBtn"
         android:layout_width="wrap_content"

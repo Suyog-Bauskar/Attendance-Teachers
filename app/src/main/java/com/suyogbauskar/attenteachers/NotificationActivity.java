@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.widget.Button;
+import android.widget.ListView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -20,8 +21,10 @@ import com.google.firebase.database.ServerValue;
 import com.google.firebase.database.ValueEventListener;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -56,14 +59,27 @@ public class NotificationActivity extends AppCompatActivity {
                 .addValueEventListener(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        String body;
-                        long time;
-                        for (DataSnapshot dsp: snapshot.getChildren()) {
-                            body = dsp.child("body").getValue(String.class);
-                            time = dsp.child("timestamp").getValue(Long.class);
+                        List<String> body = new ArrayList<>();
+                        List<String> times = new ArrayList<>();
 
-                            Toast.makeText(NotificationActivity.this, "Body: " + body + ", Time: " + time, Toast.LENGTH_SHORT).show();
+                        for (DataSnapshot dsp : snapshot.getChildren()) {
+                            body.add(dsp.child("body").getValue(String.class));
+                            times.add(dsp.child("time").getValue(String.class));
                         }
+
+                        String[] bodyArr = new String[body.size()];
+                        String[] timesArr = new String[times.size()];
+                        int reverseCounter = body.size() - 1;
+
+                        for (int i = 0; i < bodyArr.length; i++) {
+                            bodyArr[i] = body.get(reverseCounter);
+                            timesArr[i] = times.get(reverseCounter);
+                            reverseCounter--;
+                        }
+
+                        ListView notificationList = (ListView) findViewById(R.id.notificationListView);
+                        NotificationAdapter notificationAdapter = new NotificationAdapter(getApplicationContext(), bodyArr, timesArr);
+                        notificationList.setAdapter(notificationAdapter);
                     }
 
                     @Override
@@ -76,11 +92,11 @@ public class NotificationActivity extends AppCompatActivity {
     private void sendNotification() {
         FlatDialog flatDialog = new FlatDialog(NotificationActivity.this);
         flatDialog.setTitle("Send a message")
-                .setLargeTextField("")
-                .setLargeTextFieldHint("write your message here ...")
+                .setFirstTextField("")
+                .setFirstTextFieldHint("write your message here ...")
                 .setFirstButtonText("Done")
                 .withFirstButtonListner(v -> {
-                    if (flatDialog.getLargeTextField().trim().isEmpty()) {
+                    if (flatDialog.getFirstTextField().trim().isEmpty()) {
                         Toast.makeText(this, "Enter message", Toast.LENGTH_SHORT).show();
                         return;
                     }
@@ -90,7 +106,7 @@ public class NotificationActivity extends AppCompatActivity {
                     firstname = sp.getString("firstname", "");
                     lastname = sp.getString("lastname", "");
                     FirebasePush firebasePush = new FirebasePush("AAAAtBgfzRs:APA91bFqeVeSH8NFUlNWJA_EuCWmwsCXHqyeawP1UV2sH7XHOcNcjumnoBdCWue0uQIB7B5yeePlYzfDiPrbqEusZFyIJWKrnWecHuIbSqjVvLT-tZoaa7zaMMfzCxVxAzezqFAKjVBd");
-                    firebasePush.setNotification(new Notification("Prof. " + firstname + " " + lastname, flatDialog.getLargeTextField()));
+                    firebasePush.setNotification(new Notification("Prof. " + firstname + " " + lastname, flatDialog.getFirstTextField()));
                     if (selectedDivision.equals("All")) {
                         firebasePush.sendToTopic("CO" + selectedSemester);
                     } else {
@@ -101,13 +117,13 @@ public class NotificationActivity extends AppCompatActivity {
 
                     Map<String, Object> data = new HashMap<>();
                     data.put("timestamp", ServerValue.TIMESTAMP);
-                    data.put("body", flatDialog.getLargeTextField());
+                    data.put("body", flatDialog.getFirstTextField());
                     data.put("time", formattedTime);
 
                     Map<String, Object> data2 = new HashMap<>();
                     data2.put("timestamp", ServerValue.TIMESTAMP);
                     data2.put("title", "Prof. " + firstname + " " + lastname);
-                    data2.put("body", flatDialog.getLargeTextField());
+                    data2.put("body", flatDialog.getFirstTextField());
                     data2.put("time", formattedTime);
 
                     long currentDate = System.currentTimeMillis();
