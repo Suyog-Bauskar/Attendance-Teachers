@@ -53,6 +53,7 @@ dependencies {
     implementation 'com.github.mejdi14:Flat-Dialog-Android:1.0.5'
     implementation 'com.github.uzairiqbal91:CircularTimerView:1.0'
     implementation 'io.github.molihuan:pathselector:1.1.11'
+    implementation 'com.github.DavidBarbaran:FCM-AndroidToOtherDevice:1.1.2'
 
     // firebase
     implementation platform('com.google.firebase:firebase-bom:30.4.1')
@@ -60,4 +61,5 @@ dependencies {
     implementation 'com.google.android.gms:play-services-auth:20.4.1'
     implementation 'com.google.firebase:firebase-database:20.1.0'
     implementation 'com.google.firebase:firebase-storage:20.1.0'
+    implementation 'com.google.firebase:firebase-messaging:23.1.1'
 }

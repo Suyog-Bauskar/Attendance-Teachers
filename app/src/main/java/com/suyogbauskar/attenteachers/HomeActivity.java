@@ -6,6 +6,7 @@ import android.app.NotificationManager;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
@@ -174,6 +175,9 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        if (item.getItemId() == R.id.notification) {
+            startActivity(new Intent(HomeActivity.this, NotificationActivity.class));
+        }
         if (toggle.onOptionsItemSelected(item)) {
             return true;
         } else {
@@ -209,6 +213,12 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                 break;
         }
         drawerLayout.closeDrawer(GravityCompat.START);
+        return true;
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.home_menu, menu);
         return true;
     }
 }

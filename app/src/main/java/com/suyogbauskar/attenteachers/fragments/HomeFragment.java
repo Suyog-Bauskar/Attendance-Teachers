@@ -100,6 +100,8 @@ public class HomeFragment extends Fragment {
                     SharedPreferences sharedPreferences = getActivity().getSharedPreferences("teacherDataPref", MODE_PRIVATE);
                     SharedPreferences.Editor editor = sharedPreferences.edit();
                     editor.putBoolean("isAdmin", document.child("isAdmin").getValue(Boolean.class));
+                    editor.putString("firstname", document.child("firstname").getValue(String.class));
+                    editor.putString("lastname", document.child("lastname").getValue(String.class));
                     editor.commit();
 
                     getSubjectInformation();
