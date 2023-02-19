@@ -5,9 +5,7 @@ import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.view.Gravity;
-import android.view.Menu;
 import android.view.View;
-import android.widget.Button;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
@@ -16,7 +14,6 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.PopupMenu;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -35,7 +32,6 @@ public class SubmissionActivity extends AppCompatActivity {
     private TableLayout table;
     private boolean isFirstRow;
     private TextView noStudentsFoundView;
-    private Button selectSemesterBtn;
     private String subjectCodeTeacher;
 
     @Override
@@ -47,27 +43,24 @@ public class SubmissionActivity extends AppCompatActivity {
 
         user = FirebaseAuth.getInstance().getCurrentUser();
         findAllViews();
+        selectSemester();
     }
 
     private void selectSemester() {
-        PopupMenu semesterMenu = new PopupMenu(SubmissionActivity.this, selectSemesterBtn);
-        semesterMenu.getMenu().add(Menu.NONE, 1, 1, "Semester 1");
-        semesterMenu.getMenu().add(Menu.NONE, 2, 2, "Semester 2");
-        semesterMenu.getMenu().add(Menu.NONE, 3, 3, "Semester 3");
-        semesterMenu.getMenu().add(Menu.NONE, 4, 4, "Semester 4");
-        semesterMenu.getMenu().add(Menu.NONE, 5, 5, "Semester 5");
-        semesterMenu.getMenu().add(Menu.NONE, 6, 6, "Semester 6");
-        semesterMenu.show();
-
-        semesterMenu.setOnMenuItemClickListener(item -> {
+        AlertDialog.Builder semesterDialog = new AlertDialog.Builder(SubmissionActivity.this);
+        semesterDialog.setTitle("Semester");
+        String[] items = {"Semester 1", "Semester 2", "Semester 3", "Semester 4", "Semester 5", "Semester 6"};
+        semesterDialog.setSingleChoiceItems(items, -1, (dialog, which) -> {
+            dialog.dismiss();
             FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects")
                     .addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(@NonNull DataSnapshot snapshot) {
                             boolean rightSemester = false;
+                            int selectedSemester = which + 1;
 
                             for (DataSnapshot dsp : snapshot.getChildren()) {
-                                if (item.getItemId() == snapshot.child(dsp.getKey()).child("semester").getValue(Integer.class)) {
+                                if (selectedSemester == snapshot.child(dsp.getKey()).child("semester").getValue(Integer.class)) {
                                     rightSemester = true;
                                     subjectCodeTeacher = dsp.getKey();
                                     break;
@@ -79,7 +72,7 @@ public class SubmissionActivity extends AppCompatActivity {
                                 return;
                             }
 
-                            showAllStudentsData(item.getItemId());
+                            showAllStudentsData(selectedSemester);
                         }
 
                         @Override
@@ -87,8 +80,8 @@ public class SubmissionActivity extends AppCompatActivity {
                             Toast.makeText(SubmissionActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
                         }
                     });
-            return true;
         });
+        semesterDialog.create().show();
     }
 
     private void showAllStudentsData(int semester) {
@@ -101,7 +94,6 @@ public class SubmissionActivity extends AppCompatActivity {
                         Map<Integer, StudentData> tempMap = new TreeMap<>();
                         isFirstRow = true;
 
-                        selectSemesterBtn.setVisibility(View.GONE);
                         table.removeAllViews();
                         if (snapshot.getChildrenCount() == 0) {
                             noStudentsFoundView.setVisibility(View.VISIBLE);
@@ -146,8 +138,6 @@ public class SubmissionActivity extends AppCompatActivity {
     private void findAllViews() {
         table = findViewById(R.id.table);
         noStudentsFoundView = findViewById(R.id.noStudentsFoundView);
-        selectSemesterBtn = findViewById(R.id.selectSemesterBtn);
-        selectSemesterBtn.setOnClickListener(view -> selectSemester());
     }
 
     private void drawTableHeader() {

@@ -8,9 +8,7 @@ import android.graphics.Typeface;
 import android.os.Bundle;
 import android.text.InputType;
 import android.view.Gravity;
-import android.view.Menu;
 import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TableLayout;
@@ -20,7 +18,6 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.PopupMenu;
 
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -38,7 +35,6 @@ public class StudentDataActivity extends AppCompatActivity {
     private TableLayout table;
     private boolean isFirstRow;
     private TextView noStudentsFoundView;
-    private Button selectSemesterBtn;
     private String firstnameStr, lastnameStr;
     private long studentEnrollNo = 0;
 
@@ -50,22 +46,19 @@ public class StudentDataActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         findAllViews();
+        selectSemester();
     }
 
     private void selectSemester() {
-        PopupMenu semesterMenu = new PopupMenu(StudentDataActivity.this, selectSemesterBtn);
-        semesterMenu.getMenu().add(Menu.NONE, 1, 1, "Semester 1");
-        semesterMenu.getMenu().add(Menu.NONE, 2, 2, "Semester 2");
-        semesterMenu.getMenu().add(Menu.NONE, 3, 3, "Semester 3");
-        semesterMenu.getMenu().add(Menu.NONE, 4, 4, "Semester 4");
-        semesterMenu.getMenu().add(Menu.NONE, 5, 5, "Semester 5");
-        semesterMenu.getMenu().add(Menu.NONE, 6, 6, "Semester 6");
-        semesterMenu.show();
-
-        semesterMenu.setOnMenuItemClickListener(item -> {
-            showAllStudentsData(item.getItemId());
-            return true;
+        androidx.appcompat.app.AlertDialog.Builder semesterDialog = new androidx.appcompat.app.AlertDialog.Builder(StudentDataActivity.this);
+        semesterDialog.setTitle("Semester");
+        String[] items = {"Semester 1", "Semester 2", "Semester 3", "Semester 4", "Semester 5", "Semester 6"};
+        semesterDialog.setSingleChoiceItems(items, -1, (dialog, which) -> {
+            which++;
+            showAllStudentsData(which);
+            dialog.dismiss();
         });
+        semesterDialog.create().show();
     }
 
     private void showAllStudentsData(int semester) {
@@ -77,7 +70,6 @@ public class StudentDataActivity extends AppCompatActivity {
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
                         Map<Integer, StudentData> tempMap = new TreeMap<>();
 
-                        selectSemesterBtn.setVisibility(View.GONE);
                         table.removeAllViews();
                         isFirstRow = true;
                         if (snapshot.getChildrenCount() == 0) {
@@ -107,8 +99,6 @@ public class StudentDataActivity extends AppCompatActivity {
     private void findAllViews() {
         table = findViewById(R.id.table);
         noStudentsFoundView = findViewById(R.id.noStudentsFoundView);
-        selectSemesterBtn = findViewById(R.id.selectSemesterBtn);
-        selectSemesterBtn.setOnClickListener(view -> selectSemester());
     }
 
     private void drawTableHeader() {

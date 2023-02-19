@@ -6,7 +6,6 @@ import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.view.Gravity;
-import android.view.Menu;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TableLayout;
@@ -15,8 +14,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.PopupMenu;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -44,7 +43,7 @@ import cn.pedant.SweetAlert.SweetAlertDialog;
 
 public class UnitTestMarksActivity extends AppCompatActivity {
 
-    private Button selectSemesterBtn, uploadBtn, deleteBtn;
+    private Button uploadBtn, deleteBtn;
     private FirebaseUser user;
     private TableLayout table;
     private boolean isFirstRow;
@@ -60,13 +59,13 @@ public class UnitTestMarksActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         init();
+        selectSemester();
     }
 
     private void init() {
         user = FirebaseAuth.getInstance().getCurrentUser();
         isFirstRow = true;
         findAllViews();
-        selectSemesterBtn.setOnClickListener(view -> showSemesterAndUnitTestPickerDialog());
         uploadBtn.setOnClickListener(view -> selectFileForUpdatingTestMarks());
         deleteBtn.setOnClickListener(view -> deleteMarks());
 
@@ -82,27 +81,22 @@ public class UnitTestMarksActivity extends AppCompatActivity {
     }
 
     private void findAllViews() {
-        selectSemesterBtn = findViewById(R.id.selectSemesterBtn);
         table = findViewById(R.id.table);
         uploadBtn = findViewById(R.id.uploadBtn);
         deleteBtn = findViewById(R.id.deleteBtn);
     }
 
-    private void showSemesterAndUnitTestPickerDialog() {
-        PopupMenu semesterMenu = new PopupMenu(UnitTestMarksActivity.this, selectSemesterBtn);
-        semesterMenu.getMenu().add(Menu.NONE, 1, 1, "Semester 1");
-        semesterMenu.getMenu().add(Menu.NONE, 2, 2, "Semester 2");
-        semesterMenu.getMenu().add(Menu.NONE, 3, 3, "Semester 3");
-        semesterMenu.getMenu().add(Menu.NONE, 4, 4, "Semester 4");
-        semesterMenu.getMenu().add(Menu.NONE, 5, 5, "Semester 5");
-        semesterMenu.getMenu().add(Menu.NONE, 6, 6, "Semester 6");
-        semesterMenu.show();
-
-        semesterMenu.setOnMenuItemClickListener(item -> {
-            selectedSemester = item.getItemId();
+    private void selectSemester() {
+        AlertDialog.Builder semesterDialog = new AlertDialog.Builder(UnitTestMarksActivity.this);
+        semesterDialog.setTitle("Semester");
+        String[] items = {"Semester 1", "Semester 2", "Semester 3", "Semester 4", "Semester 5", "Semester 6"};
+        semesterDialog.setSingleChoiceItems(items, -1, (dialog, which) -> {
+            which++;
+            selectedSemester = which;
             allStudentsData();
-            return true;
+            dialog.dismiss();
         });
+        semesterDialog.create().show();
     }
 
     private void allStudentsData() {
@@ -125,7 +119,6 @@ public class UnitTestMarksActivity extends AppCompatActivity {
                             return;
                         }
 
-                        selectSemesterBtn.setVisibility(View.GONE);
                         uploadBtn.setVisibility(View.VISIBLE);
                         deleteBtn.setVisibility(View.VISIBLE);
 

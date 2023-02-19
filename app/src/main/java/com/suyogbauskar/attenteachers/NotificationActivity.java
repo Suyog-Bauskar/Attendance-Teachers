@@ -59,26 +59,30 @@ public class NotificationActivity extends AppCompatActivity {
                 .addValueEventListener(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        List<String> titles = new ArrayList<>();
                         List<String> body = new ArrayList<>();
                         List<String> times = new ArrayList<>();
 
                         for (DataSnapshot dsp : snapshot.getChildren()) {
+                            titles.add(dsp.child("title").getValue(String.class));
                             body.add(dsp.child("body").getValue(String.class));
                             times.add(dsp.child("time").getValue(String.class));
                         }
 
+                        String[] titleArr = new String[titles.size()];
                         String[] bodyArr = new String[body.size()];
                         String[] timesArr = new String[times.size()];
                         int reverseCounter = body.size() - 1;
 
                         for (int i = 0; i < bodyArr.length; i++) {
+                            titleArr[i] = titles.get(reverseCounter);
                             bodyArr[i] = body.get(reverseCounter);
                             timesArr[i] = times.get(reverseCounter);
                             reverseCounter--;
                         }
 
                         ListView notificationList = (ListView) findViewById(R.id.notificationListView);
-                        NotificationAdapter notificationAdapter = new NotificationAdapter(getApplicationContext(), bodyArr, timesArr);
+                        NotificationAdapter notificationAdapter = new NotificationAdapter(getApplicationContext(), titleArr, bodyArr, timesArr);
                         notificationList.setAdapter(notificationAdapter);
                     }
 
@@ -117,6 +121,7 @@ public class NotificationActivity extends AppCompatActivity {
 
                     Map<String, Object> data = new HashMap<>();
                     data.put("timestamp", ServerValue.TIMESTAMP);
+                    data.put("title", "CO" + selectedSemester + "-" + selectedDivision);
                     data.put("body", flatDialog.getFirstTextField());
                     data.put("time", formattedTime);
 
@@ -161,31 +166,13 @@ public class NotificationActivity extends AppCompatActivity {
         semesterDialog.setTitle("Semester");
         String[] items = {"Semester 1", "Semester 2", "Semester 3", "Semester 4", "Semester 5", "Semester 6"};
         semesterDialog.setSingleChoiceItems(items, -1, (dialog, which) -> {
-            switch (which) {
-                case 0:
-                    selectedSemester = 1;
-                    break;
-                case 1:
-                    selectedSemester = 2;
-                    break;
-                case 2:
-                    selectedSemester = 3;
-                    break;
-                case 3:
-                    selectedSemester = 4;
-                    break;
-                case 4:
-                    selectedSemester = 5;
-                    break;
-                case 5:
-                    selectedSemester = 6;
-                    break;
-            }
+            which++;
+            selectedSemester = which;
             dialog.dismiss();
 
             AlertDialog.Builder divisionDialog = new AlertDialog.Builder(NotificationActivity.this);
             divisionDialog.setTitle("Division");
-            String[] items2 = {"All", "Division A", "Division B", "Practical Batch A1", "Practical Batch A2", "Practical Batch A3", "Practical Batch B1", "Practical Batch B2"};
+            String[] items2 = {"All", "Division A", "Division B", "Batch A1", "Batch A2", "Batch A3", "Batch B1", "Batch B2"};
             divisionDialog.setSingleChoiceItems(items2, -1, (dialog2, which2) -> {
                 switch (which2) {
                     case 0:

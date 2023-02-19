@@ -111,7 +111,7 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
                     startYear = year;
                     startDateView.setText(monthLabel);
                 })
-                .setNegativeButton(dialog -> startActivity(new Intent(AttendanceBelow75Activity.this, HomeActivity.class))).show());
+                .setNegativeButton(dialog -> startActivity(new Intent(AttendanceBelow75Activity.this, UtilityActivity.class))).show());
         layout.addView(startingMonthBtn);
         layout.addView(startDateView);
 
@@ -127,7 +127,7 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
                     endYear = year;
                     endDateView.setText(monthLabel);
                 })
-                .setNegativeButton(dialog -> startActivity(new Intent(AttendanceBelow75Activity.this, HomeActivity.class))).show());
+                .setNegativeButton(dialog -> startActivity(new Intent(AttendanceBelow75Activity.this, UtilityActivity.class))).show());
         layout.addView(endingMonthBtn);
         layout.addView(endDateView);
 
@@ -136,13 +136,13 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
         alert.setPositiveButton("Ok", (dialogInterface, i) -> {
             if (startMonth == 0 || startYear == 0) {
                 Toast.makeText(this, "Select starting month", Toast.LENGTH_SHORT).show();
-                startActivity(new Intent(AttendanceBelow75Activity.this, HomeActivity.class));
+                startActivity(new Intent(AttendanceBelow75Activity.this, UtilityActivity.class));
             } else if (endMonth == 0 || endYear == 0) {
                 Toast.makeText(this, "Select ending month", Toast.LENGTH_SHORT).show();
-                startActivity(new Intent(AttendanceBelow75Activity.this, HomeActivity.class));
+                startActivity(new Intent(AttendanceBelow75Activity.this, UtilityActivity.class));
             } else if (endYear - startYear > 1) {
                 Toast.makeText(this, "Range too long", Toast.LENGTH_SHORT).show();
-                startActivity(new Intent(AttendanceBelow75Activity.this, HomeActivity.class));
+                startActivity(new Intent(AttendanceBelow75Activity.this, UtilityActivity.class));
             } else {
                 String startingPath = "CO" + semester + "-";
                 mainCode(startingPath + "A", allStudentsA, "A", "-");
@@ -155,7 +155,7 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
             }
         });
 
-        alert.setNegativeButton("Cancel", (dialog, whichButton) -> startActivity(new Intent(AttendanceBelow75Activity.this, HomeActivity.class)));
+        alert.setNegativeButton("Cancel", (dialog, whichButton) -> startActivity(new Intent(AttendanceBelow75Activity.this, UtilityActivity.class)));
 
         alert.show();
     }

@@ -7,7 +7,6 @@ import android.graphics.Typeface;
 import android.os.Bundle;
 import android.text.InputType;
 import android.view.Gravity;
-import android.view.Menu;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TableLayout;
@@ -16,8 +15,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.PopupMenu;
 
 import com.example.flatdialoglibrary.dialog.FlatDialog;
 import com.google.firebase.auth.FirebaseAuth;
@@ -38,10 +37,10 @@ public class TodayAttendanceActivity extends AppCompatActivity {
 
     private final FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
     private TableLayout table;
-    private Button selectSemesterBtn, addStudentBtn;
+    private Button addStudentBtn;
     private boolean isFirstRow;
     private String subjectCodeTeacher, monthStr, attendanceOf, completeDayName;
-    private int date, year, semester;
+    private int date, year, selectedSemester;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,16 +50,15 @@ public class TodayAttendanceActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         init();
+        showDialogOfSemesterAndDivision();
     }
 
     private void init() {
         table = findViewById(R.id.table);
-        selectSemesterBtn = findViewById(R.id.selectSemesterBtn);
         addStudentBtn = findViewById(R.id.addStudentBtn);
         isFirstRow = true;
 
         addStudentBtn.setOnClickListener(view -> showInputDialogForRollNo());
-        selectSemesterBtn.setOnClickListener(view -> selectSemester());
     }
 
     private void showInputDialogForRollNo() {
@@ -84,7 +82,7 @@ public class TodayAttendanceActivity extends AppCompatActivity {
     private void addStudentToAttendance(int rollNo, int periodNo) {
         FirebaseDatabase.getInstance().getReference("students_data")
                 .orderByChild("semester")
-                .equalTo(semester)
+                .equalTo(selectedSemester)
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -113,7 +111,7 @@ public class TodayAttendanceActivity extends AppCompatActivity {
 
                         String finalStudentUID = studentUID;
                         FirebaseDatabase.getInstance().getReference("attendance")
-                                .child("CO" + semester + "-" + attendanceOf)
+                                .child("CO" + selectedSemester + "-" + attendanceOf)
                                 .child(subjectCodeTeacher)
                                 .child(String.valueOf(year))
                                 .child(monthStr)
@@ -145,17 +143,14 @@ public class TodayAttendanceActivity extends AppCompatActivity {
                 });
     }
 
-    private void selectSemester() {
-        PopupMenu semesterMenu = new PopupMenu(TodayAttendanceActivity.this, selectSemesterBtn);
-        semesterMenu.getMenu().add(Menu.NONE, 1, 1, "Semester 1");
-        semesterMenu.getMenu().add(Menu.NONE, 2, 2, "Semester 2");
-        semesterMenu.getMenu().add(Menu.NONE, 3, 3, "Semester 3");
-        semesterMenu.getMenu().add(Menu.NONE, 4, 4, "Semester 4");
-        semesterMenu.getMenu().add(Menu.NONE, 5, 5, "Semester 5");
-        semesterMenu.getMenu().add(Menu.NONE, 6, 6, "Semester 6");
-        semesterMenu.show();
-
-        semesterMenu.setOnMenuItemClickListener(item -> {
+    private void showDialogOfSemesterAndDivision() {
+        AlertDialog.Builder semesterDialog = new AlertDialog.Builder(TodayAttendanceActivity.this);
+        semesterDialog.setTitle("Semester");
+        String[] items = {"Semester 1", "Semester 2", "Semester 3", "Semester 4", "Semester 5", "Semester 6"};
+        semesterDialog.setSingleChoiceItems(items, -1, (dialog, which) -> {
+            which++;
+            selectedSemester = which;
+            dialog.dismiss();
             FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects")
                     .addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
@@ -163,7 +158,7 @@ public class TodayAttendanceActivity extends AppCompatActivity {
                             boolean rightSemester = false;
 
                             for (DataSnapshot dsp : snapshot.getChildren()) {
-                                if (item.getItemId() == snapshot.child(dsp.getKey()).child("semester").getValue(Integer.class)) {
+                                if (selectedSemester == snapshot.child(dsp.getKey()).child("semester").getValue(Integer.class)) {
                                     rightSemester = true;
                                     subjectCodeTeacher = dsp.getKey();
                                     break;
@@ -175,49 +170,37 @@ public class TodayAttendanceActivity extends AppCompatActivity {
                                 return;
                             }
 
-                            PopupMenu attendanceOfMenu = new PopupMenu(TodayAttendanceActivity.this, selectSemesterBtn);
-                            attendanceOfMenu.getMenu().add(Menu.NONE, 1, 1, "Division A");
-                            attendanceOfMenu.getMenu().add(Menu.NONE, 2, 2, "Division B");
-                            attendanceOfMenu.getMenu().add(Menu.NONE, 3, 3, "Batch A1");
-                            attendanceOfMenu.getMenu().add(Menu.NONE, 4, 4, "Batch A2");
-                            attendanceOfMenu.getMenu().add(Menu.NONE, 5, 5, "Batch A3");
-                            attendanceOfMenu.getMenu().add(Menu.NONE, 6, 6, "Batch B1");
-                            attendanceOfMenu.getMenu().add(Menu.NONE, 7, 7, "Batch B2");
-                            attendanceOfMenu.show();
-                            attendanceOfMenu.setOnMenuItemClickListener(item2 -> {
-                                semester = item.getItemId();
-                                switch (item2.getItemId()) {
-                                    case 1:
+                            AlertDialog.Builder divisionDialog = new AlertDialog.Builder(TodayAttendanceActivity.this);
+                            divisionDialog.setTitle("Division");
+                            String[] items2 = {"Division A", "Division B", "Batch A1", "Batch A2", "Batch A3", "Batch B1", "Batch B2"};
+                            divisionDialog.setSingleChoiceItems(items2, -1, (dialog2, which2) -> {
+                                switch (which2) {
+                                    case 0:
                                         attendanceOf = "A";
                                         break;
-
-                                    case 2:
+                                    case 1:
                                         attendanceOf = "B";
                                         break;
-
-                                    case 3:
+                                    case 2:
                                         attendanceOf = "A1";
                                         break;
-
-                                    case 4:
+                                    case 3:
                                         attendanceOf = "A2";
                                         break;
-
-                                    case 5:
+                                    case 4:
                                         attendanceOf = "A3";
                                         break;
-
-                                    case 6:
+                                    case 5:
                                         attendanceOf = "B1";
                                         break;
-
-                                    case 7:
+                                    case 6:
                                         attendanceOf = "B2";
                                         break;
                                 }
+                                dialog2.dismiss();
                                 showTodayAttendance();
-                                return true;
                             });
+                            divisionDialog.create().show();
                         }
 
                         @Override
@@ -225,8 +208,8 @@ public class TodayAttendanceActivity extends AppCompatActivity {
                             Toast.makeText(TodayAttendanceActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
                         }
                     });
-            return true;
         });
+        semesterDialog.create().show();
     }
 
     private void showTodayAttendance() {
@@ -239,14 +222,13 @@ public class TodayAttendanceActivity extends AppCompatActivity {
         monthStr = dateArr[6];
 
         FirebaseDatabase.getInstance().getReference("attendance")
-                .child("CO" + semester + "-" + attendanceOf)
+                .child("CO" + selectedSemester + "-" + attendanceOf)
                 .child(subjectCodeTeacher)
                 .child(String.valueOf(year))
                 .child(monthStr)
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        selectSemesterBtn.setVisibility(View.GONE);
                         addStudentBtn.setVisibility(View.VISIBLE);
                         String dateStr;
                         final String[] lectureCount = new String[1];
@@ -385,42 +367,39 @@ public class TodayAttendanceActivity extends AppCompatActivity {
             isFirstRow = true;
         }
 
-        tbRow.setOnLongClickListener(new View.OnLongClickListener() {
-            @Override
-            public boolean onLongClick(View view) {
-                int rollNo = Integer.parseInt((String) tbRow.getTag());
-                new SweetAlertDialog(TodayAttendanceActivity.this, SweetAlertDialog.WARNING_TYPE)
-                        .setTitleText("Delete attendance?")
-                        .setContentText("Roll no. " + rollNo + " attendance will be deleted")
-                        .setConfirmText("Delete")
-                        .setConfirmClickListener(sweetAlertDialog -> {
-                            sweetAlertDialog.dismissWithAnimation();
-                            FirebaseDatabase.getInstance().getReference("attendance")
-                                    .child("CO" + semester + "-" + attendanceOf)
-                                    .child(subjectCodeTeacher)
-                                    .child(String.valueOf(year))
-                                    .child(monthStr)
-                                    .child(completeDayName)
-                                    .orderByChild("rollNo")
-                                    .equalTo(rollNo)
-                                    .addListenerForSingleValueEvent(new ValueEventListener() {
-                                        @Override
-                                        public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                            for (DataSnapshot ds : snapshot.getChildren()) {
-                                                ds.getRef().removeValue();
-                                            }
+        tbRow.setOnLongClickListener(view -> {
+            int rollNo1 = Integer.parseInt((String) tbRow.getTag());
+            new SweetAlertDialog(TodayAttendanceActivity.this, SweetAlertDialog.WARNING_TYPE)
+                    .setTitleText("Delete attendance?")
+                    .setContentText("Roll no. " + rollNo1 + " attendance will be deleted")
+                    .setConfirmText("Delete")
+                    .setConfirmClickListener(sweetAlertDialog -> {
+                        sweetAlertDialog.dismissWithAnimation();
+                        FirebaseDatabase.getInstance().getReference("attendance")
+                                .child("CO" + selectedSemester + "-" + attendanceOf)
+                                .child(subjectCodeTeacher)
+                                .child(String.valueOf(year))
+                                .child(monthStr)
+                                .child(completeDayName)
+                                .orderByChild("rollNo")
+                                .equalTo(rollNo1)
+                                .addListenerForSingleValueEvent(new ValueEventListener() {
+                                    @Override
+                                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                        for (DataSnapshot ds : snapshot.getChildren()) {
+                                            ds.getRef().removeValue();
                                         }
+                                    }
 
-                                        @Override
-                                        public void onCancelled(@NonNull DatabaseError error) {
-                                            Toast.makeText(TodayAttendanceActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
-                                        }
-                                    });
-                        })
-                        .setCancelText("No")
-                        .setCancelClickListener(Dialog::dismiss).show();
-                return true;
-            }
+                                    @Override
+                                    public void onCancelled(@NonNull DatabaseError error) {
+                                        Toast.makeText(TodayAttendanceActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                    })
+                    .setCancelText("No")
+                    .setCancelClickListener(Dialog::dismiss).show();
+            return true;
         });
 
         tbRow.addView(tv0);

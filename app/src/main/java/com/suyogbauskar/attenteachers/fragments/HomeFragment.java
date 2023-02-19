@@ -261,6 +261,7 @@ public class HomeFragment extends Fragment {
                 FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects/" + entry1.getKey() + "/B1_count").setValue(0);
                 FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects/" + entry1.getKey() + "/B2_count").setValue(0);
             }
+            FirebaseDatabase.getInstance().getReference("teachers_data").child(user.getUid()).child("notifications").removeValue();
         }
     }
 
