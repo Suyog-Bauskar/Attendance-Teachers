@@ -1,10 +1,13 @@
 package com.suyogbauskar.attenteachers;
 
+import static android.content.ContentValues.TAG;
+
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
@@ -134,11 +137,15 @@ public class UnitTestMarksActivity extends AppCompatActivity {
                                         table.removeAllViews();
                                         drawTableHeader();
 
-                                        for (DataSnapshot ds : snapshot.getChildren()) {
-                                            if (ds.child("isVerified").getValue(Boolean.class)) {
-                                                studentDataMap.put(ds.child("rollNo").getValue(Integer.class),
-                                                        new StudentData(ds.child("rollNo").getValue(Integer.class), ds.child("subjects").child(subjectCodeTeacher).child("unitTest1Marks").getValue(Integer.class), ds.child("subjects").child(subjectCodeTeacher).child("unitTest2Marks").getValue(Integer.class), ds.child("firstname").getValue(String.class), ds.child("lastname").getValue(String.class)));
+                                        try {
+                                            for (DataSnapshot ds : snapshot.getChildren()) {
+                                                if (ds.child("isVerified").getValue(Boolean.class)) {
+                                                    studentDataMap.put(ds.child("rollNo").getValue(Integer.class),
+                                                            new StudentData(ds.child("rollNo").getValue(Integer.class), ds.child("subjects").child(subjectCodeTeacher).child("unitTest1Marks").getValue(Integer.class), ds.child("subjects").child(subjectCodeTeacher).child("unitTest2Marks").getValue(Integer.class), ds.child("firstname").getValue(String.class), ds.child("lastname").getValue(String.class)));
+                                                }
                                             }
+                                        } catch (Exception e) {
+                                            Log.d(TAG, e.getMessage());
                                         }
                                         for (Map.Entry<Integer, StudentData> entry1 : studentDataMap.entrySet()) {
                                             int unitOneMarks = entry1.getValue().getUnitTest1Marks();

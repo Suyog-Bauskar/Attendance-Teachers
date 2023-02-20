@@ -33,6 +33,8 @@ import com.google.firebase.database.ValueEventListener;
 import com.suyogbauskar.attenteachers.fragments.HomeFragment;
 import com.suyogbauskar.attenteachers.fragments.SettingsFragment;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 public class HomeActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {

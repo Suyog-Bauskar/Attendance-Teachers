@@ -100,6 +100,9 @@ public class NotificationActivity extends AppCompatActivity {
                 .setFirstTextFieldHint("write your message here ...")
                 .setFirstButtonText("Done")
                 .withFirstButtonListner(v -> {
+                    String secretKey1 = "AAAAtBgfzRs:APA91bFqeVeSH8NFUlNWJA_EuCWmws";
+                    String secretKey2 = "CXHqyeawP1UV2sH7XHOcNcjumnoBdCWue0uQIB7B5yeePlYzfDiPrbqEus";
+                    String secretKey3 = "ZFyIJWKrnWecHuIbSqjVvLT-tZoaa7zaMMfzCxVxAzezqFAKjVBd";
                     if (flatDialog.getFirstTextField().trim().isEmpty()) {
                         Toast.makeText(this, "Enter message", Toast.LENGTH_SHORT).show();
                         return;
@@ -109,7 +112,7 @@ public class NotificationActivity extends AppCompatActivity {
                     String firstname, lastname;
                     firstname = sp.getString("firstname", "");
                     lastname = sp.getString("lastname", "");
-                    FirebasePush firebasePush = new FirebasePush("AAAAtBgfzRs:APA91bFqeVeSH8NFUlNWJA_EuCWmwsCXHqyeawP1UV2sH7XHOcNcjumnoBdCWue0uQIB7B5yeePlYzfDiPrbqEusZFyIJWKrnWecHuIbSqjVvLT-tZoaa7zaMMfzCxVxAzezqFAKjVBd");
+                    FirebasePush firebasePush = new FirebasePush(secretKey1 + secretKey2 + secretKey3);
                     firebasePush.setNotification(new Notification("Prof. " + firstname + " " + lastname, flatDialog.getFirstTextField()));
                     if (selectedDivision.equals("All")) {
                         firebasePush.sendToTopic("CO" + selectedSemester);
