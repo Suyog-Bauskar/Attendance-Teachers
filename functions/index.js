@@ -10,11 +10,14 @@ exports.deleteUserFromAuthentication = functions.database.ref('/students_data/{u
         return admin.auth().deleteUser(context.params.uid);
     });
 
-exports.sendNotification = functions.database.ref('/teachers_data/{uid}/notifications')
+exports.sendNotification = functions.database.ref('/teachers_data/{uid}/notifications/{notificationId}')
     .onCreate((snapshot, context) => {
-          // Grab the current value of what was written to the Realtime Database.
-          const original = snapshot.val();
-          console.log(original);
-          console.log(context);
-          functions.logger.log('log', context.params.pushId, original);
+          const topic = snapshot.child('title').val();
+              const payload = {
+                  notification: {
+                      title: "Prof. " + snapshot.child('firstname').val() + " " + snapshot.child('lastname').val(),
+                      body: snapshot.child('body').val()
+                  }
+              };
+              admin.messaging().sendToTopic(topic,payload);
         });

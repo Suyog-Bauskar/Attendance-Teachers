@@ -16,10 +16,6 @@ import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.activity.result.ActivityResult;
-import androidx.activity.result.ActivityResultCallback;
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -57,7 +53,6 @@ public class UnitTestMarksActivity extends AppCompatActivity {
     private String subjectCodeTeacher;
     private PathSelectFragment selector;
     private int selectedSemester;
-    private ActivityResultLauncher<Intent> resultLauncher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,35 +63,13 @@ public class UnitTestMarksActivity extends AppCompatActivity {
 
         init();
         selectSemester();
-
-        resultLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), new ActivityResultCallback<ActivityResult>() {
-                    @Override
-                    public void onActivityResult(ActivityResult result) {
-                        // Initialize result data
-                        Intent data = result.getData();
-                        // check condition
-                        if (data != null) {
-                            Log.d(TAG, "" + data.getData());
-                        }
-                    }
-                });
-    }
-
-    private void selectPDF()
-    {
-        // Initialize intent
-        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-        // set type
-        intent.setType("application/pdf");
-        // Launch intent
-        resultLauncher.launch(intent);
     }
 
     private void init() {
         user = FirebaseAuth.getInstance().getCurrentUser();
         isFirstRow = true;
         findAllViews();
-        uploadBtn.setOnClickListener(view -> selectPDF());
+        uploadBtn.setOnClickListener(view -> selectFileForUpdatingTestMarks());
         deleteBtn.setOnClickListener(view -> deleteMarks());
 
         SharedPreferences sh = getSharedPreferences("unitTestMarksPref", MODE_PRIVATE);

@@ -28,9 +28,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import fcm.androidtoandroid.FirebasePush;
-import fcm.androidtoandroid.model.Notification;
-
 public class NotificationActivity extends AppCompatActivity {
 
     private final FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
@@ -100,9 +97,6 @@ public class NotificationActivity extends AppCompatActivity {
                 .setFirstTextFieldHint("write your message here ...")
                 .setFirstButtonText("Done")
                 .withFirstButtonListner(v -> {
-                    String secretKey1 = "AAAAtBgfzRs:APA91bFqeVeSH8NFUlNWJA_EuCWmws";
-                    String secretKey2 = "CXHqyeawP1UV2sH7XHOcNcjumnoBdCWue0uQIB7B5yeePlYzfDiPrbqEus";
-                    String secretKey3 = "ZFyIJWKrnWecHuIbSqjVvLT-tZoaa7zaMMfzCxVxAzezqFAKjVBd";
                     if (flatDialog.getFirstTextField().trim().isEmpty()) {
                         Toast.makeText(this, "Enter message", Toast.LENGTH_SHORT).show();
                         return;
@@ -112,18 +106,13 @@ public class NotificationActivity extends AppCompatActivity {
                     String firstname, lastname;
                     firstname = sp.getString("firstname", "");
                     lastname = sp.getString("lastname", "");
-                    FirebasePush firebasePush = new FirebasePush(secretKey1 + secretKey2 + secretKey3);
-                    firebasePush.setNotification(new Notification("Prof. " + firstname + " " + lastname, flatDialog.getFirstTextField()));
-                    if (selectedDivision.equals("All")) {
-                        firebasePush.sendToTopic("CO" + selectedSemester);
-                    } else {
-                        firebasePush.sendToTopic("CO" + selectedSemester + "-" + selectedDivision);
-                    }
 
                     String formattedTime = new SimpleDateFormat("hh:mm a").format(new Date());
 
                     Map<String, Object> data = new HashMap<>();
                     data.put("timestamp", ServerValue.TIMESTAMP);
+                    data.put("firstname", firstname);
+                    data.put("lastname", lastname);
                     data.put("title", "CO" + selectedSemester + "-" + selectedDivision);
                     data.put("body", flatDialog.getFirstTextField());
                     data.put("time", formattedTime);
