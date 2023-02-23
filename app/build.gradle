@@ -11,8 +11,8 @@ android {
         applicationId "com.suyogbauskar.attenteachers"
         minSdk 26
         targetSdk 33
-        versionCode 12
-        versionName "1.0.10"
+        versionCode 13
+        versionName "1.0.11"
         resConfigs "en"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -52,8 +52,6 @@ dependencies {
     implementation 'com.github.kal72:RackMonthPicker:1.6.1'
     implementation 'com.github.mejdi14:Flat-Dialog-Android:1.0.5'
     implementation 'com.github.uzairiqbal91:CircularTimerView:1.0'
-    implementation 'io.github.molihuan:pathselector:1.1.11'
-    implementation 'com.github.DavidBarbaran:FCM-AndroidToOtherDevice:1.1.2'
 
     // firebase
     implementation platform('com.google.firebase:firebase-bom:30.4.1')

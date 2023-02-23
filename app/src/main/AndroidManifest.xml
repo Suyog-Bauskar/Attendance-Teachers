@@ -46,7 +46,6 @@
         <activity
             android:name=".UtilityActivity"
             android:exported="false"
-            android:noHistory="true"
             android:screenOrientation="portrait" />
         <activity
             android:name=".SubjectsActivity"
@@ -54,8 +53,7 @@
             android:noHistory="true" />
         <activity
             android:name=".UnitTestMarksActivity"
-            android:exported="false"
-            android:noHistory="true" />
+            android:exported="false" />
         <activity
             android:name=".SubmissionActivity"
             android:exported="false"

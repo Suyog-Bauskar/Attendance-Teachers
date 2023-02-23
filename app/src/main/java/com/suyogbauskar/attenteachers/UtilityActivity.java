@@ -1,14 +1,22 @@
 package com.suyogbauskar.attenteachers;
 
+import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.OpenableColumns;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -21,20 +29,17 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageMetadata;
-import com.molihuan.pathselector.PathSelector;
-import com.molihuan.pathselector.entity.FileBean;
-import com.molihuan.pathselector.fragment.BasePathSelectFragment;
-import com.molihuan.pathselector.fragment.impl.PathSelectFragment;
-import com.molihuan.pathselector.listener.CommonItemListener;
-import com.molihuan.pathselector.utils.MConstants;
 import com.suyogbauskar.attenteachers.excelfiles.CreateExcelFileOfAttendance;
 import com.suyogbauskar.attenteachers.pojos.StudentData;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.time.LocalDate;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -47,7 +52,7 @@ public class UtilityActivity extends AppCompatActivity {
     private Button excelBtn, attendanceBelow75Btn, subjectsBtn, uploadTimetableBtn, removeLastSemesterStudentsBtn, updateAllStudentsDetailsBtn, modifySubjectsBtn;
     private boolean subjectFound, isAdmin;
     private LinearLayout layout;
-    private PathSelectFragment selector;
+    private int selectedSemester;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -120,55 +125,30 @@ public class UtilityActivity extends AppCompatActivity {
                 .show();
     }
 
+    ActivityResultLauncher<Intent> activityResultLauncherForStudentsDetails = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == Activity.RESULT_OK) {
+                    readCSVFile(result.getData().getData());
+                }
+            }
+    );
+
     private void selectFileForUpdatingAllStudents() {
-        selector = PathSelector.build(this, MConstants.BUILD_ACTIVITY)
-                .setRootPath("/storage/emulated/0/Download/")
-                .setRequestCode(635)
-                .setShowFileTypes("csv")
-                .setSelectFileTypes("csv")
-                .setMaxCount(1)
-                .setShowTitlebarFragment(false)
-                .setShowTabbarFragment(false)
-                .setAlwaysShowHandleFragment(true)
-                .setHandleItemListeners(
-                        new CommonItemListener("Cancel") {
-                            @Override
-                            public boolean onClick(View v, TextView tv, List<FileBean> selectedFiles, String currentPath, BasePathSelectFragment pathSelectFragment) {
-                                if (selectedFiles.size() == 1) {
-                                    pathSelectFragment.openCloseMultipleMode(false);
-                                } else {
-                                    finish();
-                                    overridePendingTransition(0, 0);
-                                    startActivity(getIntent());
-                                    overridePendingTransition(0, 0);
-                                }
-                                return false;
-                            }
-                        },
-                        new CommonItemListener("OK") {
-                            @Override
-                            public boolean onClick(View v, TextView tv, List<FileBean> selectedFiles, String currentPath, BasePathSelectFragment pathSelectFragment) {
-                                if (selectedFiles.size() == 1) {
-                                    readCSVFile(selectedFiles.get(0).getPath());
-                                    finish();
-                                    overridePendingTransition(0, 0);
-                                    startActivity(getIntent());
-                                    overridePendingTransition(0, 0);
-                                }
-                                return false;
-                            }
-                        }
-                )
-                .show();
+        Intent data = new Intent(Intent.ACTION_GET_CONTENT);
+        Uri uri = Uri.parse(Environment.getExternalStorageDirectory().getPath());
+        data.setDataAndType(uri, "text/csv");
+        data = Intent.createChooser(data, "Select students details file");
+        activityResultLauncherForStudentsDetails.launch(data);
     }
 
-    private void readCSVFile(String path) {
+    private void readCSVFile(Uri uri) {
         try {
             Map<Long, StudentData> studentsDetailsList = new HashMap<>();
             int rollNo, batch, semester;
             long enrollNo;
             String division;
-            Scanner scanner = new Scanner(new File(path));
+            Scanner scanner = new Scanner(new InputStreamReader(getContentResolver().openInputStream(uri)));
             scanner.nextLine();
 
             while (scanner.hasNextLine()) {
@@ -206,10 +186,12 @@ public class UtilityActivity extends AppCompatActivity {
                         @Override
                         public void onDataChange(@NonNull DataSnapshot snapshot) {
                             for (DataSnapshot ds : snapshot.getChildren()) {
-                                ds.child("rollNo").getRef().setValue(studentsDetailsList.get(ds.child("enrollNo").getValue(Long.class)).getRollNo());
-                                ds.child("batch").getRef().setValue(studentsDetailsList.get(ds.child("enrollNo").getValue(Long.class)).getBatch());
-                                ds.child("semester").getRef().setValue(studentsDetailsList.get(ds.child("enrollNo").getValue(Long.class)).getSemester());
-                                ds.child("division").getRef().setValue(studentsDetailsList.get(ds.child("enrollNo").getValue(Long.class)).getDivision());
+                                if (studentsDetailsList.containsKey(ds.child("enrollNo").getValue(Long.class))) {
+                                    ds.child("rollNo").getRef().setValue(studentsDetailsList.get(ds.child("enrollNo").getValue(Long.class)).getRollNo());
+                                    ds.child("batch").getRef().setValue(studentsDetailsList.get(ds.child("enrollNo").getValue(Long.class)).getBatch());
+                                    ds.child("semester").getRef().setValue(studentsDetailsList.get(ds.child("enrollNo").getValue(Long.class)).getSemester());
+                                    ds.child("division").getRef().setValue(studentsDetailsList.get(ds.child("enrollNo").getValue(Long.class)).getDivision());
+                                }
                             }
                             Toast.makeText(UtilityActivity.this, "Students details updated", Toast.LENGTH_SHORT).show();
                         }
@@ -227,55 +209,30 @@ public class UtilityActivity extends AppCompatActivity {
         }
     }
 
-    private void selectFileForUploadingTimetable(int semester) {
-        selector = PathSelector.build(this, MConstants.BUILD_ACTIVITY)
-                .setRootPath("/storage/emulated/0/Download/")
-                .setRequestCode(635)
-                .setShowFileTypes("csv")
-                .setSelectFileTypes("csv")
-                .setMaxCount(1)
-                .setShowTitlebarFragment(false)
-                .setShowTabbarFragment(false)
-                .setAlwaysShowHandleFragment(true)
-                .setHandleItemListeners(
-                        new CommonItemListener("Cancel") {
-                            @Override
-                            public boolean onClick(View v, TextView tv, List<FileBean> selectedFiles, String currentPath, BasePathSelectFragment pathSelectFragment) {
-                                if (selectedFiles.size() == 1) {
-                                    pathSelectFragment.openCloseMultipleMode(false);
-                                } else {
-                                    finish();
-                                    overridePendingTransition(0, 0);
-                                    startActivity(getIntent());
-                                    overridePendingTransition(0, 0);
-                                }
-                                return false;
-                            }
-                        },
-                        new CommonItemListener("OK") {
-                            @Override
-                            public boolean onClick(View v, TextView tv, List<FileBean> selectedFiles, String currentPath, BasePathSelectFragment pathSelectFragment) {
-                                if (selectedFiles.size() == 1) {
-                                    uploadTimetable(semester, selectedFiles.get(0).getPath());
-                                    finish();
-                                    overridePendingTransition(0, 0);
-                                    startActivity(getIntent());
-                                    overridePendingTransition(0, 0);
-                                }
-                                return false;
-                            }
-                        }
-                )
-                .show();
+    ActivityResultLauncher<Intent> activityResultLauncherForTimetable = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == Activity.RESULT_OK) {
+                    uploadTimetable(result.getData().getData());
+                }
+            }
+    );
+
+    private void selectFileForUploadingTimetable() {
+        Intent data = new Intent(Intent.ACTION_GET_CONTENT);
+        Uri uri = Uri.parse(Environment.getExternalStorageDirectory().getPath());
+        data.setDataAndType(uri, "text/csv");
+        data = Intent.createChooser(data, "Select timetable");
+        activityResultLauncherForTimetable.launch(data);
     }
 
-    private void uploadTimetable(int semester, String path) {
+    private void uploadTimetable(Uri uri) {
         try {
-            File file = new File(path);
+            File file = getFile(getApplicationContext(), uri);
             StorageMetadata metadata = new StorageMetadata.Builder()
                     .setContentType("text/csv")
                     .build();
-            FirebaseStorage.getInstance().getReference().child("CO").child("Students_Timetables").child("CO" + semester + "_Timetable.csv")
+            FirebaseStorage.getInstance().getReference().child("CO").child("Students_Timetables").child("CO" + selectedSemester + "_Timetable.csv")
                     .putStream(new FileInputStream(file), metadata)
                     .addOnSuccessListener(taskSnapshot -> Toast.makeText(UtilityActivity.this, "Timetable uploaded successfully", Toast.LENGTH_SHORT).show())
                     .addOnFailureListener(e -> Toast.makeText(UtilityActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show());
@@ -284,32 +241,50 @@ public class UtilityActivity extends AppCompatActivity {
         }
     }
 
+    private File getFile(Context context, Uri uri) {
+        File destinationFilename = new File(context.getFilesDir().getPath() + File.separatorChar + queryName(context, uri));
+        try (InputStream ins = context.getContentResolver().openInputStream(uri)) {
+            createFileFromStream(ins, destinationFilename);
+        } catch (Exception ex) {
+            Log.e("Save File", ex.getMessage());
+            ex.printStackTrace();
+        }
+        return destinationFilename;
+    }
+
+    private void createFileFromStream(InputStream ins, File destination) {
+        try (OutputStream os = new FileOutputStream(destination)) {
+            byte[] buffer = new byte[4096];
+            int length;
+            while ((length = ins.read(buffer)) > 0) {
+                os.write(buffer, 0, length);
+            }
+            os.flush();
+        } catch (Exception ex) {
+            Log.e("Save File", ex.getMessage());
+            ex.printStackTrace();
+        }
+    }
+
+    private String queryName(Context context, Uri uri) {
+        Cursor returnCursor = context.getContentResolver().query(uri, null, null, null, null);
+        assert returnCursor != null;
+        int nameIndex = returnCursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+        returnCursor.moveToFirst();
+        String name = returnCursor.getString(nameIndex);
+        returnCursor.close();
+        return name;
+    }
+
     private void showDialogOfSemester() {
         AlertDialog.Builder semesterDialog = new AlertDialog.Builder(UtilityActivity.this);
         semesterDialog.setTitle("Semester");
         String[] items = {"Semester 1", "Semester 2", "Semester 3", "Semester 4", "Semester 5", "Semester 6"};
         semesterDialog.setSingleChoiceItems(items, -1, (dialog, which) -> {
-            switch (which) {
-                case 0:
-                    selectFileForUploadingTimetable(1);
-                    break;
-                case 1:
-                    selectFileForUploadingTimetable(2);
-                    break;
-                case 2:
-                    selectFileForUploadingTimetable(3);
-                    break;
-                case 3:
-                    selectFileForUploadingTimetable(4);
-                    break;
-                case 4:
-                    selectFileForUploadingTimetable(5);
-                    break;
-                case 5:
-                    selectFileForUploadingTimetable(6);
-                    break;
-            }
+            which++;
+            selectedSemester = which;
             dialog.dismiss();
+            selectFileForUploadingTimetable();
         });
         semesterDialog.create().show();
     }
@@ -490,9 +465,6 @@ public class UtilityActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        if (selector != null && selector.onBackPressed()) {
-            return;
-        }
         startActivity(new Intent(UtilityActivity.this, HomeActivity.class));
     }
 }

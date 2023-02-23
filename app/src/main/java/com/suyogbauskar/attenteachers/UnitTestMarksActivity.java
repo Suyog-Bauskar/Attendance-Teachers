@@ -2,11 +2,14 @@ package com.suyogbauskar.attenteachers;
 
 import static android.content.ContentValues.TAG;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
@@ -16,6 +19,8 @@ import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -26,18 +31,11 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-import com.molihuan.pathselector.PathSelector;
-import com.molihuan.pathselector.entity.FileBean;
-import com.molihuan.pathselector.fragment.BasePathSelectFragment;
-import com.molihuan.pathselector.fragment.impl.PathSelectFragment;
-import com.molihuan.pathselector.listener.CommonItemListener;
-import com.molihuan.pathselector.utils.MConstants;
 import com.suyogbauskar.attenteachers.pojos.StudentData;
 import com.suyogbauskar.attenteachers.pojos.UnitTestMarks;
 
-import java.io.File;
+import java.io.InputStreamReader;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.TreeMap;
@@ -51,7 +49,6 @@ public class UnitTestMarksActivity extends AppCompatActivity {
     private TableLayout table;
     private boolean isFirstRow;
     private String subjectCodeTeacher;
-    private PathSelectFragment selector;
     private int selectedSemester;
 
     @Override
@@ -69,7 +66,7 @@ public class UnitTestMarksActivity extends AppCompatActivity {
         user = FirebaseAuth.getInstance().getCurrentUser();
         isFirstRow = true;
         findAllViews();
-        uploadBtn.setOnClickListener(view -> selectFileForUpdatingTestMarks());
+        uploadBtn.setOnClickListener(view -> uploadFile());
         deleteBtn.setOnClickListener(view -> deleteMarks());
 
         SharedPreferences sh = getSharedPreferences("unitTestMarksPref", MODE_PRIVATE);
@@ -317,57 +314,19 @@ public class UnitTestMarksActivity extends AppCompatActivity {
         table.addView(tbRow);
     }
 
-    private void selectFileForUpdatingTestMarks() {
-        selector = PathSelector.build(this, MConstants.BUILD_ACTIVITY)
-                .setRootPath("/storage/emulated/0/Download/")
-                .setRequestCode(635)
-                .setShowFileTypes("csv")
-                .setSelectFileTypes("csv")
-                .setMaxCount(1)
-                .setShowTitlebarFragment(false)
-                .setShowTabbarFragment(false)
-                .setAlwaysShowHandleFragment(true)
-                .setHandleItemListeners(
-                        new CommonItemListener("Cancel") {
-                            @Override
-                            public boolean onClick(View v, TextView tv, List<FileBean> selectedFiles, String currentPath, BasePathSelectFragment pathSelectFragment) {
-                                if (selectedFiles.size() == 1) {
-                                    pathSelectFragment.openCloseMultipleMode(false);
-                                } else {
-                                    restartActivity();
-                                }
-                                return false;
-                            }
-                        },
-                        new CommonItemListener("OK") {
-                            @Override
-                            public boolean onClick(View v, TextView tv, List<FileBean> selectedFiles, String currentPath, BasePathSelectFragment pathSelectFragment) {
-                                if (selectedFiles.size() == 1) {
-                                    SharedPreferences sharedPreferences = getSharedPreferences("unitTestMarksPref", MODE_PRIVATE);
-                                    SharedPreferences.Editor myEdit = sharedPreferences.edit();
-                                    myEdit.putInt("semester", selectedSemester);
-                                    myEdit.commit();
-                                    readCSVFile(selectedFiles.get(0).getPath());
-                                    restartActivity();
-                                }
-                                return false;
-                            }
-                        }
-                )
-                .show();
-    }
+    ActivityResultLauncher<Intent> activityResultLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == Activity.RESULT_OK) {
+                    readCSVFile(result.getData().getData());
+                }
+            }
+    );
 
-    private void restartActivity() {
-        finish();
-        overridePendingTransition(0, 0);
-        startActivity(getIntent());
-        overridePendingTransition(0, 0);
-    }
-
-    private void readCSVFile(String path) {
+    private void readCSVFile(Uri uri) {
         try {
             Map<Integer, UnitTestMarks> unitTestMarksList = new HashMap<>();
-            Scanner scanner = new Scanner(new File(path));
+            Scanner scanner = new Scanner(new InputStreamReader(getContentResolver().openInputStream(uri)));
             scanner.nextLine();
 
             while (scanner.hasNextLine()) {
@@ -399,6 +358,14 @@ public class UnitTestMarksActivity extends AppCompatActivity {
         }
     }
 
+    private void uploadFile() {
+        Intent data = new Intent(Intent.ACTION_GET_CONTENT);
+        Uri uri = Uri.parse(Environment.getExternalStorageDirectory().getPath());
+        data.setDataAndType(uri, "text/csv");
+        data = Intent.createChooser(data, "Choose unit test marks");
+        activityResultLauncher.launch(data);
+    }
+
     @Override
     public boolean onSupportNavigateUp() {
         onBackPressed();
@@ -407,9 +374,6 @@ public class UnitTestMarksActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        if (selector != null && selector.onBackPressed()) {
-            return;
-        }
         startActivity(new Intent(UnitTestMarksActivity.this, HomeActivity.class));
     }
 }
