@@ -3,6 +3,7 @@ package com.suyogbauskar.attenteachers;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
@@ -35,8 +36,9 @@ public class StudentDataActivity extends AppCompatActivity {
     private TableLayout table;
     private boolean isFirstRow;
     private TextView noStudentsFoundView;
-    private String firstnameStr, lastnameStr;
+    private String firstnameStr, lastnameStr, department;
     private long studentEnrollNo = 0;
+    private int selectedSemester;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,6 +46,9 @@ public class StudentDataActivity extends AppCompatActivity {
         setContentView(R.layout.activity_student_data);
         setTitle("Students Data");
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
+        SharedPreferences sharedPreferences2 = getSharedPreferences("teacherDataPref", MODE_PRIVATE);
+        department = sharedPreferences2.getString("department", "");
 
         findAllViews();
         selectSemester();
@@ -55,16 +60,17 @@ public class StudentDataActivity extends AppCompatActivity {
         String[] items = {"Semester 1", "Semester 2", "Semester 3", "Semester 4", "Semester 5", "Semester 6"};
         semesterDialog.setSingleChoiceItems(items, -1, (dialog, which) -> {
             which++;
-            showAllStudentsData(which);
+            selectedSemester = which;
+            showAllStudentsData();
             dialog.dismiss();
         });
         semesterDialog.create().show();
     }
 
-    private void showAllStudentsData(int semester) {
+    private void showAllStudentsData() {
         FirebaseDatabase.getInstance().getReference("students_data")
-                .orderByChild("semester")
-                .equalTo(semester)
+                .orderByChild("queryStringSemester")
+                .equalTo(department + selectedSemester)
                 .addValueEventListener(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -338,6 +344,8 @@ public class StudentDataActivity extends AppCompatActivity {
                                                         ds.getRef().child("enrollNo").setValue(enrollNoLong);
                                                         ds.getRef().child("division").setValue(divisionStr);
                                                         ds.getRef().child("batch").setValue(batchInt);
+                                                        ds.getRef().child("queryStringRollNo").setValue(department + selectedSemester + divisionStr + rollNoInt);
+                                                        ds.getRef().child("queryStringDivision").setValue(department + divisionStr);
                                                     }
                                                 }
 

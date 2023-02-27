@@ -2,6 +2,7 @@ package com.suyogbauskar.attenteachers;
 
 import android.app.Dialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
@@ -30,6 +31,7 @@ public class StudentVerificationActivity extends AppCompatActivity {
 
     private TableLayout table;
     private boolean isFirstRow;
+    private String department;
     private TextView allStudentsVerifiedView;
 
     @Override
@@ -39,14 +41,17 @@ public class StudentVerificationActivity extends AppCompatActivity {
         setTitle("Student Verification");
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
+        SharedPreferences sharedPreferences2 = getSharedPreferences("teacherDataPref", MODE_PRIVATE);
+        department = sharedPreferences2.getString("department", "");
+
         findAllViews();
         findNotVerifiedStudents();
     }
 
     private void findNotVerifiedStudents() {
         FirebaseDatabase.getInstance().getReference("students_data")
-                .orderByChild("isVerified")
-                .equalTo(false)
+                .orderByChild("queryStringIsVerified")
+                .equalTo(department + "false")
                 .addValueEventListener(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -254,6 +259,7 @@ public class StudentVerificationActivity extends AppCompatActivity {
                                 public void onDataChange(@NonNull DataSnapshot snapshot) {
                                     for (DataSnapshot ds: snapshot.getChildren()) {
                                         ds.getRef().child("isVerified").setValue(true);
+                                        ds.getRef().child("queryStringIsVerified").setValue(department + "true");
                                     }
                                 }
 

@@ -32,7 +32,7 @@ public class NotificationActivity extends AppCompatActivity {
 
     private final FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
     private int selectedSemester;
-    private String selectedDivision;
+    private String selectedDivision, department;
     private Button sendNotificationBtn;
 
     @Override
@@ -44,6 +44,8 @@ public class NotificationActivity extends AppCompatActivity {
 
         sendNotificationBtn = findViewById(R.id.sendNotificationBtn);
         sendNotificationBtn.setOnClickListener(v -> showDialogOfSemesterAndDivision());
+        SharedPreferences sharedPreferences2 = getSharedPreferences("teacherDataPref", MODE_PRIVATE);
+        department = sharedPreferences2.getString("department", "");
 
         showNotifications();
     }
@@ -113,7 +115,7 @@ public class NotificationActivity extends AppCompatActivity {
                     data.put("timestamp", ServerValue.TIMESTAMP);
                     data.put("firstname", firstname);
                     data.put("lastname", lastname);
-                    data.put("title", "CO" + selectedSemester + "-" + selectedDivision);
+                    data.put("title", department + selectedSemester + "-" + selectedDivision);
                     data.put("body", flatDialog.getFirstTextField());
                     data.put("time", formattedTime);
 
@@ -143,7 +145,7 @@ public class NotificationActivity extends AppCompatActivity {
                             .child(String.valueOf(year))
                             .child(monthStr)
                             .child(String.valueOf(date))
-                            .child("CO" + selectedSemester + "-" + selectedDivision)
+                            .child(department + selectedSemester + "-" + selectedDivision)
                             .child(randomKey2)
                             .setValue(data2);
 
@@ -164,7 +166,7 @@ public class NotificationActivity extends AppCompatActivity {
 
             AlertDialog.Builder divisionDialog = new AlertDialog.Builder(NotificationActivity.this);
             divisionDialog.setTitle("Division");
-            String[] items2 = {"All", "Division A", "Division B", "Batch A1", "Batch A2", "Batch A3", "Batch B1", "Batch B2"};
+            String[] items2 = {"All", "Division A", "Division B", "Division C", "Batch A1", "Batch A2", "Batch A3", "Batch B1", "Batch B2", "Batch B3", "Batch C1", "Batch C2", "Batch C3"};
             divisionDialog.setSingleChoiceItems(items2, -1, (dialog2, which2) -> {
                 switch (which2) {
                     case 0:
@@ -177,19 +179,34 @@ public class NotificationActivity extends AppCompatActivity {
                         selectedDivision = "B";
                         break;
                     case 3:
-                        selectedDivision = "A1";
+                        selectedDivision = "C";
                         break;
                     case 4:
-                        selectedDivision = "A2";
+                        selectedDivision = "A1";
                         break;
                     case 5:
-                        selectedDivision = "A3";
+                        selectedDivision = "A2";
                         break;
                     case 6:
-                        selectedDivision = "B1";
+                        selectedDivision = "A3";
                         break;
                     case 7:
+                        selectedDivision = "B1";
+                        break;
+                    case 8:
                         selectedDivision = "B2";
+                        break;
+                    case 9:
+                        selectedDivision = "B3";
+                        break;
+                    case 10:
+                        selectedDivision = "C1";
+                        break;
+                    case 11:
+                        selectedDivision = "C2";
+                        break;
+                    case 12:
+                        selectedDivision = "C3";
                         break;
                 }
                 dialog2.dismiss();

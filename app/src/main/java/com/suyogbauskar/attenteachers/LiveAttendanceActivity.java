@@ -40,7 +40,7 @@ public class LiveAttendanceActivity extends AppCompatActivity {
     private TextView noAttendanceStartedView, totalPresentStudentsView;
     private Button addStudentBtn;
     private boolean isFirstRow;
-    private String monthStr, subjectCode;
+    private String monthStr, subjectCode, department;
     private int date, year, semester, count;
     private String studentUID, studentFirstname, studentLastname, attendanceOf;
     private Map<String, Object> studentData;
@@ -66,6 +66,8 @@ public class LiveAttendanceActivity extends AppCompatActivity {
         subjectCode = sharedPreferences.getString("subjectCode", "");
         semester = sharedPreferences.getInt("subjectSemester", 0);
         count = sharedPreferences.getInt("count", 0);
+        SharedPreferences sharedPreferences2 = getSharedPreferences("teacherDataPref", MODE_PRIVATE);
+        department = sharedPreferences2.getString("department", "");
 
         findAllViews();
         setListeners();
@@ -95,26 +97,20 @@ public class LiveAttendanceActivity extends AppCompatActivity {
 
     private void addStudentToAttendance(int rollNo) {
         FirebaseDatabase.getInstance().getReference("students_data")
-                .orderByChild("semester")
-                .equalTo(semester)
+                .orderByChild("queryStringRollNo")
+                .equalTo(department + semester + attendanceOf.charAt(0) + rollNo)
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        boolean hasStudentFound = false;
-
-                        for (DataSnapshot ds : snapshot.getChildren()) {
-                            if (ds.child("rollNo").getValue(Integer.class) == rollNo) {
-                                studentUID = ds.getKey();
-                                studentFirstname = ds.child("firstname").getValue(String.class);
-                                studentLastname = ds.child("lastname").getValue(String.class);
-                                hasStudentFound = true;
-                                break;
-                            }
-                        }
-
-                        if (!hasStudentFound) {
+                        if (!snapshot.exists()) {
                             Toast.makeText(LiveAttendanceActivity.this, "Roll no. " + rollNo + " not found!", Toast.LENGTH_LONG).show();
                             return;
+                        }
+
+                        for (DataSnapshot ds : snapshot.getChildren()) {
+                            studentUID = ds.getKey();
+                            studentFirstname = ds.child("firstname").getValue(String.class);
+                            studentLastname = ds.child("lastname").getValue(String.class);
                         }
 
                         studentData.put("firstname", studentFirstname);
@@ -122,7 +118,7 @@ public class LiveAttendanceActivity extends AppCompatActivity {
                         studentData.put("rollNo", rollNo);
 
                         FirebaseDatabase.getInstance().getReference("attendance")
-                                .child("CO" + semester + "-" + attendanceOf)
+                                .child(department + semester + "-" + attendanceOf)
                                 .child(subjectCode)
                                 .child(String.valueOf(year))
                                 .child(monthStr)
@@ -160,7 +156,7 @@ public class LiveAttendanceActivity extends AppCompatActivity {
     private void checkForAttendance() {
         progressDialog.show(LiveAttendanceActivity.this);
 
-        FirebaseDatabase.getInstance().getReference("attendance/active_attendance/CO" + semester + "-" + attendanceOf + "/subject_code")
+        FirebaseDatabase.getInstance().getReference("attendance/active_attendance/" + department + semester + "-" + attendanceOf + "/subject_code")
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -169,7 +165,7 @@ public class LiveAttendanceActivity extends AppCompatActivity {
                             addStudentBtn.setVisibility(View.VISIBLE);
                             drawTableHeader();
 
-                            FirebaseDatabase.getInstance().getReference("attendance/CO" + semester + "-" + attendanceOf + "/" + subjectCode + "/" + year + "/" + monthStr)
+                            FirebaseDatabase.getInstance().getReference("attendance/" + department + semester + "-" + attendanceOf + "/" + subjectCode + "/" + year + "/" + monthStr)
                                     .child(date + "-" + count)
                                     .orderByChild("rollNo")
                                     .addValueEventListener(new ValueEventListener() {
@@ -309,7 +305,7 @@ public class LiveAttendanceActivity extends AppCompatActivity {
                                         int year = Integer.parseInt(dateArr[2]);
                                         String monthStr = dateArr[6];
 
-                                        FirebaseDatabase.getInstance().getReference("attendance/CO" + semester + "-" + attendanceOf + "/" + subjectCode + "/" + year + "/" + monthStr)
+                                        FirebaseDatabase.getInstance().getReference("attendance/" + department + semester + "-" + attendanceOf + "/" + subjectCode + "/" + year + "/" + monthStr)
                                                 .child(date + "-" + count)
                                                 .orderByChild("rollNo")
                                                 .equalTo(Integer.parseInt(tbRow.getTag().toString()))

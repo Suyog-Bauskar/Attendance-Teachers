@@ -1,6 +1,7 @@
 package com.suyogbauskar.attenteachers;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
@@ -38,6 +39,7 @@ public class ModifySubjectsActivity extends AppCompatActivity {
     private TableLayout table;
     private Button addSubjectBtn;
     private boolean isFirstRow;
+    private String department;
     private final List<String> subjectCodes = new ArrayList<>();
 
     @Override
@@ -50,6 +52,8 @@ public class ModifySubjectsActivity extends AppCompatActivity {
         table = findViewById(R.id.table);
         addSubjectBtn = findViewById(R.id.addSubjectBtn);
         addSubjectBtn.setOnClickListener(view -> addSubject());
+        SharedPreferences sharedPreferences2 = getSharedPreferences("teacherDataPref", MODE_PRIVATE);
+        department = sharedPreferences2.getString("department", "");
         showSubjects();
     }
 
@@ -126,6 +130,11 @@ public class ModifySubjectsActivity extends AppCompatActivity {
                 data.put("B_count", 0);
                 data.put("B1_count", 0);
                 data.put("B2_count", 0);
+                data.put("B3_count", 0);
+                data.put("C_count", 0);
+                data.put("C1_count", 0);
+                data.put("C2_count", 0);
+                data.put("C3_count", 0);
                 data.put("semester", semesterInt);
                 data.put("subject_name", nameStr);
                 data.put("subject_short_name", shortNameStr);
@@ -183,6 +192,8 @@ public class ModifySubjectsActivity extends AppCompatActivity {
 
     private void showSubjects() {
         FirebaseDatabase.getInstance().getReference("teachers_data")
+                .orderByChild("department")
+                .equalTo(department)
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -202,11 +213,10 @@ public class ModifySubjectsActivity extends AppCompatActivity {
                                         @Override
                                         public void onDataChange(@NonNull DataSnapshot snapshot) {
                                             counter[0]++;
-                                            Subject tempSubject;
                                             for (DataSnapshot dsp : snapshot.getChildren()) {
                                                 subjectCodes.add(dsp.getKey());
-                                                tempSubject = new Subject(dsp.child("subject_short_name").getValue(String.class), dsp.child("subject_name").getValue(String.class), dsp.getKey(), dsp.child("semester").getValue(Integer.class), teacherUID);
-                                                allSubject.add(new TableRowOfModifySubjects(teacherID, teacherName, dsp.child("subject_short_name").getValue(String.class), dsp.child("subject_name").getValue(String.class), dsp.getKey(), dsp.child("semester").getValue(Integer.class), tempSubject));
+                                                allSubject.add(new TableRowOfModifySubjects(teacherID, teacherName, dsp.child("subject_short_name").getValue(String.class), dsp.child("subject_name").getValue(String.class), dsp.getKey(), dsp.child("semester").getValue(Integer.class),
+                                                        new Subject(dsp.child("subject_short_name").getValue(String.class), dsp.child("subject_name").getValue(String.class), dsp.getKey(), dsp.child("semester").getValue(Integer.class), teacherUID)));
                                             }
                                             if (counter[0] == totalTeachers) {
                                                 allSubject.sort(Comparator.comparing(TableRowOfModifySubjects::getTeacherID));
@@ -263,7 +273,7 @@ public class ModifySubjectsActivity extends AppCompatActivity {
         layout.addView(codeEditText);
 
         final EditText semesterEditText = new EditText(ModifySubjectsActivity.this);
-        semesterEditText.setHint("semester");
+        semesterEditText.setHint("Semester");
         semesterEditText.setText(String.valueOf(semester));
         semesterEditText.setInputType(InputType.TYPE_CLASS_NUMBER);
         semesterEditText.setLayoutParams(params);
