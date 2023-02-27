@@ -2,6 +2,7 @@ package com.suyogbauskar.attenteachers;
 
 import android.app.Dialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
@@ -39,7 +40,7 @@ public class TodayAttendanceActivity extends AppCompatActivity {
     private TableLayout table;
     private Button addStudentBtn;
     private boolean isFirstRow;
-    private String subjectCodeTeacher, monthStr, attendanceOf, completeDayName;
+    private String subjectCodeTeacher, monthStr, attendanceOf, completeDayName, department;
     private int date, year, selectedSemester;
 
     @Override
@@ -57,6 +58,8 @@ public class TodayAttendanceActivity extends AppCompatActivity {
         table = findViewById(R.id.table);
         addStudentBtn = findViewById(R.id.addStudentBtn);
         isFirstRow = true;
+        SharedPreferences sharedPreferences2 = getSharedPreferences("teacherDataPref", MODE_PRIVATE);
+        department = sharedPreferences2.getString("department", "");
 
         addStudentBtn.setOnClickListener(view -> showInputDialogForRollNo());
     }
@@ -64,7 +67,7 @@ public class TodayAttendanceActivity extends AppCompatActivity {
     private void showInputDialogForRollNo() {
         final FlatDialog flatDialog = new FlatDialog(TodayAttendanceActivity.this);
         flatDialog.setTitle("Roll No")
-                .setSubtitle("Enter roll no to mark attendance")
+                .setSubtitle("Enter roll no. to mark attendance")
                 .setFirstTextFieldInputType(InputType.TYPE_CLASS_NUMBER)
                 .setFirstTextFieldHint("Roll no.")
                 .setSecondTextFieldInputType(InputType.TYPE_CLASS_NUMBER)
@@ -81,8 +84,8 @@ public class TodayAttendanceActivity extends AppCompatActivity {
 
     private void addStudentToAttendance(int rollNo, int periodNo) {
         FirebaseDatabase.getInstance().getReference("students_data")
-                .orderByChild("semester")
-                .equalTo(selectedSemester)
+                .orderByChild("queryStringSemester")
+                .equalTo(department + selectedSemester)
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -111,7 +114,7 @@ public class TodayAttendanceActivity extends AppCompatActivity {
 
                         String finalStudentUID = studentUID;
                         FirebaseDatabase.getInstance().getReference("attendance")
-                                .child("CO" + selectedSemester + "-" + attendanceOf)
+                                .child(department + selectedSemester + "-" + attendanceOf)
                                 .child(subjectCodeTeacher)
                                 .child(String.valueOf(year))
                                 .child(monthStr)
@@ -172,7 +175,7 @@ public class TodayAttendanceActivity extends AppCompatActivity {
 
                             AlertDialog.Builder divisionDialog = new AlertDialog.Builder(TodayAttendanceActivity.this);
                             divisionDialog.setTitle("Division");
-                            String[] items2 = {"Division A", "Division B", "Batch A1", "Batch A2", "Batch A3", "Batch B1", "Batch B2"};
+                            String[] items2 = {"Division A", "Division B", "Division C", "Batch A1", "Batch A2", "Batch A3", "Batch B1", "Batch B2", "Batch B3", "Batch C1", "Batch C2", "Batch C3"};
                             divisionDialog.setSingleChoiceItems(items2, -1, (dialog2, which2) -> {
                                 switch (which2) {
                                     case 0:
@@ -182,19 +185,34 @@ public class TodayAttendanceActivity extends AppCompatActivity {
                                         attendanceOf = "B";
                                         break;
                                     case 2:
-                                        attendanceOf = "A1";
+                                        attendanceOf = "C";
                                         break;
                                     case 3:
-                                        attendanceOf = "A2";
+                                        attendanceOf = "A1";
                                         break;
                                     case 4:
-                                        attendanceOf = "A3";
+                                        attendanceOf = "A2";
                                         break;
                                     case 5:
-                                        attendanceOf = "B1";
+                                        attendanceOf = "A3";
                                         break;
                                     case 6:
+                                        attendanceOf = "B1";
+                                        break;
+                                    case 7:
                                         attendanceOf = "B2";
+                                        break;
+                                    case 8:
+                                        attendanceOf = "B3";
+                                        break;
+                                    case 9:
+                                        attendanceOf = "C1";
+                                        break;
+                                    case 10:
+                                        attendanceOf = "C2";
+                                        break;
+                                    case 11:
+                                        attendanceOf = "C3";
                                         break;
                                 }
                                 dialog2.dismiss();
@@ -222,7 +240,7 @@ public class TodayAttendanceActivity extends AppCompatActivity {
         monthStr = dateArr[6];
 
         FirebaseDatabase.getInstance().getReference("attendance")
-                .child("CO" + selectedSemester + "-" + attendanceOf)
+                .child(department + selectedSemester + "-" + attendanceOf)
                 .child(subjectCodeTeacher)
                 .child(String.valueOf(year))
                 .child(monthStr)
@@ -376,7 +394,7 @@ public class TodayAttendanceActivity extends AppCompatActivity {
                     .setConfirmClickListener(sweetAlertDialog -> {
                         sweetAlertDialog.dismissWithAnimation();
                         FirebaseDatabase.getInstance().getReference("attendance")
-                                .child("CO" + selectedSemester + "-" + attendanceOf)
+                                .child(department + selectedSemester + "-" + attendanceOf)
                                 .child(subjectCodeTeacher)
                                 .child(String.valueOf(year))
                                 .child(monthStr)

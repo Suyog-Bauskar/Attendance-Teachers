@@ -51,6 +51,7 @@ public class UtilityActivity extends AppCompatActivity {
     private final FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
     private Button excelBtn, attendanceBelow75Btn, subjectsBtn, uploadTimetableBtn, removeLastSemesterStudentsBtn, updateAllStudentsDetailsBtn, modifySubjectsBtn;
     private boolean subjectFound, isAdmin;
+    private String department;
     private LinearLayout layout;
     private int selectedSemester;
 
@@ -70,6 +71,7 @@ public class UtilityActivity extends AppCompatActivity {
 
         SharedPreferences sp = getSharedPreferences("teacherDataPref", MODE_PRIVATE);
         isAdmin = sp.getBoolean("isAdmin", false);
+        department = sp.getString("department", "");
         if (isAdmin) {
             layout.setVisibility(View.VISIBLE);
         }
@@ -104,8 +106,8 @@ public class UtilityActivity extends AppCompatActivity {
                 .setConfirmClickListener(sDialog -> {
                     sDialog.dismissWithAnimation();
                     FirebaseDatabase.getInstance().getReference("students_data")
-                            .orderByChild("semester")
-                            .equalTo(6)
+                            .orderByChild("queryStringSemester")
+                            .equalTo(department + "6")
                             .addListenerForSingleValueEvent(new ValueEventListener() {
                                 @Override
                                 public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -188,9 +190,12 @@ public class UtilityActivity extends AppCompatActivity {
                             for (DataSnapshot ds : snapshot.getChildren()) {
                                 if (studentsDetailsList.containsKey(ds.child("enrollNo").getValue(Long.class))) {
                                     ds.child("rollNo").getRef().setValue(studentsDetailsList.get(ds.child("enrollNo").getValue(Long.class)).getRollNo());
+                                    ds.child("queryStringRollNo").getRef().setValue(department + studentsDetailsList.get(ds.child("enrollNo").getValue(Long.class)).getSemester() + studentsDetailsList.get(ds.child("enrollNo").getValue(Long.class)).getDivision() + studentsDetailsList.get(ds.child("enrollNo").getValue(Long.class)).getRollNo());
                                     ds.child("batch").getRef().setValue(studentsDetailsList.get(ds.child("enrollNo").getValue(Long.class)).getBatch());
                                     ds.child("semester").getRef().setValue(studentsDetailsList.get(ds.child("enrollNo").getValue(Long.class)).getSemester());
+                                    ds.child("queryStringSemester").getRef().setValue(department + studentsDetailsList.get(ds.child("enrollNo").getValue(Long.class)).getSemester());
                                     ds.child("division").getRef().setValue(studentsDetailsList.get(ds.child("enrollNo").getValue(Long.class)).getDivision());
+                                    ds.child("queryStringDivision").getRef().setValue(department + studentsDetailsList.get(ds.child("enrollNo").getValue(Long.class)).getSemester() + studentsDetailsList.get(ds.child("enrollNo").getValue(Long.class)).getDivision());
                                 }
                             }
                             Toast.makeText(UtilityActivity.this, "Students details updated", Toast.LENGTH_SHORT).show();
@@ -232,7 +237,7 @@ public class UtilityActivity extends AppCompatActivity {
             StorageMetadata metadata = new StorageMetadata.Builder()
                     .setContentType("text/csv")
                     .build();
-            FirebaseStorage.getInstance().getReference().child("CO").child("Students_Timetables").child("CO" + selectedSemester + "_Timetable.csv")
+            FirebaseStorage.getInstance().getReference().child("Students_Timetables").child(department + selectedSemester + "_Timetable.csv")
                     .putStream(new FileInputStream(file), metadata)
                     .addOnSuccessListener(taskSnapshot -> Toast.makeText(UtilityActivity.this, "Timetable uploaded successfully", Toast.LENGTH_SHORT).show())
                     .addOnFailureListener(e -> Toast.makeText(UtilityActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show());

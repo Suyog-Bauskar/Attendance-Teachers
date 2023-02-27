@@ -3,6 +3,7 @@ package com.suyogbauskar.attenteachers;
 import static android.content.ContentValues.TAG;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
@@ -35,7 +36,7 @@ public class SubmissionActivity extends AppCompatActivity {
     private TableLayout table;
     private boolean isFirstRow;
     private TextView noStudentsFoundView;
-    private String subjectCodeTeacher;
+    private String subjectCodeTeacher, department;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,6 +46,8 @@ public class SubmissionActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         user = FirebaseAuth.getInstance().getCurrentUser();
+        SharedPreferences sharedPreferences2 = getSharedPreferences("teacherDataPref", MODE_PRIVATE);
+        department = sharedPreferences2.getString("department", "");
         findAllViews();
         selectSemester();
     }
@@ -89,8 +92,8 @@ public class SubmissionActivity extends AppCompatActivity {
 
     private void showAllStudentsData(int semester) {
         FirebaseDatabase.getInstance().getReference("students_data")
-                .orderByChild("semester")
-                .equalTo(semester)
+                .orderByChild("queryStringSemester")
+                .equalTo(department + semester)
                 .addValueEventListener(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {

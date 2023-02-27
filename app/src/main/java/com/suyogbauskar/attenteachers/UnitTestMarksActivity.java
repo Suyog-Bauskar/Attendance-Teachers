@@ -48,7 +48,7 @@ public class UnitTestMarksActivity extends AppCompatActivity {
     private FirebaseUser user;
     private TableLayout table;
     private boolean isFirstRow;
-    private String subjectCodeTeacher;
+    private String subjectCodeTeacher, department;
     private int selectedSemester;
 
     @Override
@@ -65,19 +65,12 @@ public class UnitTestMarksActivity extends AppCompatActivity {
     private void init() {
         user = FirebaseAuth.getInstance().getCurrentUser();
         isFirstRow = true;
+        SharedPreferences sharedPreferences2 = getSharedPreferences("teacherDataPref", MODE_PRIVATE);
+        department = sharedPreferences2.getString("department", "");
         findAllViews();
         uploadBtn.setOnClickListener(view -> uploadFile());
         deleteBtn.setOnClickListener(view -> deleteMarks());
-
-        SharedPreferences sh = getSharedPreferences("unitTestMarksPref", MODE_PRIVATE);
-        selectedSemester = sh.getInt("semester", 0);
-        if (selectedSemester != 0) {
-            SharedPreferences sharedPreferences = getSharedPreferences("unitTestMarksPref", MODE_PRIVATE);
-            SharedPreferences.Editor myEdit = sharedPreferences.edit();
-            myEdit.putInt("semester", 0);
-            myEdit.commit();
-            allStudentsData();
-        }
+        allStudentsData();
     }
 
     private void findAllViews() {
@@ -123,8 +116,8 @@ public class UnitTestMarksActivity extends AppCompatActivity {
                         deleteBtn.setVisibility(View.VISIBLE);
 
                         FirebaseDatabase.getInstance().getReference("students_data")
-                                .orderByChild("semester")
-                                .equalTo(selectedSemester)
+                                .orderByChild("queryStringSemester")
+                                .equalTo(department + selectedSemester)
                                 .addValueEventListener(new ValueEventListener() {
                                     @Override
                                     public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -182,8 +175,8 @@ public class UnitTestMarksActivity extends AppCompatActivity {
                 .setConfirmClickListener(sDialog -> {
                     sDialog.dismissWithAnimation();
                     FirebaseDatabase.getInstance().getReference("students_data")
-                            .orderByChild("semester")
-                            .equalTo(selectedSemester)
+                            .orderByChild("queryStringSemester")
+                            .equalTo(department + selectedSemester)
                             .addListenerForSingleValueEvent(new ValueEventListener() {
                                 @Override
                                 public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -336,8 +329,8 @@ public class UnitTestMarksActivity extends AppCompatActivity {
             }
 
             FirebaseDatabase.getInstance().getReference("students_data")
-                    .orderByChild("semester")
-                    .equalTo(selectedSemester)
+                    .orderByChild("queryStringSemester")
+                    .equalTo(department + selectedSemester)
                     .addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(@NonNull DataSnapshot snapshot) {
