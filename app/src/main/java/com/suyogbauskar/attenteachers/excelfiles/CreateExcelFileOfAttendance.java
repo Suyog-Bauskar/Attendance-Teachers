@@ -41,7 +41,7 @@ import java.util.Map;
 
 public class CreateExcelFileOfAttendance extends Service {
 
-    private String year, subjectCode, subjectName;
+    private String year, subjectCode, subjectName, department;
     private int semester;
 
     @Nullable
@@ -58,6 +58,8 @@ public class CreateExcelFileOfAttendance extends Service {
         subjectCode = sharedPreferences.getString("subjectCode", "");
         subjectName = sharedPreferences.getString("subjectName", "");
         semester = sharedPreferences.getInt("semester", 0);
+        SharedPreferences sharedPreferences2 = getSharedPreferences("teacherDataPref", MODE_PRIVATE);
+        department = sharedPreferences2.getString("department", "");
 
         getAllStudentsData();
 
@@ -66,17 +68,22 @@ public class CreateExcelFileOfAttendance extends Service {
 
     private void getAllStudentsData() {
         FirebaseDatabase.getInstance().getReference("/students_data")
-                .orderByChild("semester").equalTo(semester)
+                .orderByChild("queryStringSemester").equalTo(department + semester)
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
                         List<StudentData> studentsListA = new ArrayList<>();
                         List<StudentData> studentsListB = new ArrayList<>();
+                        List<StudentData> studentsListC = new ArrayList<>();
                         List<StudentData> studentsListA1 = new ArrayList<>();
                         List<StudentData> studentsListA2 = new ArrayList<>();
                         List<StudentData> studentsListA3 = new ArrayList<>();
                         List<StudentData> studentsListB1 = new ArrayList<>();
                         List<StudentData> studentsListB2 = new ArrayList<>();
+                        List<StudentData> studentsListB3 = new ArrayList<>();
+                        List<StudentData> studentsListC1 = new ArrayList<>();
+                        List<StudentData> studentsListC2 = new ArrayList<>();
+                        List<StudentData> studentsListC3 = new ArrayList<>();
 
                         for (DataSnapshot dsp : snapshot.getChildren()) {
                             String firstname = dsp.child("firstname").getValue(String.class);
@@ -85,42 +92,62 @@ public class CreateExcelFileOfAttendance extends Service {
 
                             if (dsp.child("division").getValue(String.class).equals("A")) {
                                 studentsListA.add(new StudentData(rollNo, firstname, lastname));
-                            }
-                            if (dsp.child("division").getValue(String.class).equals("B")) {
+
+                                if (dsp.child("batch").getValue(Integer.class) == 1) {
+                                    studentsListA1.add(new StudentData(rollNo, firstname, lastname));
+                                } else if (dsp.child("batch").getValue(Integer.class) == 2) {
+                                    studentsListA2.add(new StudentData(rollNo, firstname, lastname));
+                                } else if (dsp.child("batch").getValue(Integer.class) == 3) {
+                                    studentsListA3.add(new StudentData(rollNo, firstname, lastname));
+                                }
+                            } else if (dsp.child("division").getValue(String.class).equals("B")) {
                                 studentsListB.add(new StudentData(rollNo, firstname, lastname));
-                            }
-                            if (dsp.child("batch").getValue(Integer.class) == 1) {
-                                studentsListA1.add(new StudentData(rollNo, firstname, lastname));
-                            }
-                            if (dsp.child("batch").getValue(Integer.class) == 2) {
-                                studentsListA2.add(new StudentData(rollNo, firstname, lastname));
-                            }
-                            if (dsp.child("batch").getValue(Integer.class) == 3) {
-                                studentsListA3.add(new StudentData(rollNo, firstname, lastname));
-                            }
-                            if (dsp.child("batch").getValue(Integer.class) == 4) {
-                                studentsListB1.add(new StudentData(rollNo, firstname, lastname));
-                            }
-                            if (dsp.child("batch").getValue(Integer.class) == 5) {
-                                studentsListB2.add(new StudentData(rollNo, firstname, lastname));
+
+                                if (dsp.child("batch").getValue(Integer.class) == 1) {
+                                    studentsListB1.add(new StudentData(rollNo, firstname, lastname));
+                                } else if (dsp.child("batch").getValue(Integer.class) == 2) {
+                                    studentsListB2.add(new StudentData(rollNo, firstname, lastname));
+                                } else if (dsp.child("batch").getValue(Integer.class) == 3) {
+                                    studentsListB3.add(new StudentData(rollNo, firstname, lastname));
+                                }
+                            } else if (dsp.child("division").getValue(String.class).equals("C")) {
+                                studentsListC.add(new StudentData(rollNo, firstname, lastname));
+
+                                if (dsp.child("batch").getValue(Integer.class) == 1) {
+                                    studentsListC1.add(new StudentData(rollNo, firstname, lastname));
+                                } else if (dsp.child("batch").getValue(Integer.class) == 2) {
+                                    studentsListC2.add(new StudentData(rollNo, firstname, lastname));
+                                } else if (dsp.child("batch").getValue(Integer.class) == 3) {
+                                    studentsListC3.add(new StudentData(rollNo, firstname, lastname));
+                                }
                             }
                         }
 
                         studentsListA.sort(Comparator.comparingInt(StudentData::getRollNo));
+                        studentsListB.sort(Comparator.comparingInt(StudentData::getRollNo));
                         studentsListB.sort(Comparator.comparingInt(StudentData::getRollNo));
                         studentsListA1.sort(Comparator.comparingInt(StudentData::getRollNo));
                         studentsListA2.sort(Comparator.comparingInt(StudentData::getRollNo));
                         studentsListA3.sort(Comparator.comparingInt(StudentData::getRollNo));
                         studentsListB1.sort(Comparator.comparingInt(StudentData::getRollNo));
                         studentsListB2.sort(Comparator.comparingInt(StudentData::getRollNo));
+                        studentsListB3.sort(Comparator.comparingInt(StudentData::getRollNo));
+                        studentsListC1.sort(Comparator.comparingInt(StudentData::getRollNo));
+                        studentsListC2.sort(Comparator.comparingInt(StudentData::getRollNo));
+                        studentsListC3.sort(Comparator.comparingInt(StudentData::getRollNo));
 
                         createExcelFile(studentsListA,"A",0, new XSSFWorkbook());
                         createExcelFile(studentsListB,"B",10, new XSSFWorkbook());
-                        createExcelFile(studentsListA1,"A1",20, new XSSFWorkbook());
-                        createExcelFile(studentsListA2,"A2",30, new XSSFWorkbook());
-                        createExcelFile(studentsListA3,"A3",40, new XSSFWorkbook());
-                        createExcelFile(studentsListB1,"B1",50, new XSSFWorkbook());
-                        createExcelFile(studentsListB2,"B2",60, new XSSFWorkbook());
+                        createExcelFile(studentsListC,"C",20, new XSSFWorkbook());
+                        createExcelFile(studentsListA1,"A1",30, new XSSFWorkbook());
+                        createExcelFile(studentsListA2,"A2",40, new XSSFWorkbook());
+                        createExcelFile(studentsListA3,"A3",50, new XSSFWorkbook());
+                        createExcelFile(studentsListB1,"B1",60, new XSSFWorkbook());
+                        createExcelFile(studentsListB2,"B2",70, new XSSFWorkbook());
+                        createExcelFile(studentsListB3,"B3",80, new XSSFWorkbook());
+                        createExcelFile(studentsListC1,"C1",90, new XSSFWorkbook());
+                        createExcelFile(studentsListC2,"C2",100, new XSSFWorkbook());
+                        createExcelFile(studentsListC3,"C3",110, new XSSFWorkbook());
                     }
 
                     @Override
@@ -131,14 +158,14 @@ public class CreateExcelFileOfAttendance extends Service {
     }
 
     private void createExcelFile(List<StudentData> studentsList, String className, int errorCode, XSSFWorkbook xssfWorkbook) {
-            FirebaseDatabase.getInstance().getReference("attendance/CO" + semester + "-" + className + "/" + subjectCode + "/" + year)
+            FirebaseDatabase.getInstance().getReference("attendance/" + department + semester + "-" + className + "/" + subjectCode + "/" + year)
                     .addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(@NonNull DataSnapshot snapshot) {
                             Map<String, Map<String, List<StudentData>>> requiredPresentData = new HashMap<>();
 
                             if (!snapshot.exists()) {
-                                sendErrorNotification("No attendance found of CO" + semester + "-" + className + " " + year, errorCode + 1);
+                                sendErrorNotification("No attendance found of " + department + semester + "-" + className + " " + year, errorCode + 1);
                                 return;
                             }
                             int counter = 0;
@@ -301,17 +328,17 @@ public class CreateExcelFileOfAttendance extends Service {
     }
 
     private void writeExcelDataToFile(String year, XSSFWorkbook xssfWorkbook, int errorCode, String className) {
-        String filename = subjectName + " " + year + " CO" + semester + "-" + className;
+        String filename = subjectName + " " + year + " " + department + semester + "-" + className;
 
         try {
             File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/Atten Teachers");
             dir.mkdir();
             dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/Atten Teachers/Attendance");
             dir.mkdir();
-            dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/Atten Teachers/Attendance/CO" + semester);
+            dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/Atten Teachers/Attendance/" + department + semester);
             dir.mkdir();
 
-            File filePath = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/Atten Teachers/Attendance/CO" + semester + "/" + filename + ".xlsx");
+            File filePath = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/Atten Teachers/Attendance/" + department + semester + "/" + filename + ".xlsx");
 
             filePath.createNewFile();
 
@@ -423,7 +450,7 @@ public class CreateExcelFileOfAttendance extends Service {
     }
 
     private void sendNotificationOfExcelFileCreated(int id, String className) {
-        Uri selectedUri = Uri.parse(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/Atten Teachers/Attendance/CO" + semester);
+        Uri selectedUri = Uri.parse(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/Atten Teachers/Attendance/" + department + semester);
         Intent intent = new Intent(Intent.ACTION_VIEW);
         intent.setDataAndType(selectedUri, "resource/folder");
 
@@ -431,9 +458,9 @@ public class CreateExcelFileOfAttendance extends Service {
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "File")
                 .setSmallIcon(R.drawable.raw_logo)
-                .setContentText("Excel file of " + subjectName + " " + year + " CO" + semester + "-" + className + " saved in downloads folder")
+                .setContentText("Excel file of " + subjectName + " " + year + " " + department + semester + "-" + className + " saved in downloads folder")
                 .setStyle(new NotificationCompat.BigTextStyle()
-                        .bigText("Excel file of " + subjectName + " " + year + " CO" + semester + "-" + className + " saved in downloads folder"))
+                        .bigText("Excel file of " + subjectName + " " + year + " " + department + semester + "-" + className + " saved in downloads folder"))
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setContentIntent(pendingIntent)
                 .setAutoCancel(true);

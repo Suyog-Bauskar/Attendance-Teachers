@@ -15,6 +15,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.PopupMenu;
 import androidx.fragment.app.Fragment;
 
@@ -25,6 +26,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ServerValue;
 import com.google.firebase.database.ValueEventListener;
+import com.suyogbauskar.attenteachers.NotificationActivity;
 import com.suyogbauskar.attenteachers.R;
 import com.suyogbauskar.attenteachers.pojos.SubjectInformation;
 import com.suyogbauskar.attenteachers.utils.ProgressDialog;
@@ -45,7 +47,7 @@ import cn.pedant.SweetAlert.SweetAlertDialog;
 
 public class HomeFragment extends Fragment {
 
-    private String firstnameDB, lastnameDB, monthStr, selectedSubjectCode, selectedSubjectName, selectedSubjectShortName, selectedAttendanceOf, statusMessage;
+    private String firstnameDB, lastnameDB, monthStr, selectedSubjectCode, selectedSubjectName, selectedSubjectShortName, selectedAttendanceOf, statusMessage, department;
     private TextView codeView, statusView;
     private Button generateCodeAndStopBtn, deleteBtn;
     private int randomNo, date, year, selectedSemester;
@@ -96,6 +98,7 @@ public class HomeFragment extends Fragment {
                     DataSnapshot document = task.getResult();
                     firstnameDB = document.child("firstname").getValue(String.class);
                     lastnameDB = document.child("lastname").getValue(String.class);
+                    department = document.child("department").getValue(String.class);
 
                     SharedPreferences sharedPreferences = getActivity().getSharedPreferences("teacherDataPref", MODE_PRIVATE);
                     SharedPreferences.Editor editor = sharedPreferences.edit();
@@ -170,7 +173,7 @@ public class HomeFragment extends Fragment {
         data.put("subject_short_name", selectedSubjectShortName);
         data.put("uid", user.getUid());
 
-        statusMessage = "CO" + selectedSemester + "-" + selectedAttendanceOf + " " + selectedSubjectShortName + "\nAttendance Started";
+        statusMessage = department + selectedSemester + "-" + selectedAttendanceOf + " " + selectedSubjectShortName + "\nAttendance Started";
         statusView.setText(statusMessage);
         statusView.setVisibility(View.VISIBLE);
 
@@ -181,7 +184,7 @@ public class HomeFragment extends Fragment {
                             @Override
                             public void onDataChange(@NonNull DataSnapshot snapshot) {
                                 data.put("count", snapshot.getValue(Integer.class));
-                                FirebaseDatabase.getInstance().getReference("attendance/active_attendance/CO" + selectedSemester + "-" + selectedAttendanceOf).setValue(data);
+                                FirebaseDatabase.getInstance().getReference("attendance/active_attendance/" + department + selectedSemester + "-" + selectedAttendanceOf).setValue(data);
 
                                 SharedPreferences sharedPreferences = getActivity().getSharedPreferences("DBPathPref",MODE_PRIVATE);
                                 SharedPreferences.Editor myEdit = sharedPreferences.edit();
@@ -199,7 +202,6 @@ public class HomeFragment extends Fragment {
                                 Toast.makeText(getContext(), error.getMessage(), Toast.LENGTH_LONG).show();
                             }
                         }));
-
     }
 
     private void stopAttendanceBtn() {
@@ -214,7 +216,7 @@ public class HomeFragment extends Fragment {
         data.put("uid", "0");
         data.put("count", 0);
 
-        FirebaseDatabase.getInstance().getReference("attendance/active_attendance/CO" + selectedSemester + "-" + selectedAttendanceOf).setValue(data);
+        FirebaseDatabase.getInstance().getReference("attendance/active_attendance/" + department + selectedSemester + "-" + selectedAttendanceOf).setValue(data);
 
         SharedPreferences sharedPreferences = getActivity().getSharedPreferences("DBPathPref",MODE_PRIVATE);
         SharedPreferences.Editor myEdit = sharedPreferences.edit();
@@ -256,11 +258,16 @@ public class HomeFragment extends Fragment {
             for (Map.Entry<String, SubjectInformation> entry1: allSubjects.entrySet()) {
                 FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects/" + entry1.getKey() + "/A_count").setValue(0);
                 FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects/" + entry1.getKey() + "/B_count").setValue(0);
+                FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects/" + entry1.getKey() + "/C_count").setValue(0);
                 FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects/" + entry1.getKey() + "/A1_count").setValue(0);
                 FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects/" + entry1.getKey() + "/A2_count").setValue(0);
                 FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects/" + entry1.getKey() + "/A3_count").setValue(0);
                 FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects/" + entry1.getKey() + "/B1_count").setValue(0);
                 FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects/" + entry1.getKey() + "/B2_count").setValue(0);
+                FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects/" + entry1.getKey() + "/B3_count").setValue(0);
+                FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects/" + entry1.getKey() + "/C1_count").setValue(0);
+                FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects/" + entry1.getKey() + "/C2_count").setValue(0);
+                FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects/" + entry1.getKey() + "/C3_count").setValue(0);
             }
             FirebaseDatabase.getInstance().getReference("teachers_data").child(user.getUid()).child("notifications").removeValue();
         }
@@ -278,7 +285,7 @@ public class HomeFragment extends Fragment {
                             .addListenerForSingleValueEvent(new ValueEventListener() {
                                 @Override
                                 public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                    FirebaseDatabase.getInstance().getReference("attendance/CO" + selectedSemester + "-" + selectedAttendanceOf + "/" + selectedSubjectCode + "/" + year + "/" + monthStr)
+                                    FirebaseDatabase.getInstance().getReference("attendance/" + department + selectedSemester + "-" + selectedAttendanceOf + "/" + selectedSubjectCode + "/" + year + "/" + monthStr)
                                             .child(date + "-" + snapshot.getValue(Integer.class)).removeValue();
 
                                     FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects/" + selectedSubjectCode + "/" + selectedAttendanceOf + "_count")
@@ -356,18 +363,14 @@ public class HomeFragment extends Fragment {
         randomNo = new Random().nextInt((99999 - 10000) + 1) + 10000;
         AtomicBoolean anySubjectFound = new AtomicBoolean(false);
 
-        PopupMenu semesterMenu = new PopupMenu(getContext(), codeView);
-        semesterMenu.getMenu().add(Menu.NONE, 1, 1, "Semester 1");
-        semesterMenu.getMenu().add(Menu.NONE, 2, 2, "Semester 2");
-        semesterMenu.getMenu().add(Menu.NONE, 3, 3, "Semester 3");
-        semesterMenu.getMenu().add(Menu.NONE, 4, 4, "Semester 4");
-        semesterMenu.getMenu().add(Menu.NONE, 5, 5, "Semester 5");
-        semesterMenu.getMenu().add(Menu.NONE, 6, 6, "Semester 6");
-        semesterMenu.show();
-
-        semesterMenu.setOnMenuItemClickListener(item -> {
+        AlertDialog.Builder semesterDialog = new AlertDialog.Builder(getContext());
+        semesterDialog.setTitle("Semester");
+        String[] items = {"Semester 1", "Semester 2", "Semester 3", "Semester 4", "Semester 5", "Semester 6"};
+        semesterDialog.setSingleChoiceItems(items, -1, (dialog, which) -> {
+            int semester = 0;
             for (Map.Entry<String, SubjectInformation> entry1 : allSubjects.entrySet()) {
-                if (entry1.getValue().getSubjectSemester() == item.getItemId()) {
+                semester = Integer.parseInt(items[which].charAt(items[which].length() - 1) + "");
+                if (entry1.getValue().getSubjectSemester() == semester) {
                     anySubjectFound.set(true);
                     selectedSubjectCode = entry1.getValue().getSubjectCode();
                     selectedSubjectName = entry1.getValue().getSubjectName();
@@ -380,57 +383,53 @@ public class HomeFragment extends Fragment {
                 return false;
             }
 
-            selectedSemester = item.getItemId();
+            selectedSemester = semester;
 
-            PopupMenu attendanceOfMenu = new PopupMenu(getContext(), codeView);
-            attendanceOfMenu.getMenu().add(Menu.NONE, 1, 1, "Division A");
-            attendanceOfMenu.getMenu().add(Menu.NONE, 2, 2, "Division B");
-            attendanceOfMenu.getMenu().add(Menu.NONE, 3, 3, "Batch A1");
-            attendanceOfMenu.getMenu().add(Menu.NONE, 4, 4, "Batch A2");
-            attendanceOfMenu.getMenu().add(Menu.NONE, 5, 5, "Batch A3");
-            attendanceOfMenu.getMenu().add(Menu.NONE, 6, 6, "Batch B1");
-            attendanceOfMenu.getMenu().add(Menu.NONE, 7, 7, "Batch B2");
-            attendanceOfMenu.show();
-            attendanceOfMenu.setOnMenuItemClickListener(item2 -> {
+            AlertDialog.Builder divisionDialog = new AlertDialog.Builder(getContext());
+            divisionDialog.setTitle("Division");
+            String[] items2 = {"Division A", "Division B", "Division C", "Batch A1", "Batch A2", "Batch A3", "Batch B1", "Batch B2", "Batch B3", "Batch C1", "Batch C2", "Batch C3"};
+            divisionDialog.setSingleChoiceItems(items2, -1, (dialog2, which2) -> {
                 SharedPreferences sharedPreferences = getActivity().getSharedPreferences("DBPathPref", MODE_PRIVATE);
                 SharedPreferences.Editor editor = sharedPreferences.edit();
-                switch (item2.getItemId()) {
-                    case 1:
+                switch (which2) {
+                    case 0:
                         selectedAttendanceOf = "A";
-                        editor.putString("attendanceOf", "A");
                         break;
-
-                    case 2:
+                    case 1:
                         selectedAttendanceOf = "B";
-                        editor.putString("attendanceOf", "B");
                         break;
-
+                    case 2:
+                        selectedAttendanceOf = "C";
+                        break;
                     case 3:
                         selectedAttendanceOf = "A1";
-                        editor.putString("attendanceOf", "A1");
                         break;
-
                     case 4:
                         selectedAttendanceOf = "A2";
-                        editor.putString("attendanceOf", "A2");
                         break;
-
                     case 5:
                         selectedAttendanceOf = "A3";
-                        editor.putString("attendanceOf", "A3");
                         break;
-
                     case 6:
                         selectedAttendanceOf = "B1";
-                        editor.putString("attendanceOf", "B1");
                         break;
-
                     case 7:
                         selectedAttendanceOf = "B2";
-                        editor.putString("attendanceOf", "B2");
+                        break;
+                    case 8:
+                        selectedAttendanceOf = "B3";
+                        break;
+                    case 9:
+                        selectedAttendanceOf = "C1";
+                        break;
+                    case 10:
+                        selectedAttendanceOf = "C2";
+                        break;
+                    case 11:
+                        selectedAttendanceOf = "C3";
                         break;
                 }
-
+                editor.putString("attendanceOf", selectedAttendanceOf);
                 editor.commit();
                 onAttendanceStart();
                 codeView.setText("Code - " + randomNo);
@@ -456,11 +455,11 @@ public class HomeFragment extends Fragment {
                     }
                 }, 180, TimeFormatEnum.SECONDS, 10);
                 progressBar.startTimer();
-
-                return true;
+                dialog2.dismiss();
             });
-            return true;
+            divisionDialog.create().show();
         });
+        semesterDialog.create().show();
     }
 
 }
