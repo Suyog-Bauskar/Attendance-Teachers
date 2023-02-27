@@ -37,15 +37,9 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
     private TableLayout table;
     private boolean isFirstRow;
     private int startMonth, startYear, endMonth, endYear;
-    private String subjectCode, whichClass;
+    private String subjectCode, department;
     private Map<String, Float> studentsBelow75List;
-    private Map<String, StudentData> allStudentsA;
-    private Map<String, StudentData> allStudentsB;
-    private Map<String, StudentData> allStudentsA1;
-    private Map<String, StudentData> allStudentsA2;
-    private Map<String, StudentData> allStudentsA3;
-    private Map<String, StudentData> allStudentsB1;
-    private Map<String, StudentData> allStudentsB2;
+    private Map<String, StudentData> allStudentsA, allStudentsB, allStudentsC, allStudentsA1, allStudentsA2, allStudentsA3, allStudentsB1, allStudentsB2, allStudentsB3, allStudentsC1, allStudentsC2, allStudentsC3;
     private int semester;
 
     @Override
@@ -67,14 +61,16 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
         allStudentsB = new HashMap<>();
         allStudentsB1 = new HashMap<>();
         allStudentsB2 = new HashMap<>();
+        allStudentsB3 = new HashMap<>();
+        allStudentsC = new HashMap<>();
+        allStudentsC1 = new HashMap<>();
+        allStudentsC2 = new HashMap<>();
+        allStudentsC3 = new HashMap<>();
         SharedPreferences sharedPreferences = getSharedPreferences("attendanceBelow75Pref", MODE_PRIVATE);
-        whichClass = sharedPreferences.getString("class", "");
         semester = sharedPreferences.getInt("semester", 0);
         subjectCode = sharedPreferences.getString("subjectCode", "");
-        startMonth = sharedPreferences.getInt("startMonth", 0);
-        startYear = sharedPreferences.getInt("startYear", 0);
-        endMonth = sharedPreferences.getInt("endMonth", 0);
-        endYear = sharedPreferences.getInt("endYear", 0);
+        SharedPreferences sharedPreferences2 = getSharedPreferences("teacherDataPref", MODE_PRIVATE);
+        department = sharedPreferences2.getString("department", "");
 
         table = findViewById(R.id.table);
         isFirstRow = true;
@@ -144,14 +140,19 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
                 Toast.makeText(this, "Range too long", Toast.LENGTH_SHORT).show();
                 startActivity(new Intent(AttendanceBelow75Activity.this, UtilityActivity.class));
             } else {
-                String startingPath = "CO" + semester + "-";
+                String startingPath = department + semester + "-";
                 mainCode(startingPath + "A", allStudentsA, "A", "-");
                 mainCode(startingPath + "B", allStudentsB, "B", "-");
+                mainCode(startingPath + "C", allStudentsC, "C", "-");
                 mainCode(startingPath + "A1", allStudentsA1, "A", "1");
                 mainCode(startingPath + "A2", allStudentsA2, "A", "2");
                 mainCode(startingPath + "A3", allStudentsA3, "A", "3");
                 mainCode(startingPath + "B1", allStudentsB1, "B", "1");
                 mainCode(startingPath + "B2", allStudentsB2, "B", "2");
+                mainCode(startingPath + "B3", allStudentsB3, "B", "3");
+                mainCode(startingPath + "C1", allStudentsC1, "C", "1");
+                mainCode(startingPath + "C2", allStudentsC2, "C", "2");
+                mainCode(startingPath + "C3", allStudentsC3, "C", "3");
             }
         });
 
@@ -162,8 +163,8 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
 
     private void getAllStudentsBasedOnDivision() {
         FirebaseDatabase.getInstance().getReference("students_data")
-                .orderByChild("semester")
-                .equalTo(semester)
+                .orderByChild("queryStringSemester")
+                .equalTo(department + semester)
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -190,6 +191,17 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
                                     allStudentsB1.put(dsp.getKey(), new StudentData(rollNo, firstname, lastname));
                                 } else if (batch == 2) {
                                     allStudentsB2.put(dsp.getKey(), new StudentData(rollNo, firstname, lastname));
+                                } else if (batch == 3) {
+                                    allStudentsB3.put(dsp.getKey(), new StudentData(rollNo, firstname, lastname));
+                                }
+                            } else if (division.equals("C")) {
+                                allStudentsC.put(dsp.getKey(), new StudentData(rollNo, firstname, lastname));
+                                if (batch == 1) {
+                                    allStudentsC1.put(dsp.getKey(), new StudentData(rollNo, firstname, lastname));
+                                } else if (batch == 2) {
+                                    allStudentsC2.put(dsp.getKey(), new StudentData(rollNo, firstname, lastname));
+                                } else if (batch == 3) {
+                                    allStudentsC3.put(dsp.getKey(), new StudentData(rollNo, firstname, lastname));
                                 }
                             }
                         }
@@ -502,8 +514,8 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
         }
 
         FirebaseDatabase.getInstance().getReference("students_data")
-                .orderByChild("semester")
-                .equalTo(semester)
+                .orderByChild("queryStringSemester")
+                .equalTo(department + semester)
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {

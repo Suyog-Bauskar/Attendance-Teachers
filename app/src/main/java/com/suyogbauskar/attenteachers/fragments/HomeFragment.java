@@ -102,6 +102,7 @@ public class HomeFragment extends Fragment {
                     editor.putBoolean("isAdmin", document.child("isAdmin").getValue(Boolean.class));
                     editor.putString("firstname", document.child("firstname").getValue(String.class));
                     editor.putString("lastname", document.child("lastname").getValue(String.class));
+                    editor.putString("department", document.child("department").getValue(String.class));
                     editor.commit();
 
                     getSubjectInformation();
