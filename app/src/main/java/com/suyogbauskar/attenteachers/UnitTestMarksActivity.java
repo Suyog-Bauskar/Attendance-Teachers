@@ -70,7 +70,6 @@ public class UnitTestMarksActivity extends AppCompatActivity {
         findAllViews();
         uploadBtn.setOnClickListener(view -> uploadFile());
         deleteBtn.setOnClickListener(view -> deleteMarks());
-        allStudentsData();
     }
 
     private void findAllViews() {
@@ -155,7 +154,7 @@ public class UnitTestMarksActivity extends AppCompatActivity {
 
                                     @Override
                                     public void onCancelled(@NonNull DatabaseError error) {
-                                        Toast.makeText(UnitTestMarksActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                                        Log.d(TAG, error.getMessage());
                                     }
                                 });
                     }

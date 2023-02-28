@@ -1,5 +1,7 @@
 package com.suyogbauskar.attenteachers;
 
+import static android.content.ContentValues.TAG;
+
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Intent;
@@ -8,6 +10,7 @@ import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.text.InputType;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.EditText;
@@ -97,7 +100,7 @@ public class StudentDataActivity extends AppCompatActivity {
 
                     @Override
                     public void onCancelled(@NonNull DatabaseError error) {
-                        Toast.makeText(StudentDataActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                        Log.d(TAG, error.getMessage());
                     }
                 });
     }

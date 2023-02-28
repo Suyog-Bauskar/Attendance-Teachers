@@ -1,14 +1,16 @@
 package com.suyogbauskar.attenteachers;
 
+import static android.content.ContentValues.TAG;
+
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Gravity;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -61,7 +63,7 @@ public class SubjectsActivity extends AppCompatActivity {
 
                     @Override
                     public void onCancelled(@NonNull DatabaseError error) {
-                        Toast.makeText(SubjectsActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                        Log.d(TAG, error.getMessage());
                     }
                 });
     }

@@ -140,7 +140,7 @@ public class SubmissionActivity extends AppCompatActivity {
 
                     @Override
                     public void onCancelled(@NonNull DatabaseError error) {
-                        Toast.makeText(SubmissionActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                        Log.d(TAG, error.getMessage());
                     }
                 });
     }

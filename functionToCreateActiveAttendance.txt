@@ -1,0 +1,25 @@
+private void functionToCreateActiveAttendance() {
+        String[] departments = {"CE", "CO", "IF", "EE", "EJ", "ME"};
+        String[] semesters = {"1", "2", "3", "4", "5", "6"};
+        String[] batches = {"A", "A1", "A2", "A3", "B", "B1", "B2", "B3", "C", "C1", "C2", "C3"};
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("code", 0);
+        data.put("count", 0);
+        data.put("firstname", "");
+        data.put("isAttendanceRunning", false);
+        data.put("lastname", "");
+        data.put("subject_code", "");
+        data.put("subject_name", "");
+        data.put("subject_short_name", "");
+        data.put("uid", "");
+
+        for (String department: departments) {
+            for (String semester: semesters) {
+                for (String batch: batches) {
+                    FirebaseDatabase.getInstance().getReference("attendance/active_attendance")
+                            .child(department + semester + "-" + batch).setValue(data);
+                }
+            }
+        }
+    }

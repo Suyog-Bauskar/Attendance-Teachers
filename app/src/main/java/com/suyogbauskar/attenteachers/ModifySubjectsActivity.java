@@ -325,6 +325,11 @@ public class ModifySubjectsActivity extends AppCompatActivity {
                                                     data.put("B_count", snapshot.child("B_count").getValue(Integer.class));
                                                     data.put("B1_count", snapshot.child("B1_count").getValue(Integer.class));
                                                     data.put("B2_count", snapshot.child("B2_count").getValue(Integer.class));
+                                                    data.put("B3_count", snapshot.child("B3_count").getValue(Integer.class));
+                                                    data.put("C_count", snapshot.child("C_count").getValue(Integer.class));
+                                                    data.put("C1_count", snapshot.child("C1_count").getValue(Integer.class));
+                                                    data.put("C2_count", snapshot.child("C2_count").getValue(Integer.class));
+                                                    data.put("C3_count", snapshot.child("C3_count").getValue(Integer.class));
                                                     data.put("semester", semesterInt);
                                                     data.put("subject_name", nameStr);
                                                     data.put("subject_short_name", shortNameStr);
