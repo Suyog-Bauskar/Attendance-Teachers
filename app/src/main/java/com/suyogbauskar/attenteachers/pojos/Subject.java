@@ -19,6 +19,17 @@ public class Subject {
         this.teacherUID = teacherUID;
     }
 
+    public Subject(String shortName, String name, String code) {
+        this.shortName = shortName;
+        Name = name;
+        this.code = code;
+    }
+
+    public Subject(String code, String shortName) {
+        this.code = code;
+        this.shortName = shortName;
+    }
+
     public String getShortName() {
         return shortName;
     }

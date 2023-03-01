@@ -25,6 +25,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ServerValue;
 import com.google.firebase.database.ValueEventListener;
 import com.suyogbauskar.attenteachers.R;
+import com.suyogbauskar.attenteachers.pojos.Subject;
 import com.suyogbauskar.attenteachers.pojos.SubjectInformation;
 import com.suyogbauskar.attenteachers.utils.ProgressDialog;
 import com.uzairiqbal.circulartimerview.CircularTimerListener;
@@ -32,8 +33,10 @@ import com.uzairiqbal.circulartimerview.CircularTimerView;
 import com.uzairiqbal.circulartimerview.TimeFormatEnum;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
@@ -359,19 +362,19 @@ public class HomeFragment extends Fragment {
     private void generateCodeBtn() {
         randomNo = new Random().nextInt((99999 - 10000) + 1) + 10000;
         AtomicBoolean anySubjectFound = new AtomicBoolean(false);
+        List<Subject> currentSemesterSubjectList = new ArrayList<>();
 
         AlertDialog.Builder semesterDialog = new AlertDialog.Builder(getContext());
         semesterDialog.setTitle("Semester");
         String[] items = {"Semester 1", "Semester 2", "Semester 3", "Semester 4", "Semester 5", "Semester 6"};
         semesterDialog.setSingleChoiceItems(items, -1, (dialog, which) -> {
+            dialog.dismiss();
             int semester = 0;
             for (Map.Entry<String, SubjectInformation> entry1 : allSubjects.entrySet()) {
                 semester = Integer.parseInt(items[which].charAt(items[which].length() - 1) + "");
                 if (entry1.getValue().getSubjectSemester() == semester) {
                     anySubjectFound.set(true);
-                    selectedSubjectCode = entry1.getValue().getSubjectCode();
-                    selectedSubjectName = entry1.getValue().getSubjectName();
-                    selectedSubjectShortName = entry1.getValue().getSubjectShortName();
+                    currentSemesterSubjectList.add(new Subject(entry1.getValue().getSubjectShortName(), entry1.getValue().getSubjectName(), entry1.getValue().getSubjectCode()));
                 }
             }
 
@@ -426,36 +429,63 @@ public class HomeFragment extends Fragment {
                         selectedAttendanceOf = "C3";
                         break;
                 }
+
                 editor.putString("attendanceOf", selectedAttendanceOf);
                 editor.commit();
-                onAttendanceStart();
-                codeView.setText("Code - " + randomNo);
-                deleteBtn.setVisibility(View.VISIBLE);
-                generateCodeAndStopBtn.setText("Stop");
 
-                edit2.putBoolean("wasAttendanceRunning", true);
-                edit2.putString("statusMessage", statusMessage);
-                edit2.putInt("code", randomNo);
-                edit2.putLong("endTime", System.currentTimeMillis() + 180000L);
-                edit2.apply();
-
-                progressBar.setCircularTimerListener(new CircularTimerListener() {
-                    @Override
-                    public String updateDataOnTick(long remainingTimeInMs) {
-                        edit2.putLong("time", remainingTimeInMs);
-                        return String.valueOf((int)Math.ceil((remainingTimeInMs / 1000.f)));
+                if (currentSemesterSubjectList.size() > 1) {
+                    AlertDialog.Builder subjectDialog = new AlertDialog.Builder(getContext());
+                    subjectDialog.setTitle("Subjects");
+                    String[] items3 = new String[currentSemesterSubjectList.size()];
+                    for (int i = 0; i < currentSemesterSubjectList.size(); i++) {
+                        items3[i] = currentSemesterSubjectList.get(i).getShortName();
                     }
 
-                    @Override
-                    public void onTimerFinished() {
-                        stopAttendanceBtn();
-                    }
-                }, 180, TimeFormatEnum.SECONDS, 10);
-                progressBar.startTimer();
+                    subjectDialog.setSingleChoiceItems(items3, -1, (dialog3, which3) -> {
+                        dialog3.dismiss();
+                        selectedSubjectCode = currentSemesterSubjectList.get(which3).getCode();
+                        selectedSubjectName = currentSemesterSubjectList.get(which3).getName();
+                        selectedSubjectShortName = currentSemesterSubjectList.get(which3).getShortName();
+                        startAttendanceAfterSelectingAllOptions();
+                    });
+                    subjectDialog.create().show();
+                } else {
+                    selectedSubjectCode = currentSemesterSubjectList.get(0).getCode();
+                    selectedSubjectName = currentSemesterSubjectList.get(0).getName();
+                    selectedSubjectShortName = currentSemesterSubjectList.get(0).getShortName();
+                    startAttendanceAfterSelectingAllOptions();
+                }
                 dialog2.dismiss();
             });
             divisionDialog.create().show();
         });
         semesterDialog.create().show();
+    }
+
+    private void startAttendanceAfterSelectingAllOptions() {
+        onAttendanceStart();
+        codeView.setText("Code - " + randomNo);
+        deleteBtn.setVisibility(View.VISIBLE);
+        generateCodeAndStopBtn.setText("Stop");
+
+        edit2.putBoolean("wasAttendanceRunning", true);
+        edit2.putString("statusMessage", statusMessage);
+        edit2.putInt("code", randomNo);
+        edit2.putLong("endTime", System.currentTimeMillis() + 180000L);
+        edit2.apply();
+
+        progressBar.setCircularTimerListener(new CircularTimerListener() {
+            @Override
+            public String updateDataOnTick(long remainingTimeInMs) {
+                edit2.putLong("time", remainingTimeInMs);
+                return String.valueOf((int)Math.ceil((remainingTimeInMs / 1000.f)));
+            }
+
+            @Override
+            public void onTimerFinished() {
+                stopAttendanceBtn();
+            }
+        }, 180, TimeFormatEnum.SECONDS, 10);
+        progressBar.startTimer();
     }
 }

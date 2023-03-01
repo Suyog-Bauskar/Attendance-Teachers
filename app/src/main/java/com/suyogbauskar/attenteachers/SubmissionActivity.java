@@ -26,7 +26,10 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.suyogbauskar.attenteachers.pojos.StudentData;
+import com.suyogbauskar.attenteachers.pojos.Subject;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -62,14 +65,14 @@ public class SubmissionActivity extends AppCompatActivity {
                     .addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(@NonNull DataSnapshot snapshot) {
+                            List<Subject> currentSemesterSubjectList = new ArrayList<>();
                             boolean rightSemester = false;
                             int selectedSemester = which + 1;
 
                             for (DataSnapshot dsp : snapshot.getChildren()) {
-                                if (selectedSemester == snapshot.child(dsp.getKey()).child("semester").getValue(Integer.class)) {
+                                if (selectedSemester == dsp.child("semester").getValue(Integer.class)) {
                                     rightSemester = true;
-                                    subjectCodeTeacher = dsp.getKey();
-                                    break;
+                                    currentSemesterSubjectList.add(new Subject(dsp.getKey(), dsp.child("subject_short_name").getValue(String.class)));
                                 }
                             }
 
@@ -78,7 +81,24 @@ public class SubmissionActivity extends AppCompatActivity {
                                 return;
                             }
 
-                            showAllStudentsData(selectedSemester);
+                            if (currentSemesterSubjectList.size() > 1) {
+                                AlertDialog.Builder subjectDialog = new AlertDialog.Builder(SubmissionActivity.this);
+                                subjectDialog.setTitle("Subjects");
+                                String[] items3 = new String[currentSemesterSubjectList.size()];
+                                for (int i = 0; i < currentSemesterSubjectList.size(); i++) {
+                                    items3[i] = currentSemesterSubjectList.get(i).getShortName();
+                                }
+
+                                subjectDialog.setSingleChoiceItems(items3, -1, (dialog3, which3) -> {
+                                    dialog3.dismiss();
+                                    subjectCodeTeacher = currentSemesterSubjectList.get(which3).getCode();
+                                    showAllStudentsData(selectedSemester);
+                                });
+                                subjectDialog.create().show();
+                            } else {
+                                subjectCodeTeacher = currentSemesterSubjectList.get(0).getCode();
+                                showAllStudentsData(selectedSemester);
+                            }
                         }
 
                         @Override

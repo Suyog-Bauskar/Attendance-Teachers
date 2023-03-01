@@ -26,9 +26,12 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.suyogbauskar.attenteachers.pojos.Subject;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -158,13 +161,13 @@ public class TodayAttendanceActivity extends AppCompatActivity {
                     .addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(@NonNull DataSnapshot snapshot) {
+                            List<Subject> currentSemesterSubjectList = new ArrayList<>();
                             boolean rightSemester = false;
 
                             for (DataSnapshot dsp : snapshot.getChildren()) {
-                                if (selectedSemester == snapshot.child(dsp.getKey()).child("semester").getValue(Integer.class)) {
+                                if (selectedSemester == dsp.child("semester").getValue(Integer.class)) {
                                     rightSemester = true;
-                                    subjectCodeTeacher = dsp.getKey();
-                                    break;
+                                    currentSemesterSubjectList.add(new Subject(dsp.getKey(), dsp.child("subject_short_name").getValue(String.class)));
                                 }
                             }
 
@@ -216,7 +219,25 @@ public class TodayAttendanceActivity extends AppCompatActivity {
                                         break;
                                 }
                                 dialog2.dismiss();
-                                showTodayAttendance();
+
+                                if (currentSemesterSubjectList.size() > 1) {
+                                    AlertDialog.Builder subjectDialog = new AlertDialog.Builder(TodayAttendanceActivity.this);
+                                    subjectDialog.setTitle("Subjects");
+                                    String[] items3 = new String[currentSemesterSubjectList.size()];
+                                    for (int i = 0; i < currentSemesterSubjectList.size(); i++) {
+                                        items3[i] = currentSemesterSubjectList.get(i).getShortName();
+                                    }
+
+                                    subjectDialog.setSingleChoiceItems(items3, -1, (dialog3, which3) -> {
+                                        dialog3.dismiss();
+                                        subjectCodeTeacher = currentSemesterSubjectList.get(which3).getCode();
+                                        showTodayAttendance();
+                                    });
+                                    subjectDialog.create().show();
+                                } else {
+                                    subjectCodeTeacher = currentSemesterSubjectList.get(0).getCode();
+                                    showTodayAttendance();
+                                }
                             });
                             divisionDialog.create().show();
                         }

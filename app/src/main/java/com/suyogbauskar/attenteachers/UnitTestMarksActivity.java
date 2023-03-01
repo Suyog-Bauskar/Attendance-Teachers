@@ -32,10 +32,13 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.suyogbauskar.attenteachers.pojos.StudentData;
+import com.suyogbauskar.attenteachers.pojos.Subject;
 import com.suyogbauskar.attenteachers.pojos.UnitTestMarks;
 
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.TreeMap;
@@ -96,13 +99,13 @@ public class UnitTestMarksActivity extends AppCompatActivity {
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        List<Subject> currentSemesterSubjectList = new ArrayList<>();
                         boolean rightSemester = false;
 
                         for (DataSnapshot dsp : snapshot.getChildren()) {
-                            if (selectedSemester == snapshot.child(dsp.getKey()).child("semester").getValue(Integer.class)) {
+                            if (selectedSemester == dsp.child("semester").getValue(Integer.class)) {
                                 rightSemester = true;
-                                subjectCodeTeacher = dsp.getKey();
-                                break;
+                                currentSemesterSubjectList.add(new Subject(dsp.getKey(), dsp.child("subject_short_name").getValue(String.class)));
                             }
                         }
 
@@ -111,57 +114,78 @@ public class UnitTestMarksActivity extends AppCompatActivity {
                             return;
                         }
 
-                        uploadBtn.setVisibility(View.VISIBLE);
-                        deleteBtn.setVisibility(View.VISIBLE);
+                        if (currentSemesterSubjectList.size() > 1) {
+                            AlertDialog.Builder subjectDialog = new AlertDialog.Builder(UnitTestMarksActivity.this);
+                            subjectDialog.setTitle("Subjects");
+                            String[] items3 = new String[currentSemesterSubjectList.size()];
+                            for (int i = 0; i < currentSemesterSubjectList.size(); i++) {
+                                items3[i] = currentSemesterSubjectList.get(i).getShortName();
+                            }
 
-                        FirebaseDatabase.getInstance().getReference("students_data")
-                                .orderByChild("queryStringSemester")
-                                .equalTo(department + selectedSemester)
-                                .addValueEventListener(new ValueEventListener() {
-                                    @Override
-                                    public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                        Map<Integer, StudentData> studentDataMap = new TreeMap<>();
-                                        isFirstRow = true;
-
-                                        table.removeAllViews();
-                                        drawTableHeader();
-
-                                        try {
-                                            for (DataSnapshot ds : snapshot.getChildren()) {
-                                                if (ds.child("isVerified").getValue(Boolean.class)) {
-                                                    studentDataMap.put(ds.child("rollNo").getValue(Integer.class),
-                                                            new StudentData(ds.child("rollNo").getValue(Integer.class), ds.child("subjects").child(subjectCodeTeacher).child("unitTest1Marks").getValue(Integer.class), ds.child("subjects").child(subjectCodeTeacher).child("unitTest2Marks").getValue(Integer.class), ds.child("firstname").getValue(String.class), ds.child("lastname").getValue(String.class)));
-                                                }
-                                            }
-                                        } catch (Exception e) {
-                                            Log.d(TAG, e.getMessage());
-                                        }
-                                        for (Map.Entry<Integer, StudentData> entry1 : studentDataMap.entrySet()) {
-                                            int unitOneMarks = entry1.getValue().getUnitTest1Marks();
-                                            int unitTwoMarks = entry1.getValue().getUnitTest2Marks();
-
-                                            if (unitOneMarks == -1 && unitTwoMarks == -1) {
-                                                createTableRow(entry1.getValue().getRollNo(), entry1.getValue().getFirstname() + " " + entry1.getValue().getLastname(), "-", "-");
-                                            } else if (unitOneMarks == -1) {
-                                                createTableRow(entry1.getValue().getRollNo(), entry1.getValue().getFirstname() + " " + entry1.getValue().getLastname(), "-", String.valueOf(unitTwoMarks));
-                                            } else if (unitTwoMarks == -1) {
-                                                createTableRow(entry1.getValue().getRollNo(), entry1.getValue().getFirstname() + " " + entry1.getValue().getLastname(), String.valueOf(unitOneMarks), "-");
-                                            } else {
-                                                createTableRow(entry1.getValue().getRollNo(), entry1.getValue().getFirstname() + " " + entry1.getValue().getLastname(), String.valueOf(unitOneMarks), String.valueOf(unitTwoMarks));
-                                            }
-                                        }
-                                    }
-
-                                    @Override
-                                    public void onCancelled(@NonNull DatabaseError error) {
-                                        Log.d(TAG, error.getMessage());
-                                    }
-                                });
+                            subjectDialog.setSingleChoiceItems(items3, -1, (dialog3, which3) -> {
+                                dialog3.dismiss();
+                                subjectCodeTeacher = currentSemesterSubjectList.get(which3).getCode();
+                                allStudentsDataAfterSelectingSubject();
+                            });
+                            subjectDialog.create().show();
+                        } else {
+                            subjectCodeTeacher = currentSemesterSubjectList.get(0).getCode();
+                            allStudentsDataAfterSelectingSubject();
+                        }
                     }
 
                     @Override
                     public void onCancelled(@NonNull DatabaseError error) {
                         Toast.makeText(UnitTestMarksActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+    private void allStudentsDataAfterSelectingSubject() {
+        uploadBtn.setVisibility(View.VISIBLE);
+        deleteBtn.setVisibility(View.VISIBLE);
+
+        FirebaseDatabase.getInstance().getReference("students_data")
+                .orderByChild("queryStringSemester")
+                .equalTo(department + selectedSemester)
+                .addValueEventListener(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        Map<Integer, StudentData> studentDataMap = new TreeMap<>();
+                        isFirstRow = true;
+
+                        table.removeAllViews();
+                        drawTableHeader();
+
+                        try {
+                            for (DataSnapshot ds : snapshot.getChildren()) {
+                                if (ds.child("isVerified").getValue(Boolean.class)) {
+                                    studentDataMap.put(ds.child("rollNo").getValue(Integer.class),
+                                            new StudentData(ds.child("rollNo").getValue(Integer.class), ds.child("subjects").child(subjectCodeTeacher).child("unitTest1Marks").getValue(Integer.class), ds.child("subjects").child(subjectCodeTeacher).child("unitTest2Marks").getValue(Integer.class), ds.child("firstname").getValue(String.class), ds.child("lastname").getValue(String.class)));
+                                }
+                            }
+                        } catch (Exception e) {
+                            Log.d(TAG, e.getMessage());
+                        }
+                        for (Map.Entry<Integer, StudentData> entry1 : studentDataMap.entrySet()) {
+                            int unitOneMarks = entry1.getValue().getUnitTest1Marks();
+                            int unitTwoMarks = entry1.getValue().getUnitTest2Marks();
+
+                            if (unitOneMarks == -1 && unitTwoMarks == -1) {
+                                createTableRow(entry1.getValue().getRollNo(), entry1.getValue().getFirstname() + " " + entry1.getValue().getLastname(), "-", "-");
+                            } else if (unitOneMarks == -1) {
+                                createTableRow(entry1.getValue().getRollNo(), entry1.getValue().getFirstname() + " " + entry1.getValue().getLastname(), "-", String.valueOf(unitTwoMarks));
+                            } else if (unitTwoMarks == -1) {
+                                createTableRow(entry1.getValue().getRollNo(), entry1.getValue().getFirstname() + " " + entry1.getValue().getLastname(), String.valueOf(unitOneMarks), "-");
+                            } else {
+                                createTableRow(entry1.getValue().getRollNo(), entry1.getValue().getFirstname() + " " + entry1.getValue().getLastname(), String.valueOf(unitOneMarks), String.valueOf(unitTwoMarks));
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        Log.d(TAG, error.getMessage());
                     }
                 });
     }
@@ -333,9 +357,13 @@ public class UnitTestMarksActivity extends AppCompatActivity {
                     .addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(@NonNull DataSnapshot snapshot) {
-                            for (DataSnapshot ds : snapshot.getChildren()) {
-                                ds.child("subjects").child(subjectCodeTeacher).child("unitTest1Marks").getRef().setValue(Integer.parseInt(unitTestMarksList.get(ds.child("rollNo").getValue(Integer.class)).getUnitTest1Marks()));
-                                ds.child("subjects").child(subjectCodeTeacher).child("unitTest2Marks").getRef().setValue(Integer.parseInt(unitTestMarksList.get(ds.child("rollNo").getValue(Integer.class)).getUnitTest2Marks()));
+                            try {
+                                for (DataSnapshot ds : snapshot.getChildren()) {
+                                    ds.child("subjects").child(subjectCodeTeacher).child("unitTest1Marks").getRef().setValue(Integer.parseInt(unitTestMarksList.get(ds.child("rollNo").getValue(Integer.class)).getUnitTest1Marks()));
+                                    ds.child("subjects").child(subjectCodeTeacher).child("unitTest2Marks").getRef().setValue(Integer.parseInt(unitTestMarksList.get(ds.child("rollNo").getValue(Integer.class)).getUnitTest2Marks()));
+                                }
+                            } catch (Exception e) {
+                                Toast.makeText(UnitTestMarksActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
                             }
                         }
 

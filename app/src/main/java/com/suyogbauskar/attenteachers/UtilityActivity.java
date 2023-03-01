@@ -31,6 +31,7 @@ import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageMetadata;
 import com.suyogbauskar.attenteachers.excelfiles.CreateExcelFileOfAttendance;
 import com.suyogbauskar.attenteachers.pojos.StudentData;
+import com.suyogbauskar.attenteachers.pojos.Subject;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -39,7 +40,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -337,13 +340,11 @@ public class UtilityActivity extends AppCompatActivity {
                     .addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(@NonNull DataSnapshot snapshot) {
+                            List<Subject> currentSemesterSubjectList = new ArrayList<>();
                             for (DataSnapshot dsp : snapshot.getChildren()) {
-                                if (snapshot.child(dsp.getKey()).child("semester").getValue(Integer.class) == selectedSemester.get()) {
-                                    editor.putString("subjectCode", dsp.getKey());
-                                    editor.putString("subjectName", snapshot.child(dsp.getKey()).child("subject_name").getValue(String.class));
-                                    editor.commit();
+                                if (dsp.child("semester").getValue(Integer.class) == selectedSemester.get()) {
                                     subjectFound = true;
-                                    break;
+                                    currentSemesterSubjectList.add(new Subject(dsp.child("subject_short_name").getValue(String.class), dsp.child("subject_name").getValue(String.class), dsp.getKey()));
                                 }
                             }
 
@@ -376,10 +377,33 @@ public class UtilityActivity extends AppCompatActivity {
                                         editor2.putString("year", items2[4]);
                                         break;
                                 }
-                                Toast.makeText(UtilityActivity.this, "Creating Excel File...", Toast.LENGTH_SHORT).show();
                                 dialog2.dismiss();
                                 editor2.commit();
-                                startService(new Intent(UtilityActivity.this, CreateExcelFileOfAttendance.class));
+
+                                if (currentSemesterSubjectList.size() > 1) {
+                                    AlertDialog.Builder subjectDialog = new AlertDialog.Builder(UtilityActivity.this);
+                                    subjectDialog.setTitle("Subjects");
+                                    String[] items3 = new String[currentSemesterSubjectList.size()];
+                                    for (int i = 0; i < currentSemesterSubjectList.size(); i++) {
+                                        items3[i] = currentSemesterSubjectList.get(i).getShortName();
+                                    }
+
+                                    subjectDialog.setSingleChoiceItems(items3, -1, (dialog3, which3) -> {
+                                        dialog3.dismiss();
+                                        editor.putString("subjectCode", currentSemesterSubjectList.get(which3).getCode());
+                                        editor.putString("subjectName", currentSemesterSubjectList.get(which3).getName());
+                                        editor.commit();
+                                        Toast.makeText(UtilityActivity.this, "Creating Excel File...", Toast.LENGTH_SHORT).show();
+                                        startService(new Intent(UtilityActivity.this, CreateExcelFileOfAttendance.class));
+                                    });
+                                    subjectDialog.create().show();
+                                } else {
+                                    editor.putString("subjectCode", currentSemesterSubjectList.get(0).getCode());
+                                    editor.putString("subjectName", currentSemesterSubjectList.get(0).getName());
+                                    editor.commit();
+                                    Toast.makeText(UtilityActivity.this, "Creating Excel File...", Toast.LENGTH_SHORT).show();
+                                    startService(new Intent(UtilityActivity.this, CreateExcelFileOfAttendance.class));
+                                }
                             });
                             yearDialog.create().show();
                         }
@@ -436,12 +460,11 @@ public class UtilityActivity extends AppCompatActivity {
                     .addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(@NonNull DataSnapshot snapshot) {
+                            List<Subject> currentSemesterSubjectList = new ArrayList<>();
                             for (DataSnapshot dsp : snapshot.getChildren()) {
                                 if (snapshot.child(dsp.getKey()).child("semester").getValue(Integer.class) == selectedSemester.get()) {
-                                    editor.putString("subjectCode", dsp.getKey());
-                                    editor.commit();
                                     subjectFound = true;
-                                    break;
+                                    currentSemesterSubjectList.add(new Subject(dsp.getKey(), dsp.child("subject_short_name").getValue(String.class)));
                                 }
                             }
 
@@ -449,8 +472,26 @@ public class UtilityActivity extends AppCompatActivity {
                                 Toast.makeText(UtilityActivity.this, "You don't teach this semester", Toast.LENGTH_SHORT).show();
                                 return;
                             }
+                            if (currentSemesterSubjectList.size() > 1) {
+                                AlertDialog.Builder subjectDialog = new AlertDialog.Builder(UtilityActivity.this);
+                                subjectDialog.setTitle("Subjects");
+                                String[] items3 = new String[currentSemesterSubjectList.size()];
+                                for (int i = 0; i < currentSemesterSubjectList.size(); i++) {
+                                    items3[i] = currentSemesterSubjectList.get(i).getShortName();
+                                }
 
-                            startActivity(new Intent(UtilityActivity.this, AttendanceBelow75Activity.class));
+                                subjectDialog.setSingleChoiceItems(items3, -1, (dialog3, which3) -> {
+                                    dialog3.dismiss();
+                                    editor.putString("subjectCode", currentSemesterSubjectList.get(which3).getCode());
+                                    editor.commit();
+                                    startActivity(new Intent(UtilityActivity.this, AttendanceBelow75Activity.class));
+                                });
+                                subjectDialog.create().show();
+                            } else {
+                                editor.putString("subjectCode", currentSemesterSubjectList.get(0).getCode());
+                                editor.commit();
+                                startActivity(new Intent(UtilityActivity.this, AttendanceBelow75Activity.class));
+                            }
                         }
 
                         @Override

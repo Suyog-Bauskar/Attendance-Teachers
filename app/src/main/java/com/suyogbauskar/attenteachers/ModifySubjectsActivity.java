@@ -40,7 +40,6 @@ public class ModifySubjectsActivity extends AppCompatActivity {
     private Button addSubjectBtn;
     private boolean isFirstRow;
     private String department;
-    private final List<String> subjectCodes = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -149,33 +148,11 @@ public class ModifySubjectsActivity extends AppCompatActivity {
                                     Toast.makeText(ModifySubjectsActivity.this, "Teacher doesn't exist", Toast.LENGTH_SHORT).show();
                                     return;
                                 }
-                                if (subjectCodes.contains(codeStr)) {
-                                    Toast.makeText(ModifySubjectsActivity.this, "Subject code already exist", Toast.LENGTH_SHORT).show();
-                                    return;
-                                }
                                 for (DataSnapshot dsp : snapshot.getChildren()) {
-                                    dsp.getRef().child("subjects")
-                                            .orderByChild("semester")
-                                            .equalTo(semesterInt)
-                                            .addListenerForSingleValueEvent(new ValueEventListener() {
-                                                @Override
-                                                public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                                    if (snapshot.exists()) {
-                                                        Toast.makeText(ModifySubjectsActivity.this, "Teacher already teach this semester", Toast.LENGTH_SHORT).show();
-                                                        return;
-                                                    }
-
-                                                    dsp.getRef().child("subjects").child(codeStr)
-                                                            .setValue(data)
-                                                            .addOnSuccessListener(unused -> showSubjects())
-                                                            .addOnFailureListener(e -> Toast.makeText(ModifySubjectsActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show());
-                                                }
-
-                                                @Override
-                                                public void onCancelled(@NonNull DatabaseError error) {
-                                                    Toast.makeText(ModifySubjectsActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
-                                                }
-                                            });
+                                    dsp.getRef().child("subjects").child(codeStr)
+                                            .setValue(data)
+                                            .addOnSuccessListener(unused -> showSubjects())
+                                            .addOnFailureListener(e -> Toast.makeText(ModifySubjectsActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show());
                                 }
                             }
 
@@ -214,7 +191,6 @@ public class ModifySubjectsActivity extends AppCompatActivity {
                                         public void onDataChange(@NonNull DataSnapshot snapshot) {
                                             counter[0]++;
                                             for (DataSnapshot dsp : snapshot.getChildren()) {
-                                                subjectCodes.add(dsp.getKey());
                                                 allSubject.add(new TableRowOfModifySubjects(teacherID, teacherName, dsp.child("subject_short_name").getValue(String.class), dsp.child("subject_name").getValue(String.class), dsp.getKey(), dsp.child("semester").getValue(Integer.class),
                                                         new Subject(dsp.child("subject_short_name").getValue(String.class), dsp.child("subject_name").getValue(String.class), dsp.getKey(), dsp.child("semester").getValue(Integer.class), teacherUID)));
                                             }
@@ -295,88 +271,65 @@ public class ModifySubjectsActivity extends AppCompatActivity {
                 Toast.makeText(getApplicationContext(), "Invalid Code", Toast.LENGTH_LONG).show();
             } else if (semesterInt <= 0 || semesterInt > 6) {
                 Toast.makeText(getApplicationContext(), "Invalid Semester", Toast.LENGTH_LONG).show();
-            } else if (subjectCodes.contains(codeStr) && (!code.equals(codeStr))) {
-                Toast.makeText(getApplicationContext(), "Subject code already exists", Toast.LENGTH_LONG).show();
             } else {
-                if ((shortName.equals(shortNameStr)) && (name.equals(nameStr)) && (code.equals(codeStr)) && (semester == semesterInt)) {
-                    return;
+                if (!code.equals(codeStr)) {
+                    FirebaseDatabase.getInstance().getReference("teachers_data/" + teacherUID + "/subjects/" + code)
+                            .addListenerForSingleValueEvent(new ValueEventListener() {
+                                @Override
+                                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                    Map<String, Object> data = new HashMap<>();
+                                    data.put("A_count", snapshot.child("A_count").getValue(Integer.class));
+                                    data.put("A1_count", snapshot.child("A1_count").getValue(Integer.class));
+                                    data.put("A2_count", snapshot.child("A2_count").getValue(Integer.class));
+                                    data.put("A3_count", snapshot.child("A3_count").getValue(Integer.class));
+                                    data.put("B_count", snapshot.child("B_count").getValue(Integer.class));
+                                    data.put("B1_count", snapshot.child("B1_count").getValue(Integer.class));
+                                    data.put("B2_count", snapshot.child("B2_count").getValue(Integer.class));
+                                    data.put("B3_count", snapshot.child("B3_count").getValue(Integer.class));
+                                    data.put("C_count", snapshot.child("C_count").getValue(Integer.class));
+                                    data.put("C1_count", snapshot.child("C1_count").getValue(Integer.class));
+                                    data.put("C2_count", snapshot.child("C2_count").getValue(Integer.class));
+                                    data.put("C3_count", snapshot.child("C3_count").getValue(Integer.class));
+                                    data.put("semester", semesterInt);
+                                    data.put("subject_name", nameStr);
+                                    data.put("subject_short_name", shortNameStr);
+
+                                    FirebaseDatabase.getInstance().getReference("teachers_data/" + teacherUID + "/subjects/" + codeStr)
+                                            .setValue(data)
+                                            .addOnSuccessListener(unused -> {
+                                                showSubjects();
+                                                FirebaseDatabase.getInstance().getReference("teachers_data/" + teacherUID + "/subjects/" + code).removeValue();
+                                                Toast.makeText(ModifySubjectsActivity.this, "Details updated successfully", Toast.LENGTH_SHORT).show();
+                                            })
+                                            .addOnFailureListener(e -> Toast.makeText(ModifySubjectsActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show());
+                                }
+
+                                @Override
+                                public void onCancelled(@NonNull DatabaseError error) {
+                                    Toast.makeText(ModifySubjectsActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                } else {
+                    FirebaseDatabase.getInstance().getReference("teachers_data/" + teacherUID + "/subjects/" + code)
+                            .addListenerForSingleValueEvent(new ValueEventListener() {
+                                @Override
+                                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                    snapshot.child("subject_short_name").getRef().setValue(shortNameStr).addOnSuccessListener(unused -> {
+                                        snapshot.child("subject_name").getRef().setValue(nameStr).addOnSuccessListener(unused2 -> {
+                                            snapshot.child("semester").getRef().setValue(semesterInt).addOnSuccessListener(unused3 -> {
+                                                Toast.makeText(ModifySubjectsActivity.this, "Details updated successfully", Toast.LENGTH_SHORT).show();
+                                                showSubjects();
+                                            });
+                                        });
+                                    });
+                                }
+
+                                @Override
+                                public void onCancelled(@NonNull DatabaseError error) {
+                                    Toast.makeText(ModifySubjectsActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                                }
+                            });
                 }
-
-                FirebaseDatabase.getInstance().getReference("teachers_data/" + teacherUID + "/subjects")
-                        .orderByChild("semester")
-                        .equalTo(semesterInt)
-                        .addListenerForSingleValueEvent(new ValueEventListener() {
-                            @Override
-                            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                if (snapshot.exists() && (semester != semesterInt)) {
-                                    Toast.makeText(ModifySubjectsActivity.this, "Teacher already teach this semester", Toast.LENGTH_SHORT).show();
-                                    return;
-                                }
-                                if (!code.equals(codeStr)) {
-                                    FirebaseDatabase.getInstance().getReference("teachers_data/" + teacherUID + "/subjects/" + code)
-                                            .addListenerForSingleValueEvent(new ValueEventListener() {
-                                                @Override
-                                                public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                                    Map<String, Object> data = new HashMap<>();
-                                                    data.put("A_count", snapshot.child("A_count").getValue(Integer.class));
-                                                    data.put("A1_count", snapshot.child("A1_count").getValue(Integer.class));
-                                                    data.put("A2_count", snapshot.child("A2_count").getValue(Integer.class));
-                                                    data.put("A3_count", snapshot.child("A3_count").getValue(Integer.class));
-                                                    data.put("B_count", snapshot.child("B_count").getValue(Integer.class));
-                                                    data.put("B1_count", snapshot.child("B1_count").getValue(Integer.class));
-                                                    data.put("B2_count", snapshot.child("B2_count").getValue(Integer.class));
-                                                    data.put("B3_count", snapshot.child("B3_count").getValue(Integer.class));
-                                                    data.put("C_count", snapshot.child("C_count").getValue(Integer.class));
-                                                    data.put("C1_count", snapshot.child("C1_count").getValue(Integer.class));
-                                                    data.put("C2_count", snapshot.child("C2_count").getValue(Integer.class));
-                                                    data.put("C3_count", snapshot.child("C3_count").getValue(Integer.class));
-                                                    data.put("semester", semesterInt);
-                                                    data.put("subject_name", nameStr);
-                                                    data.put("subject_short_name", shortNameStr);
-
-                                                    FirebaseDatabase.getInstance().getReference("teachers_data/" + teacherUID + "/subjects/" + codeStr)
-                                                            .setValue(data)
-                                                            .addOnSuccessListener(unused -> {
-                                                                showSubjects();
-                                                                FirebaseDatabase.getInstance().getReference("teachers_data/" + teacherUID + "/subjects/" + code).removeValue();
-                                                                Toast.makeText(ModifySubjectsActivity.this, "Details updated successfully", Toast.LENGTH_SHORT).show();
-                                                            })
-                                                            .addOnFailureListener(e -> Toast.makeText(ModifySubjectsActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show());
-                                                }
-
-                                                @Override
-                                                public void onCancelled(@NonNull DatabaseError error) {
-                                                    Toast.makeText(ModifySubjectsActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
-                                                }
-                                            });
-                                } else {
-                                    FirebaseDatabase.getInstance().getReference("teachers_data/" + teacherUID + "/subjects/" + code)
-                                            .addListenerForSingleValueEvent(new ValueEventListener() {
-                                                @Override
-                                                public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                                    snapshot.child("subject_short_name").getRef().setValue(shortNameStr).addOnSuccessListener(unused -> {
-                                                        snapshot.child("subject_name").getRef().setValue(nameStr).addOnSuccessListener(unused2 -> {
-                                                            snapshot.child("semester").getRef().setValue(semesterInt).addOnSuccessListener(unused3 -> {
-                                                                Toast.makeText(ModifySubjectsActivity.this, "Details updated successfully", Toast.LENGTH_SHORT).show();
-                                                                showSubjects();
-                                                            });
-                                                        });
-                                                    });
-                                                }
-
-                                                @Override
-                                                public void onCancelled(@NonNull DatabaseError error) {
-                                                    Toast.makeText(ModifySubjectsActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
-                                                }
-                                            });
-                                }
-                            }
-
-                            @Override
-                            public void onCancelled(@NonNull DatabaseError error) {
-                                Toast.makeText(ModifySubjectsActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
-                            }
-                        });
             }
         });
         alert.setNegativeButton("Cancel", (dialog, whichButton) -> dialog.dismiss());
