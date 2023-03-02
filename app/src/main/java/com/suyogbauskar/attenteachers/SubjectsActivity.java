@@ -23,9 +23,6 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.suyogbauskar.attenteachers.pojos.Subject;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public class SubjectsActivity extends AppCompatActivity {
 
     private FirebaseUser user;
@@ -49,14 +46,12 @@ public class SubjectsActivity extends AppCompatActivity {
                 .addValueEventListener(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        Map<String, Subject> subjectMap = new HashMap<>();
                         Subject tempSubject;
                         isFirstRow = true;
                         table.removeAllViews();
                         drawTableHeader();
                         for (DataSnapshot dsp : snapshot.getChildren()) {
                             tempSubject = new Subject(dsp.child("subject_short_name").getValue(String.class), dsp.child("subject_name").getValue(String.class), dsp.getKey(), dsp.child("semester").getValue(Integer.class));
-                            subjectMap.put(dsp.getKey(), tempSubject);
                             createTableRow(dsp.child("subject_short_name").getValue(String.class), dsp.child("subject_name").getValue(String.class), dsp.getKey(), dsp.child("semester").getValue(Integer.class), tempSubject);
                         }
                     }
