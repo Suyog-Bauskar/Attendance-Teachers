@@ -11,7 +11,6 @@ import android.os.Environment;
 import android.provider.OpenableColumns;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
@@ -20,6 +19,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -52,7 +52,7 @@ import cn.pedant.SweetAlert.SweetAlertDialog;
 public class UtilityActivity extends AppCompatActivity {
 
     private final FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-    private Button excelBtn, attendanceBelow75Btn, subjectsBtn, uploadTimetableBtn, removeLastSemesterStudentsBtn, updateAllStudentsDetailsBtn, modifySubjectsBtn;
+    private CardView excelBtn, attendanceBelow75Btn, subjectsBtn, uploadTimetableBtn, removeLastSemesterStudentsBtn, updateAllStudentsDetailsBtn, modifySubjectsBtn;
     private boolean subjectFound, isAdmin;
     private String department;
     private LinearLayout layout;

@@ -25,20 +25,17 @@
         <activity
             android:name=".NotificationActivity"
             android:exported="false"
-            android:noHistory="true"
             android:screenOrientation="portrait"/>
         <activity
             android:name=".ModifySubjectsActivity"
-            android:exported="false"
-            android:noHistory="true">
+            android:exported="false">
             <meta-data
                 android:name="android.app.lib_name"
                 android:value="" />
         </activity>
         <activity
             android:name=".TodayAttendanceActivity"
-            android:exported="false"
-            android:noHistory="true">
+            android:exported="false">
             <meta-data
                 android:name="android.app.lib_name"
                 android:value="" />
@@ -49,41 +46,33 @@
             android:screenOrientation="portrait" />
         <activity
             android:name=".SubjectsActivity"
-            android:exported="false"
-            android:noHistory="true" />
+            android:exported="false" />
         <activity
             android:name=".UnitTestMarksActivity"
             android:exported="false" />
         <activity
             android:name=".SubmissionActivity"
-            android:exported="false"
-            android:noHistory="true" />
+            android:exported="false" />
         <activity
             android:name=".StudentDataActivity"
-            android:exported="false"
-            android:noHistory="true" />
+            android:exported="false" />
         <activity
             android:name=".StudentVerificationActivity"
-            android:exported="false"
-            android:noHistory="true" />
+            android:exported="false" />
         <activity
             android:name=".LiveAttendanceActivity"
             android:exported="false"
-            android:noHistory="true"
             android:screenOrientation="portrait" />
         <activity
             android:name=".AttendanceBelow75Activity"
-            android:exported="false"
-            android:noHistory="true" />
+            android:exported="false" />
         <activity
             android:name=".HomeActivity"
             android:exported="false"
-            android:noHistory="true"
             android:screenOrientation="portrait" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:noHistory="true"
             android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

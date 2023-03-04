@@ -121,7 +121,10 @@ public class MainActivity extends AppCompatActivity {
                         startActivity(new Intent(MainActivity.this, HomeActivity.class));
                     }
                 })
-                .addOnFailureListener(e -> Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show());
+                .addOnFailureListener(e -> {
+                    progressDialog.hide();
+                    Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
+                });
     }
 
     @Override
