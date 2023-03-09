@@ -265,12 +265,13 @@ public class TodayAttendanceActivity extends AppCompatActivity {
                 .child(subjectCodeTeacher)
                 .child(String.valueOf(year))
                 .child(monthStr)
-                .addListenerForSingleValueEvent(new ValueEventListener() {
+                .addValueEventListener(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
                         addStudentBtn.setVisibility(View.VISIBLE);
                         String dateStr;
                         final String[] lectureCount = new String[1];
+                        table.removeAllViews();
                         drawTableHeader();
                         for (DataSnapshot dsp : snapshot.getChildren()) {
                             dateStr = dsp.getKey().split("-")[0];
@@ -407,7 +408,7 @@ public class TodayAttendanceActivity extends AppCompatActivity {
         }
 
         tbRow.setOnLongClickListener(view -> {
-            int rollNo1 = Integer.parseInt((String) tbRow.getTag());
+            int rollNo1 = Integer.parseInt(tbRow.getTag().toString());
             new SweetAlertDialog(TodayAttendanceActivity.this, SweetAlertDialog.WARNING_TYPE)
                     .setTitleText("Delete attendance?")
                     .setContentText("Roll no. " + rollNo1 + " attendance will be deleted")
