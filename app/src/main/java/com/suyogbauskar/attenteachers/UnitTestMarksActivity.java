@@ -37,11 +37,11 @@ import com.suyogbauskar.attenteachers.pojos.UnitTestMarks;
 
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
-import java.util.TreeMap;
 
 import cn.pedant.SweetAlert.SweetAlertDialog;
 
@@ -50,9 +50,10 @@ public class UnitTestMarksActivity extends AppCompatActivity {
     private Button uploadBtn, deleteBtn;
     private FirebaseUser user;
     private TableLayout table;
-    private boolean isFirstRow;
-    private String subjectCodeTeacher, department;
+    private boolean isFirstRow, isFirstYear;
+    private String subjectCodeTeacher, department, selectedDivision;
     private int selectedSemester;
+    private ValueEventListener valueEventListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,12 +63,13 @@ public class UnitTestMarksActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         init();
-        selectSemester();
+        selectSemesterAndDivision();
     }
 
     private void init() {
         user = FirebaseAuth.getInstance().getCurrentUser();
         isFirstRow = true;
+        isFirstYear = false;
         SharedPreferences sharedPreferences2 = getSharedPreferences("teacherDataPref", MODE_PRIVATE);
         department = sharedPreferences2.getString("department", "");
         findAllViews();
@@ -81,20 +83,72 @@ public class UnitTestMarksActivity extends AppCompatActivity {
         deleteBtn = findViewById(R.id.deleteBtn);
     }
 
-    private void selectSemester() {
+    private void selectSemesterAndDivision() {
         AlertDialog.Builder semesterDialog = new AlertDialog.Builder(UnitTestMarksActivity.this);
         semesterDialog.setTitle("Semester");
         String[] items = {"Semester 1", "Semester 2", "Semester 3", "Semester 4", "Semester 5", "Semester 6"};
         semesterDialog.setSingleChoiceItems(items, -1, (dialog, which) -> {
             which++;
             selectedSemester = which;
-            allStudentsData();
+            if (selectedSemester == 1 || selectedSemester == 2) {
+                AlertDialog.Builder divisionDialog = new AlertDialog.Builder(UnitTestMarksActivity.this);
+                divisionDialog.setTitle("Division");
+                String[] items2 = {"Division A", "Division B", "Division C"};
+                divisionDialog.setSingleChoiceItems(items2, -1, (dialog2, which2) -> {
+                    switch (which2) {
+                        case 0:
+                            selectedDivision = "A";
+                            break;
+                        case 1:
+                            selectedDivision = "B";
+                            break;
+                        case 2:
+                            selectedDivision = "C";
+                            break;
+                    }
+                    isFirstYear = true;
+                    getAllSubjectsOfThatSemester();
+                    dialog2.dismiss();
+                });
+                divisionDialog.create().show();
+            } else {
+                getAllSubjectsOfThatSemester();
+            }
             dialog.dismiss();
         });
         semesterDialog.create().show();
     }
 
-    private void allStudentsData() {
+    private void whichDataToShow() {
+        uploadBtn.setVisibility(View.VISIBLE);
+        deleteBtn.setVisibility(View.VISIBLE);
+
+        valueEventListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                showStudentsData(snapshot);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Log.d(TAG, error.getMessage());
+            }
+        };
+
+        if (isFirstYear) {
+            FirebaseDatabase.getInstance().getReference("students_data")
+                    .orderByChild("queryStringDivision")
+                    .equalTo(department + selectedSemester + selectedDivision)
+                    .addValueEventListener(valueEventListener);
+        } else {
+            FirebaseDatabase.getInstance().getReference("students_data")
+                    .orderByChild("queryStringSemester")
+                    .equalTo(department + selectedSemester)
+                    .addValueEventListener(valueEventListener);
+        }
+    }
+
+    private void getAllSubjectsOfThatSemester() {
         FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects")
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
@@ -125,12 +179,12 @@ public class UnitTestMarksActivity extends AppCompatActivity {
                             subjectDialog.setSingleChoiceItems(items3, -1, (dialog3, which3) -> {
                                 dialog3.dismiss();
                                 subjectCodeTeacher = currentSemesterSubjectList.get(which3).getCode();
-                                allStudentsDataAfterSelectingSubject();
+                                whichDataToShow();
                             });
                             subjectDialog.create().show();
                         } else {
                             subjectCodeTeacher = currentSemesterSubjectList.get(0).getCode();
-                            allStudentsDataAfterSelectingSubject();
+                            whichDataToShow();
                         }
                     }
 
@@ -141,53 +195,37 @@ public class UnitTestMarksActivity extends AppCompatActivity {
                 });
     }
 
-    private void allStudentsDataAfterSelectingSubject() {
-        uploadBtn.setVisibility(View.VISIBLE);
-        deleteBtn.setVisibility(View.VISIBLE);
+    private void showStudentsData(DataSnapshot snapshot) {
+        List<StudentData> tempList = new ArrayList<>();
+        isFirstRow = true;
 
-        FirebaseDatabase.getInstance().getReference("students_data")
-                .orderByChild("queryStringSemester")
-                .equalTo(department + selectedSemester)
-                .addValueEventListener(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        Map<Integer, StudentData> studentDataMap = new TreeMap<>();
-                        isFirstRow = true;
+        table.removeAllViews();
+        drawTableHeader();
 
-                        table.removeAllViews();
-                        drawTableHeader();
+        try {
+            for (DataSnapshot ds : snapshot.getChildren()) {
+                if (ds.child("isVerified").getValue(Boolean.class)) {
+                    tempList.add(new StudentData(ds.child("rollNo").getValue(Integer.class), ds.child("subjects").child(subjectCodeTeacher).child("unitTest1Marks").getValue(Integer.class), ds.child("subjects").child(subjectCodeTeacher).child("unitTest2Marks").getValue(Integer.class), ds.child("firstname").getValue(String.class), ds.child("lastname").getValue(String.class)));
+                }
+            }
+        } catch (Exception e) {
+            Log.d(TAG, e.getMessage());
+        }
+        tempList.sort(Comparator.comparing(StudentData::getRollNo));
+        for (StudentData student : tempList) {
+            int unitOneMarks = student.getUnitTest1Marks();
+            int unitTwoMarks = student.getUnitTest2Marks();
 
-                        try {
-                            for (DataSnapshot ds : snapshot.getChildren()) {
-                                if (ds.child("isVerified").getValue(Boolean.class)) {
-                                    studentDataMap.put(ds.child("rollNo").getValue(Integer.class),
-                                            new StudentData(ds.child("rollNo").getValue(Integer.class), ds.child("subjects").child(subjectCodeTeacher).child("unitTest1Marks").getValue(Integer.class), ds.child("subjects").child(subjectCodeTeacher).child("unitTest2Marks").getValue(Integer.class), ds.child("firstname").getValue(String.class), ds.child("lastname").getValue(String.class)));
-                                }
-                            }
-                        } catch (Exception e) {
-                            Log.d(TAG, e.getMessage());
-                        }
-                        for (Map.Entry<Integer, StudentData> entry1 : studentDataMap.entrySet()) {
-                            int unitOneMarks = entry1.getValue().getUnitTest1Marks();
-                            int unitTwoMarks = entry1.getValue().getUnitTest2Marks();
-
-                            if (unitOneMarks == -1 && unitTwoMarks == -1) {
-                                createTableRow(entry1.getValue().getRollNo(), entry1.getValue().getFirstname() + " " + entry1.getValue().getLastname(), "-", "-");
-                            } else if (unitOneMarks == -1) {
-                                createTableRow(entry1.getValue().getRollNo(), entry1.getValue().getFirstname() + " " + entry1.getValue().getLastname(), "-", String.valueOf(unitTwoMarks));
-                            } else if (unitTwoMarks == -1) {
-                                createTableRow(entry1.getValue().getRollNo(), entry1.getValue().getFirstname() + " " + entry1.getValue().getLastname(), String.valueOf(unitOneMarks), "-");
-                            } else {
-                                createTableRow(entry1.getValue().getRollNo(), entry1.getValue().getFirstname() + " " + entry1.getValue().getLastname(), String.valueOf(unitOneMarks), String.valueOf(unitTwoMarks));
-                            }
-                        }
-                    }
-
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError error) {
-                        Log.d(TAG, error.getMessage());
-                    }
-                });
+            if (unitOneMarks == -1 && unitTwoMarks == -1) {
+                createTableRow(student.getRollNo(), student.getFirstname() + " " + student.getLastname(), "-", "-");
+            } else if (unitOneMarks == -1) {
+                createTableRow(student.getRollNo(), student.getFirstname() + " " + student.getLastname(), "-", String.valueOf(unitTwoMarks));
+            } else if (unitTwoMarks == -1) {
+                createTableRow(student.getRollNo(), student.getFirstname() + " " + student.getLastname(), String.valueOf(unitOneMarks), "-");
+            } else {
+                createTableRow(student.getRollNo(), student.getFirstname() + " " + student.getLastname(), String.valueOf(unitOneMarks), String.valueOf(unitTwoMarks));
+            }
+        }
     }
 
     private void deleteMarks() {
@@ -197,24 +235,45 @@ public class UnitTestMarksActivity extends AppCompatActivity {
                 .setConfirmText("Delete")
                 .setConfirmClickListener(sDialog -> {
                     sDialog.dismissWithAnimation();
-                    FirebaseDatabase.getInstance().getReference("students_data")
-                            .orderByChild("queryStringSemester")
-                            .equalTo(department + selectedSemester)
-                            .addListenerForSingleValueEvent(new ValueEventListener() {
-                                @Override
-                                public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                    for (DataSnapshot ds : snapshot.getChildren()) {
-                                        ds.child("subjects").child(subjectCodeTeacher).child("unitTest1Marks").getRef().setValue(-1);
-                                        ds.child("subjects").child(subjectCodeTeacher).child("unitTest2Marks").getRef().setValue(-1);
+                    if (isFirstYear) {
+                        FirebaseDatabase.getInstance().getReference("students_data")
+                                .orderByChild("queryStringDivision")
+                                .equalTo(department + selectedSemester + selectedDivision)
+                                .addListenerForSingleValueEvent(new ValueEventListener() {
+                                    @Override
+                                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                        for (DataSnapshot ds : snapshot.getChildren()) {
+                                            ds.child("subjects").child(subjectCodeTeacher).child("unitTest1Marks").getRef().setValue(-1);
+                                            ds.child("subjects").child(subjectCodeTeacher).child("unitTest2Marks").getRef().setValue(-1);
+                                        }
+                                        Toast.makeText(UnitTestMarksActivity.this, "All students marks deleted successfully", Toast.LENGTH_SHORT).show();
                                     }
-                                    Toast.makeText(UnitTestMarksActivity.this, "All students marks deleted successfully", Toast.LENGTH_SHORT).show();
-                                }
 
-                                @Override
-                                public void onCancelled(@NonNull DatabaseError error) {
-                                    Toast.makeText(UnitTestMarksActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
-                                }
-                            });
+                                    @Override
+                                    public void onCancelled(@NonNull DatabaseError error) {
+                                        Toast.makeText(UnitTestMarksActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                    } else {
+                        FirebaseDatabase.getInstance().getReference("students_data")
+                                .orderByChild("queryStringSemester")
+                                .equalTo(department + selectedSemester)
+                                .addListenerForSingleValueEvent(new ValueEventListener() {
+                                    @Override
+                                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                        for (DataSnapshot ds : snapshot.getChildren()) {
+                                            ds.child("subjects").child(subjectCodeTeacher).child("unitTest1Marks").getRef().setValue(-1);
+                                            ds.child("subjects").child(subjectCodeTeacher).child("unitTest2Marks").getRef().setValue(-1);
+                                        }
+                                        Toast.makeText(UnitTestMarksActivity.this, "All students marks deleted successfully", Toast.LENGTH_SHORT).show();
+                                    }
+
+                                    @Override
+                                    public void onCancelled(@NonNull DatabaseError error) {
+                                        Toast.makeText(UnitTestMarksActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                    }
                 })
                 .show();
     }
@@ -351,28 +410,51 @@ public class UnitTestMarksActivity extends AppCompatActivity {
                 unitTestMarksList.put(Integer.parseInt(splitted[0]), new UnitTestMarks(splitted[1], splitted[2]));
             }
 
-            FirebaseDatabase.getInstance().getReference("students_data")
-                    .orderByChild("queryStringSemester")
-                    .equalTo(department + selectedSemester)
-                    .addListenerForSingleValueEvent(new ValueEventListener() {
-                        @Override
-                        public void onDataChange(@NonNull DataSnapshot snapshot) {
-                            try {
-                                for (DataSnapshot ds : snapshot.getChildren()) {
-                                    ds.child("subjects").child(subjectCodeTeacher).child("unitTest1Marks").getRef().setValue(Integer.parseInt(unitTestMarksList.get(ds.child("rollNo").getValue(Integer.class)).getUnitTest1Marks()));
-                                    ds.child("subjects").child(subjectCodeTeacher).child("unitTest2Marks").getRef().setValue(Integer.parseInt(unitTestMarksList.get(ds.child("rollNo").getValue(Integer.class)).getUnitTest2Marks()));
+            if (isFirstYear) {
+                FirebaseDatabase.getInstance().getReference("students_data")
+                        .orderByChild("queryStringDivision")
+                        .equalTo(department + selectedSemester + selectedDivision)
+                        .addListenerForSingleValueEvent(new ValueEventListener() {
+                            @Override
+                            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                try {
+                                    for (DataSnapshot ds : snapshot.getChildren()) {
+                                        ds.child("subjects").child(subjectCodeTeacher).child("unitTest1Marks").getRef().setValue(Integer.parseInt(unitTestMarksList.get(ds.child("rollNo").getValue(Integer.class)).getUnitTest1Marks()));
+                                        ds.child("subjects").child(subjectCodeTeacher).child("unitTest2Marks").getRef().setValue(Integer.parseInt(unitTestMarksList.get(ds.child("rollNo").getValue(Integer.class)).getUnitTest2Marks()));
+                                    }
+                                } catch (Exception e) {
+                                    Toast.makeText(UnitTestMarksActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
                                 }
-                            } catch (Exception e) {
-                                Toast.makeText(UnitTestMarksActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
                             }
-                        }
 
-                        @Override
-                        public void onCancelled(@NonNull DatabaseError error) {
-                            Toast.makeText(UnitTestMarksActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
-                        }
-                    });
+                            @Override
+                            public void onCancelled(@NonNull DatabaseError error) {
+                                Toast.makeText(UnitTestMarksActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                            }
+                        });
+            } else {
+                FirebaseDatabase.getInstance().getReference("students_data")
+                        .orderByChild("queryStringSemester")
+                        .equalTo(department + selectedSemester)
+                        .addListenerForSingleValueEvent(new ValueEventListener() {
+                            @Override
+                            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                try {
+                                    for (DataSnapshot ds : snapshot.getChildren()) {
+                                        ds.child("subjects").child(subjectCodeTeacher).child("unitTest1Marks").getRef().setValue(Integer.parseInt(unitTestMarksList.get(ds.child("rollNo").getValue(Integer.class)).getUnitTest1Marks()));
+                                        ds.child("subjects").child(subjectCodeTeacher).child("unitTest2Marks").getRef().setValue(Integer.parseInt(unitTestMarksList.get(ds.child("rollNo").getValue(Integer.class)).getUnitTest2Marks()));
+                                    }
+                                } catch (Exception e) {
+                                    Toast.makeText(UnitTestMarksActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+                                }
+                            }
 
+                            @Override
+                            public void onCancelled(@NonNull DatabaseError error) {
+                                Toast.makeText(UnitTestMarksActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                            }
+                        });
+            }
         } catch (Exception e) {
             Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
         }
@@ -384,6 +466,18 @@ public class UnitTestMarksActivity extends AppCompatActivity {
         data.setDataAndType(uri, "text/csv");
         data = Intent.createChooser(data, "Choose unit test marks");
         activityResultLauncher.launch(data);
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (valueEventListener != null) {
+            if (isFirstYear) {
+                FirebaseDatabase.getInstance().getReference("students_data").removeEventListener(valueEventListener);
+            } else {
+                FirebaseDatabase.getInstance().getReference("students_data").removeEventListener(valueEventListener);
+            }
+        }
+        super.onDestroy();
     }
 
     @Override

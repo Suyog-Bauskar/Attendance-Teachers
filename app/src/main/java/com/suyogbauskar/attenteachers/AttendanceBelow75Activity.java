@@ -176,33 +176,37 @@ public class AttendanceBelow75Activity extends AppCompatActivity {
                             int batch = dsp.child("batch").getValue(Integer.class);
                             int rollNo = dsp.child("rollNo").getValue(Integer.class);
 
-                            if (division.equals("A")) {
-                                allStudentsA.put(dsp.getKey(), new StudentData(rollNo, firstname, lastname));
-                                if (batch == 1) {
-                                    allStudentsA1.put(dsp.getKey(), new StudentData(rollNo, firstname, lastname));
-                                } else if (batch == 2) {
-                                    allStudentsA2.put(dsp.getKey(), new StudentData(rollNo, firstname, lastname));
-                                } else if (batch == 3) {
-                                    allStudentsA3.put(dsp.getKey(), new StudentData(rollNo, firstname, lastname));
-                                }
-                            } else if (division.equals("B")) {
-                                allStudentsB.put(dsp.getKey(), new StudentData(rollNo, firstname, lastname));
-                                if (batch == 1) {
-                                    allStudentsB1.put(dsp.getKey(), new StudentData(rollNo, firstname, lastname));
-                                } else if (batch == 2) {
-                                    allStudentsB2.put(dsp.getKey(), new StudentData(rollNo, firstname, lastname));
-                                } else if (batch == 3) {
-                                    allStudentsB3.put(dsp.getKey(), new StudentData(rollNo, firstname, lastname));
-                                }
-                            } else if (division.equals("C")) {
-                                allStudentsC.put(dsp.getKey(), new StudentData(rollNo, firstname, lastname));
-                                if (batch == 1) {
-                                    allStudentsC1.put(dsp.getKey(), new StudentData(rollNo, firstname, lastname));
-                                } else if (batch == 2) {
-                                    allStudentsC2.put(dsp.getKey(), new StudentData(rollNo, firstname, lastname));
-                                } else if (batch == 3) {
-                                    allStudentsC3.put(dsp.getKey(), new StudentData(rollNo, firstname, lastname));
-                                }
+                            switch (division) {
+                                case "A":
+                                    allStudentsA.put(dsp.getKey(), new StudentData(rollNo, firstname, lastname));
+                                    if (batch == 1) {
+                                        allStudentsA1.put(dsp.getKey(), new StudentData(rollNo, firstname, lastname));
+                                    } else if (batch == 2) {
+                                        allStudentsA2.put(dsp.getKey(), new StudentData(rollNo, firstname, lastname));
+                                    } else if (batch == 3) {
+                                        allStudentsA3.put(dsp.getKey(), new StudentData(rollNo, firstname, lastname));
+                                    }
+                                    break;
+                                case "B":
+                                    allStudentsB.put(dsp.getKey(), new StudentData(rollNo, firstname, lastname));
+                                    if (batch == 1) {
+                                        allStudentsB1.put(dsp.getKey(), new StudentData(rollNo, firstname, lastname));
+                                    } else if (batch == 2) {
+                                        allStudentsB2.put(dsp.getKey(), new StudentData(rollNo, firstname, lastname));
+                                    } else if (batch == 3) {
+                                        allStudentsB3.put(dsp.getKey(), new StudentData(rollNo, firstname, lastname));
+                                    }
+                                    break;
+                                case "C":
+                                    allStudentsC.put(dsp.getKey(), new StudentData(rollNo, firstname, lastname));
+                                    if (batch == 1) {
+                                        allStudentsC1.put(dsp.getKey(), new StudentData(rollNo, firstname, lastname));
+                                    } else if (batch == 2) {
+                                        allStudentsC2.put(dsp.getKey(), new StudentData(rollNo, firstname, lastname));
+                                    } else if (batch == 3) {
+                                        allStudentsC3.put(dsp.getKey(), new StudentData(rollNo, firstname, lastname));
+                                    }
+                                    break;
                             }
                         }
                     }

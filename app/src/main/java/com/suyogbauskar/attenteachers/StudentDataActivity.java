@@ -2,7 +2,6 @@ package com.suyogbauskar.attenteachers;
 
 import static android.content.ContentValues.TAG;
 
-import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -21,6 +20,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.database.DataSnapshot;
@@ -29,19 +29,21 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.suyogbauskar.attenteachers.pojos.StudentData;
 
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
 import cn.pedant.SweetAlert.SweetAlertDialog;
 
 public class StudentDataActivity extends AppCompatActivity {
 
     private TableLayout table;
-    private boolean isFirstRow;
+    private boolean isFirstRow, isFirstYear;
     private TextView noStudentsFoundView;
-    private String firstnameStr, lastnameStr, department;
+    private String firstnameStr, lastnameStr, department, selectedDivision;
     private long studentEnrollNo = 0;
     private int selectedSemester;
+    private ValueEventListener valueEventListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,57 +54,94 @@ public class StudentDataActivity extends AppCompatActivity {
 
         SharedPreferences sharedPreferences2 = getSharedPreferences("teacherDataPref", MODE_PRIVATE);
         department = sharedPreferences2.getString("department", "");
+        isFirstYear = false;
 
         findAllViews();
         selectSemester();
     }
 
     private void selectSemester() {
-        androidx.appcompat.app.AlertDialog.Builder semesterDialog = new androidx.appcompat.app.AlertDialog.Builder(StudentDataActivity.this);
+        AlertDialog.Builder semesterDialog = new AlertDialog.Builder(StudentDataActivity.this);
         semesterDialog.setTitle("Semester");
         String[] items = {"Semester 1", "Semester 2", "Semester 3", "Semester 4", "Semester 5", "Semester 6"};
         semesterDialog.setSingleChoiceItems(items, -1, (dialog, which) -> {
             which++;
             selectedSemester = which;
-            showAllStudentsData();
+            if (selectedSemester == 1 || selectedSemester == 2) {
+                AlertDialog.Builder divisionDialog = new AlertDialog.Builder(StudentDataActivity.this);
+                divisionDialog.setTitle("Division");
+                String[] items2 = {"Division A", "Division B", "Division C"};
+                divisionDialog.setSingleChoiceItems(items2, -1, (dialog2, which2) -> {
+                    switch (which2) {
+                        case 0:
+                            selectedDivision = "A";
+                            break;
+                        case 1:
+                            selectedDivision = "B";
+                            break;
+                        case 2:
+                            selectedDivision = "C";
+                            break;
+                    }
+                    isFirstYear = true;
+                    whichDataToShow();
+                    dialog2.dismiss();
+                });
+                divisionDialog.create().show();
+            } else {
+                whichDataToShow();
+            }
             dialog.dismiss();
         });
         semesterDialog.create().show();
     }
 
-    private void showAllStudentsData() {
-        FirebaseDatabase.getInstance().getReference("students_data")
-                .orderByChild("queryStringSemester")
-                .equalTo(department + selectedSemester)
-                .addValueEventListener(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        Map<Integer, StudentData> tempMap = new TreeMap<>();
+    private void whichDataToShow() {
+        valueEventListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                showStudentsData(snapshot);
+            }
 
-                        table.removeAllViews();
-                        isFirstRow = true;
-                        if (snapshot.getChildrenCount() == 0) {
-                            noStudentsFoundView.setVisibility(View.VISIBLE);
-                            return;
-                        }
-                        drawTableHeader();
-                        noStudentsFoundView.setVisibility(View.GONE);
-                        for (DataSnapshot ds : snapshot.getChildren()) {
-                            if (ds.child("isVerified").getValue(Boolean.class)) {
-                                tempMap.put(ds.child("rollNo").getValue(Integer.class),
-                                        new StudentData(ds.child("rollNo").getValue(Integer.class),ds.child("batch").getValue(Integer.class),ds.child("semester").getValue(Integer.class), ds.child("enrollNo").getValue(Long.class), ds.child("firstname").getValue(String.class), ds.child("lastname").getValue(String.class), ds.child("division").getValue(String.class)));
-                            }
-                        }
-                        for (Map.Entry<Integer, StudentData> entry1: tempMap.entrySet()) {
-                            createTableRow(entry1.getValue().getRollNo(), entry1.getValue().getFirstname() + " " + entry1.getValue().getLastname(), entry1.getValue().getEnrollNo(), entry1.getValue().getDivision(), entry1.getValue().getBatch());
-                        }
-                    }
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Log.d(TAG, error.getMessage());
+            }
+        };
 
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError error) {
-                        Log.d(TAG, error.getMessage());
-                    }
-                });
+        if (isFirstYear) {
+            FirebaseDatabase.getInstance().getReference("students_data")
+                    .orderByChild("queryStringDivision")
+                    .equalTo(department + selectedSemester + selectedDivision)
+                    .addValueEventListener(valueEventListener);
+        } else {
+            FirebaseDatabase.getInstance().getReference("students_data")
+                    .orderByChild("queryStringSemester")
+                    .equalTo(department + selectedSemester)
+                    .addValueEventListener(valueEventListener);
+        }
+    }
+
+    private void showStudentsData(DataSnapshot snapshot) {
+        List<StudentData> tempList = new ArrayList<>();
+
+        table.removeAllViews();
+        isFirstRow = true;
+        if (snapshot.getChildrenCount() == 0) {
+            noStudentsFoundView.setVisibility(View.VISIBLE);
+            return;
+        }
+        drawTableHeader();
+        noStudentsFoundView.setVisibility(View.GONE);
+        for (DataSnapshot ds : snapshot.getChildren()) {
+            if (ds.child("isVerified").getValue(Boolean.class)) {
+                tempList.add(new StudentData(ds.child("rollNo").getValue(Integer.class), ds.child("batch").getValue(Integer.class), ds.child("semester").getValue(Integer.class), ds.child("enrollNo").getValue(Long.class), ds.child("firstname").getValue(String.class), ds.child("lastname").getValue(String.class), ds.child("division").getValue(String.class)));
+            }
+        }
+        tempList.sort(Comparator.comparing(StudentData::getRollNo));
+        for (StudentData student : tempList) {
+            createTableRow(student.getRollNo(), student.getFirstname() + " " + student.getLastname(), student.getEnrollNo(), student.getDivision(), student.getBatch());
+        }
     }
 
     private void findAllViews() {
@@ -411,6 +450,18 @@ public class StudentDataActivity extends AppCompatActivity {
         tbRow.addView(tv4);
 
         table.addView(tbRow);
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (valueEventListener != null) {
+            if (isFirstYear) {
+                FirebaseDatabase.getInstance().getReference("students_data").removeEventListener(valueEventListener);
+            } else {
+                FirebaseDatabase.getInstance().getReference("students_data").removeEventListener(valueEventListener);
+            }
+        }
+        super.onDestroy();
     }
 
     @Override

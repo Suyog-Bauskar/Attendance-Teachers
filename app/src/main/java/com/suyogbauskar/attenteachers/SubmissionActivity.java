@@ -37,9 +37,11 @@ public class SubmissionActivity extends AppCompatActivity {
 
     private FirebaseUser user;
     private TableLayout table;
-    private boolean isFirstRow;
+    private boolean isFirstRow, isFirstYear;
     private TextView noStudentsFoundView;
-    private String subjectCodeTeacher, department;
+    private String subjectCodeTeacher, department, selectedDivision;
+    private int selectedSemester;
+    private ValueEventListener valueEventListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,6 +53,8 @@ public class SubmissionActivity extends AppCompatActivity {
         user = FirebaseAuth.getInstance().getCurrentUser();
         SharedPreferences sharedPreferences2 = getSharedPreferences("teacherDataPref", MODE_PRIVATE);
         department = sharedPreferences2.getString("department", "");
+        isFirstYear = false;
+
         findAllViews();
         selectSemester();
     }
@@ -60,109 +64,149 @@ public class SubmissionActivity extends AppCompatActivity {
         semesterDialog.setTitle("Semester");
         String[] items = {"Semester 1", "Semester 2", "Semester 3", "Semester 4", "Semester 5", "Semester 6"};
         semesterDialog.setSingleChoiceItems(items, -1, (dialog, which) -> {
+            which++;
+            selectedSemester = which;
+            if (selectedSemester == 1 || selectedSemester == 2) {
+                AlertDialog.Builder divisionDialog = new AlertDialog.Builder(SubmissionActivity.this);
+                divisionDialog.setTitle("Division");
+                String[] items2 = {"Division A", "Division B", "Division C"};
+                divisionDialog.setSingleChoiceItems(items2, -1, (dialog2, which2) -> {
+                    switch (which2) {
+                        case 0:
+                            selectedDivision = "A";
+                            break;
+                        case 1:
+                            selectedDivision = "B";
+                            break;
+                        case 2:
+                            selectedDivision = "C";
+                            break;
+                    }
+                    isFirstYear = true;
+                    getAllSubjectsOfThatSemester();
+                    dialog2.dismiss();
+                });
+                divisionDialog.create().show();
+            } else {
+                getAllSubjectsOfThatSemester();
+            }
             dialog.dismiss();
-            FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects")
-                    .addListenerForSingleValueEvent(new ValueEventListener() {
-                        @Override
-                        public void onDataChange(@NonNull DataSnapshot snapshot) {
-                            List<Subject> currentSemesterSubjectList = new ArrayList<>();
-                            boolean rightSemester = false;
-                            int selectedSemester = which + 1;
-
-                            for (DataSnapshot dsp : snapshot.getChildren()) {
-                                if (selectedSemester == dsp.child("semester").getValue(Integer.class)) {
-                                    rightSemester = true;
-                                    currentSemesterSubjectList.add(new Subject(dsp.getKey(), dsp.child("subject_short_name").getValue(String.class)));
-                                }
-                            }
-
-                            if (!rightSemester) {
-                                Toast.makeText(SubmissionActivity.this, "You don't teach this semester", Toast.LENGTH_SHORT).show();
-                                return;
-                            }
-
-                            if (currentSemesterSubjectList.size() > 1) {
-                                AlertDialog.Builder subjectDialog = new AlertDialog.Builder(SubmissionActivity.this);
-                                subjectDialog.setTitle("Subjects");
-                                String[] items3 = new String[currentSemesterSubjectList.size()];
-                                for (int i = 0; i < currentSemesterSubjectList.size(); i++) {
-                                    items3[i] = currentSemesterSubjectList.get(i).getShortName();
-                                }
-
-                                subjectDialog.setSingleChoiceItems(items3, -1, (dialog3, which3) -> {
-                                    dialog3.dismiss();
-                                    subjectCodeTeacher = currentSemesterSubjectList.get(which3).getCode();
-                                    showAllStudentsData(selectedSemester);
-                                });
-                                subjectDialog.create().show();
-                            } else {
-                                subjectCodeTeacher = currentSemesterSubjectList.get(0).getCode();
-                                showAllStudentsData(selectedSemester);
-                            }
-                        }
-
-                        @Override
-                        public void onCancelled(@NonNull DatabaseError error) {
-                            Toast.makeText(SubmissionActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
-                        }
-                    });
         });
         semesterDialog.create().show();
     }
 
-    private void showAllStudentsData(int semester) {
-        FirebaseDatabase.getInstance().getReference("students_data")
-                .orderByChild("queryStringSemester")
-                .equalTo(department + semester)
-                .addValueEventListener(new ValueEventListener() {
+    private void getAllSubjectsOfThatSemester() {
+        FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects")
+                .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        Map<Integer, StudentData> tempMap = new TreeMap<>();
-                        isFirstRow = true;
+                        List<Subject> currentSemesterSubjectList = new ArrayList<>();
+                        boolean rightSemester = false;
 
-                        table.removeAllViews();
-                        if (snapshot.getChildrenCount() == 0) {
-                            noStudentsFoundView.setVisibility(View.VISIBLE);
+                        for (DataSnapshot dsp : snapshot.getChildren()) {
+                            if (selectedSemester == dsp.child("semester").getValue(Integer.class)) {
+                                rightSemester = true;
+                                currentSemesterSubjectList.add(new Subject(dsp.getKey(), dsp.child("subject_short_name").getValue(String.class)));
+                            }
+                        }
+
+                        if (!rightSemester) {
+                            Toast.makeText(SubmissionActivity.this, "You don't teach this semester", Toast.LENGTH_SHORT).show();
                             return;
                         }
-                        drawTableHeader();
-                        noStudentsFoundView.setVisibility(View.GONE);
-                        try {
-                            for (DataSnapshot ds : snapshot.getChildren()) {
-                                if (ds.child("isVerified").getValue(Boolean.class)) {
-                                    tempMap.put(ds.child("rollNo").getValue(Integer.class), new StudentData(
-                                            ds.child("rollNo").getValue(Integer.class),
-                                            ds.child("firstname").getValue(String.class),
-                                            ds.child("lastname").getValue(String.class),
-                                            ds.child("enrollNo").getValue(Long.class),
-                                            ds.child("subjects").child(subjectCodeTeacher).child("isManualSubmitted").getValue(Boolean.class),
-                                            ds.child("subjects").child(subjectCodeTeacher).child("isMicroProjectSubmitted").getValue(Boolean.class)
-                                    ));
-                                }
-                            }
-                        } catch (Exception e) {
-                            Log.d(TAG, e.getMessage());
-                        }
 
-                        for (Map.Entry<Integer, StudentData> entry1 : tempMap.entrySet()) {
-                            if (entry1.getValue().isManual() && entry1.getValue().isMicroProject()) {
-                                createTableRow(entry1.getValue().getRollNo(), entry1.getValue().getFirstname() + " " + entry1.getValue().getLastname(), entry1.getValue().getEnrollNo(), "✅", "✅");
-                            } else if (entry1.getValue().isManual()) {
-                                createTableRow(entry1.getValue().getRollNo(), entry1.getValue().getFirstname() + " " + entry1.getValue().getLastname(), entry1.getValue().getEnrollNo(), "✅", "❌");
-                            } else if (entry1.getValue().isMicroProject()) {
-                                createTableRow(entry1.getValue().getRollNo(), entry1.getValue().getFirstname() + " " + entry1.getValue().getLastname(), entry1.getValue().getEnrollNo(), "❌", "✅");
-                            } else {
-                                createTableRow(entry1.getValue().getRollNo(), entry1.getValue().getFirstname() + " " + entry1.getValue().getLastname(), entry1.getValue().getEnrollNo(), "❌", "❌");
+                        if (currentSemesterSubjectList.size() > 1) {
+                            AlertDialog.Builder subjectDialog = new AlertDialog.Builder(SubmissionActivity.this);
+                            subjectDialog.setTitle("Subjects");
+                            String[] items3 = new String[currentSemesterSubjectList.size()];
+                            for (int i = 0; i < currentSemesterSubjectList.size(); i++) {
+                                items3[i] = currentSemesterSubjectList.get(i).getShortName();
                             }
-                        }
 
+                            subjectDialog.setSingleChoiceItems(items3, -1, (dialog3, which3) -> {
+                                dialog3.dismiss();
+                                subjectCodeTeacher = currentSemesterSubjectList.get(which3).getCode();
+                                whichDataToShow();
+                            });
+                            subjectDialog.create().show();
+                        } else {
+                            subjectCodeTeacher = currentSemesterSubjectList.get(0).getCode();
+                            whichDataToShow();
+                        }
                     }
 
                     @Override
                     public void onCancelled(@NonNull DatabaseError error) {
-                        Log.d(TAG, error.getMessage());
+                        Toast.makeText(SubmissionActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 });
+    }
+
+    private void whichDataToShow() {
+        valueEventListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                showStudentsData(snapshot);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Log.d(TAG, error.getMessage());
+            }
+        };
+
+        if (isFirstYear) {
+            FirebaseDatabase.getInstance().getReference("students_data")
+                    .orderByChild("queryStringDivision")
+                    .equalTo(department + selectedSemester + selectedDivision)
+                    .addValueEventListener(valueEventListener);
+        } else {
+            FirebaseDatabase.getInstance().getReference("students_data")
+                    .orderByChild("queryStringSemester")
+                    .equalTo(department + selectedSemester)
+                    .addValueEventListener(valueEventListener);
+        }
+    }
+
+    private void showStudentsData(DataSnapshot snapshot) {
+        Map<Integer, StudentData> tempMap = new TreeMap<>();
+        isFirstRow = true;
+
+        table.removeAllViews();
+        if (snapshot.getChildrenCount() == 0) {
+            noStudentsFoundView.setVisibility(View.VISIBLE);
+            return;
+        }
+        drawTableHeader();
+        noStudentsFoundView.setVisibility(View.GONE);
+        try {
+            for (DataSnapshot ds : snapshot.getChildren()) {
+                if (ds.child("isVerified").getValue(Boolean.class)) {
+                    tempMap.put(ds.child("rollNo").getValue(Integer.class), new StudentData(
+                            ds.child("rollNo").getValue(Integer.class),
+                            ds.child("firstname").getValue(String.class),
+                            ds.child("lastname").getValue(String.class),
+                            ds.child("enrollNo").getValue(Long.class),
+                            ds.child("subjects").child(subjectCodeTeacher).child("isManualSubmitted").getValue(Boolean.class),
+                            ds.child("subjects").child(subjectCodeTeacher).child("isMicroProjectSubmitted").getValue(Boolean.class)
+                    ));
+                }
+            }
+        } catch (Exception e) {
+            Log.d(TAG, e.getMessage());
+        }
+
+        for (Map.Entry<Integer, StudentData> entry1 : tempMap.entrySet()) {
+            if (entry1.getValue().isManual() && entry1.getValue().isMicroProject()) {
+                createTableRow(entry1.getValue().getRollNo(), entry1.getValue().getFirstname() + " " + entry1.getValue().getLastname(), entry1.getValue().getEnrollNo(), "✅", "✅");
+            } else if (entry1.getValue().isManual()) {
+                createTableRow(entry1.getValue().getRollNo(), entry1.getValue().getFirstname() + " " + entry1.getValue().getLastname(), entry1.getValue().getEnrollNo(), "✅", "❌");
+            } else if (entry1.getValue().isMicroProject()) {
+                createTableRow(entry1.getValue().getRollNo(), entry1.getValue().getFirstname() + " " + entry1.getValue().getLastname(), entry1.getValue().getEnrollNo(), "❌", "✅");
+            } else {
+                createTableRow(entry1.getValue().getRollNo(), entry1.getValue().getFirstname() + " " + entry1.getValue().getLastname(), entry1.getValue().getEnrollNo(), "❌", "❌");
+            }
+        }
     }
 
     private void findAllViews() {
@@ -371,6 +415,18 @@ public class SubmissionActivity extends AppCompatActivity {
         tbRow.addView(tv4);
 
         table.addView(tbRow);
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (valueEventListener != null) {
+            if (isFirstYear) {
+                FirebaseDatabase.getInstance().getReference("students_data").removeEventListener(valueEventListener);
+            } else {
+                FirebaseDatabase.getInstance().getReference("students_data").removeEventListener(valueEventListener);
+            }
+        }
+        super.onDestroy();
     }
 
     @Override
