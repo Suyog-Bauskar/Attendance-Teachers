@@ -36,6 +36,7 @@ public class StudentVerificationActivity extends AppCompatActivity {
     private boolean isFirstRow;
     private String department;
     private TextView allStudentsVerifiedView;
+    private ValueEventListener valueEventListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,34 +53,36 @@ public class StudentVerificationActivity extends AppCompatActivity {
     }
 
     private void findNotVerifiedStudents() {
+        valueEventListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                Map<Long, StudentData> tempMap = new TreeMap<>();
+                table.removeAllViews();
+                if (snapshot.getChildrenCount() == 0) {
+                    allStudentsVerifiedView.setVisibility(View.VISIBLE);
+                    return;
+                }
+                drawTableHeader();
+                allStudentsVerifiedView.setVisibility(View.GONE);
+                for (DataSnapshot ds : snapshot.getChildren()) {
+                    tempMap.put(ds.child("enrollNo").getValue(Long.class),
+                            new StudentData(ds.child("rollNo").getValue(Integer.class), ds.child("batch").getValue(Integer.class),ds.child("semester").getValue(Integer.class), ds.child("enrollNo").getValue(Long.class), ds.child("firstname").getValue(String.class), ds.child("lastname").getValue(String.class), ds.child("division").getValue(String.class)));
+                }
+                for (Map.Entry<Long, StudentData> entry1: tempMap.entrySet()) {
+                    createTableRow(entry1.getValue().getRollNo(), entry1.getValue().getFirstname() + " " + entry1.getValue().getLastname(),entry1.getValue().getSemester(), entry1.getValue().getEnrollNo(), entry1.getValue().getDivision(), entry1.getValue().getBatch());
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Log.d(TAG, error.getMessage());
+            }
+        };
+
         FirebaseDatabase.getInstance().getReference("students_data")
                 .orderByChild("queryStringIsVerified")
                 .equalTo(department + "false")
-                .addValueEventListener(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        Map<Long, StudentData> tempMap = new TreeMap<>();
-                        table.removeAllViews();
-                        if (snapshot.getChildrenCount() == 0) {
-                            allStudentsVerifiedView.setVisibility(View.VISIBLE);
-                            return;
-                        }
-                        drawTableHeader();
-                        allStudentsVerifiedView.setVisibility(View.GONE);
-                        for (DataSnapshot ds : snapshot.getChildren()) {
-                            tempMap.put(ds.child("enrollNo").getValue(Long.class),
-                                    new StudentData(ds.child("rollNo").getValue(Integer.class), ds.child("batch").getValue(Integer.class),ds.child("semester").getValue(Integer.class), ds.child("enrollNo").getValue(Long.class), ds.child("firstname").getValue(String.class), ds.child("lastname").getValue(String.class), ds.child("division").getValue(String.class)));
-                        }
-                        for (Map.Entry<Long, StudentData> entry1: tempMap.entrySet()) {
-                            createTableRow(entry1.getValue().getRollNo(), entry1.getValue().getFirstname() + " " + entry1.getValue().getLastname(),entry1.getValue().getSemester(), entry1.getValue().getEnrollNo(), entry1.getValue().getDivision(), entry1.getValue().getBatch());
-                        }
-                    }
-
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError error) {
-                        Log.d(TAG, error.getMessage());
-                    }
-                });
+                .addValueEventListener(valueEventListener);
     }
 
     private void findAllViews() {
@@ -316,6 +319,14 @@ public class StudentVerificationActivity extends AppCompatActivity {
         tbRow.addView(tv6);
 
         table.addView(tbRow);
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (valueEventListener != null) {
+            FirebaseDatabase.getInstance().getReference("students_data").removeEventListener(valueEventListener);
+        }
+        super.onDestroy();
     }
 
     @Override

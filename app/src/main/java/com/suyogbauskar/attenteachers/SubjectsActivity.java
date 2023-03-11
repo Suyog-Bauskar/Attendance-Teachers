@@ -28,6 +28,7 @@ public class SubjectsActivity extends AppCompatActivity {
     private FirebaseUser user;
     private TableLayout table;
     private boolean isFirstRow;
+    private ValueEventListener valueEventListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,25 +43,26 @@ public class SubjectsActivity extends AppCompatActivity {
     }
 
     private void showSubjects() {
-        FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects")
-                .addValueEventListener(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        Subject tempSubject;
-                        isFirstRow = true;
-                        table.removeAllViews();
-                        drawTableHeader();
-                        for (DataSnapshot dsp : snapshot.getChildren()) {
-                            tempSubject = new Subject(dsp.child("subject_short_name").getValue(String.class), dsp.child("subject_name").getValue(String.class), dsp.getKey(), dsp.child("semester").getValue(Integer.class));
-                            createTableRow(dsp.child("subject_short_name").getValue(String.class), dsp.child("subject_name").getValue(String.class), dsp.getKey(), dsp.child("semester").getValue(Integer.class), tempSubject);
-                        }
-                    }
+        valueEventListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                Subject tempSubject;
+                isFirstRow = true;
+                table.removeAllViews();
+                drawTableHeader();
+                for (DataSnapshot dsp : snapshot.getChildren()) {
+                    tempSubject = new Subject(dsp.child("subject_short_name").getValue(String.class), dsp.child("subject_name").getValue(String.class), dsp.getKey(), dsp.child("semester").getValue(Integer.class));
+                    createTableRow(dsp.child("subject_short_name").getValue(String.class), dsp.child("subject_name").getValue(String.class), dsp.getKey(), dsp.child("semester").getValue(Integer.class), tempSubject);
+                }
+            }
 
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError error) {
-                        Log.d(TAG, error.getMessage());
-                    }
-                });
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Log.d(TAG, error.getMessage());
+            }
+        };
+        FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects")
+                .addValueEventListener(valueEventListener);
     }
 
     private void drawTableHeader() {
@@ -173,6 +175,14 @@ public class SubjectsActivity extends AppCompatActivity {
         tbRow.addView(tv3);
 
         table.addView(tbRow);
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (valueEventListener != null) {
+            FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects").removeEventListener(valueEventListener);
+        }
+        super.onDestroy();
     }
 
     @Override

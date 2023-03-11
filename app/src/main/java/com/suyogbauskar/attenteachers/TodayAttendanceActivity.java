@@ -42,9 +42,10 @@ public class TodayAttendanceActivity extends AppCompatActivity {
     private final FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
     private TableLayout table;
     private Button addStudentBtn;
-    private boolean isFirstRow;
+    private boolean isFirstRow, isFirstYear;
     private String subjectCodeTeacher, monthStr, attendanceOf, completeDayName, department;
-    private int date, year, selectedSemester;
+    private int date, year, selectedSemester, rollNo, periodNo;
+    private ValueEventListener valueEventListener, valueEventListener2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,6 +62,7 @@ public class TodayAttendanceActivity extends AppCompatActivity {
         table = findViewById(R.id.table);
         addStudentBtn = findViewById(R.id.addStudentBtn);
         isFirstRow = true;
+        isFirstYear = false;
         SharedPreferences sharedPreferences2 = getSharedPreferences("teacherDataPref", MODE_PRIVATE);
         department = sharedPreferences2.getString("department", "");
 
@@ -79,67 +81,82 @@ public class TodayAttendanceActivity extends AppCompatActivity {
                 .setSecondButtonText("CANCEL")
                 .withFirstButtonListner(view -> {
                     flatDialog.dismiss();
-                    addStudentToAttendance(Integer.parseInt(flatDialog.getFirstTextField()), Integer.parseInt(flatDialog.getSecondTextField()));
+                    rollNo = Integer.parseInt(flatDialog.getFirstTextField());
+                    periodNo = Integer.parseInt(flatDialog.getSecondTextField());
+                    addStudentToAttendance();
                 })
                 .withSecondButtonListner(view -> flatDialog.dismiss())
                 .show();
     }
 
-    private void addStudentToAttendance(int rollNo, int periodNo) {
-        FirebaseDatabase.getInstance().getReference("students_data")
-                .orderByChild("queryStringSemester")
-                .equalTo(department + selectedSemester)
+    private void addStudentToAttendance() {
+        valueEventListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                addStudentToAttendanceAfterSelectingSemester(snapshot);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Toast.makeText(TodayAttendanceActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        };
+
+        if (isFirstYear) {
+            FirebaseDatabase.getInstance().getReference("students_data")
+                    .orderByChild("queryStringDivision")
+                    .equalTo(department + selectedSemester + attendanceOf.charAt(0))
+                    .addValueEventListener(valueEventListener);
+        } else {
+            FirebaseDatabase.getInstance().getReference("students_data")
+                    .orderByChild("queryStringSemester")
+                    .equalTo(department + selectedSemester)
+                    .addListenerForSingleValueEvent(valueEventListener);
+        }
+    }
+
+    private void addStudentToAttendanceAfterSelectingSemester(DataSnapshot snapshot) {
+        boolean hasStudentFound = false;
+        String studentUID = "", studentFirstname = "", studentLastname = "";
+        Map<String, Object> studentData = new HashMap<>();
+
+        for (DataSnapshot ds : snapshot.getChildren()) {
+            if (ds.child("rollNo").getValue(Integer.class) == rollNo) {
+                studentUID = ds.getKey();
+                studentFirstname = ds.child("firstname").getValue(String.class);
+                studentLastname = ds.child("lastname").getValue(String.class);
+                hasStudentFound = true;
+                break;
+            }
+        }
+
+        if (!hasStudentFound) {
+            Toast.makeText(TodayAttendanceActivity.this, "Roll no. " + rollNo + " not found!", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        studentData.put("firstname", studentFirstname);
+        studentData.put("lastname", studentLastname);
+        studentData.put("rollNo", rollNo);
+
+        String finalStudentUID = studentUID;
+        FirebaseDatabase.getInstance().getReference("attendance")
+                .child(department + selectedSemester + "-" + attendanceOf)
+                .child(subjectCodeTeacher)
+                .child(String.valueOf(year))
+                .child(monthStr)
+                .child(date + "-" + periodNo)
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        boolean hasStudentFound = false;
-                        String studentUID = "", studentFirstname = "", studentLastname = "";
-                        Map<String, Object> studentData = new HashMap<>();
-
-                        for (DataSnapshot ds : snapshot.getChildren()) {
-                            if (ds.child("rollNo").getValue(Integer.class) == rollNo) {
-                                studentUID = ds.getKey();
-                                studentFirstname = ds.child("firstname").getValue(String.class);
-                                studentLastname = ds.child("lastname").getValue(String.class);
-                                hasStudentFound = true;
-                                break;
-                            }
-                        }
-
-                        if (!hasStudentFound) {
-                            Toast.makeText(TodayAttendanceActivity.this, "Roll no. " + rollNo + " not found!", Toast.LENGTH_LONG).show();
+                        if (!snapshot.exists()) {
+                            Toast.makeText(TodayAttendanceActivity.this, "Invalid period no.", Toast.LENGTH_SHORT).show();
                             return;
                         }
 
-                        studentData.put("firstname", studentFirstname);
-                        studentData.put("lastname", studentLastname);
-                        studentData.put("rollNo", rollNo);
-
-                        String finalStudentUID = studentUID;
-                        FirebaseDatabase.getInstance().getReference("attendance")
-                                .child(department + selectedSemester + "-" + attendanceOf)
-                                .child(subjectCodeTeacher)
-                                .child(String.valueOf(year))
-                                .child(monthStr)
-                                .child(date + "-" + periodNo)
-                                .addListenerForSingleValueEvent(new ValueEventListener() {
-                                    @Override
-                                    public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                        if (!snapshot.exists()) {
-                                            Toast.makeText(TodayAttendanceActivity.this, "Invalid period no.", Toast.LENGTH_SHORT).show();
-                                            return;
-                                        }
-
-                                        snapshot.getRef().child(finalStudentUID).setValue(studentData)
-                                                .addOnSuccessListener(unused -> Toast.makeText(TodayAttendanceActivity.this, "Roll no. " + rollNo + " added successfully", Toast.LENGTH_SHORT).show())
-                                                .addOnFailureListener(e -> Toast.makeText(TodayAttendanceActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show());
-                                    }
-
-                                    @Override
-                                    public void onCancelled(@NonNull DatabaseError error) {
-                                        Toast.makeText(TodayAttendanceActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
-                                    }
-                                });
+                        snapshot.getRef().child(finalStudentUID).setValue(studentData)
+                                .addOnSuccessListener(unused -> Toast.makeText(TodayAttendanceActivity.this, "Roll no. " + rollNo + " added successfully", Toast.LENGTH_SHORT).show())
+                                .addOnFailureListener(e -> Toast.makeText(TodayAttendanceActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show());
                     }
 
                     @Override
@@ -156,6 +173,9 @@ public class TodayAttendanceActivity extends AppCompatActivity {
         semesterDialog.setSingleChoiceItems(items, -1, (dialog, which) -> {
             which++;
             selectedSemester = which;
+            if (selectedSemester == 1 || selectedSemester == 2) {
+                isFirstYear = true;
+            }
             dialog.dismiss();
             FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects")
                     .addListenerForSingleValueEvent(new ValueEventListener() {
@@ -260,47 +280,49 @@ public class TodayAttendanceActivity extends AppCompatActivity {
         year = Integer.parseInt(dateArr[2]);
         monthStr = dateArr[6];
 
+        valueEventListener2 = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                addStudentBtn.setVisibility(View.VISIBLE);
+                String dateStr;
+                final String[] lectureCount = new String[1];
+                table.removeAllViews();
+                drawTableHeader();
+                for (DataSnapshot dsp : snapshot.getChildren()) {
+                    dateStr = dsp.getKey().split("-")[0];
+
+                    if (dateStr.equals(String.valueOf(date))) {
+                        dsp.getRef().orderByChild("rollNo").addListenerForSingleValueEvent(new ValueEventListener() {
+                            @Override
+                            public void onDataChange(@NonNull DataSnapshot snapshot2) {
+                                completeDayName = dsp.getKey();
+                                lectureCount[0] = dsp.getKey().split("-")[1];
+                                for (DataSnapshot dsp2 : snapshot2.getChildren()) {
+                                    createTableRow(lectureCount[0], dsp2.child("rollNo").getValue(Integer.class), dsp2.child("firstname").getValue(String.class) + " " + dsp2.child("lastname").getValue(String.class));
+                                }
+                            }
+
+                            @Override
+                            public void onCancelled(@NonNull DatabaseError error) {
+                                Toast.makeText(TodayAttendanceActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Toast.makeText(TodayAttendanceActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        };
+
         FirebaseDatabase.getInstance().getReference("attendance")
                 .child(department + selectedSemester + "-" + attendanceOf)
                 .child(subjectCodeTeacher)
                 .child(String.valueOf(year))
                 .child(monthStr)
-                .addValueEventListener(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        addStudentBtn.setVisibility(View.VISIBLE);
-                        String dateStr;
-                        final String[] lectureCount = new String[1];
-                        table.removeAllViews();
-                        drawTableHeader();
-                        for (DataSnapshot dsp : snapshot.getChildren()) {
-                            dateStr = dsp.getKey().split("-")[0];
-
-                            if (dateStr.equals(String.valueOf(date))) {
-                                dsp.getRef().orderByChild("rollNo").addListenerForSingleValueEvent(new ValueEventListener() {
-                                    @Override
-                                    public void onDataChange(@NonNull DataSnapshot snapshot2) {
-                                        completeDayName = dsp.getKey();
-                                        lectureCount[0] = dsp.getKey().split("-")[1];
-                                        for (DataSnapshot dsp2 : snapshot2.getChildren()) {
-                                            createTableRow(lectureCount[0], dsp2.child("rollNo").getValue(Integer.class), dsp2.child("firstname").getValue(String.class) + " " + dsp2.child("lastname").getValue(String.class));
-                                        }
-                                    }
-
-                                    @Override
-                                    public void onCancelled(@NonNull DatabaseError error) {
-                                        Toast.makeText(TodayAttendanceActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
-                                    }
-                                });
-                            }
-                        }
-                    }
-
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError error) {
-                        Toast.makeText(TodayAttendanceActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
-                    }
-                });
+                .addValueEventListener(valueEventListener2);
     }
 
     private void drawTableHeader() {
@@ -448,6 +470,21 @@ public class TodayAttendanceActivity extends AppCompatActivity {
         tbRow.addView(tv3);
 
         table.addView(tbRow);
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (valueEventListener != null) {
+            FirebaseDatabase.getInstance().getReference("students_data").removeEventListener(valueEventListener);
+        }
+        if (valueEventListener2 != null) {
+            FirebaseDatabase.getInstance().getReference("attendance")
+                    .child(department + selectedSemester + "-" + attendanceOf)
+                    .child(subjectCodeTeacher)
+                    .child(String.valueOf(year))
+                    .child(monthStr).removeEventListener(valueEventListener2);
+        }
+        super.onDestroy();
     }
 
     @Override

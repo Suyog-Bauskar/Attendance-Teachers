@@ -37,6 +37,7 @@ public class NotificationActivity extends AppCompatActivity {
     private int selectedSemester;
     private String selectedDivision, department;
     private Button sendNotificationBtn;
+    private ValueEventListener valueEventListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,45 +55,47 @@ public class NotificationActivity extends AppCompatActivity {
     }
 
     private void showNotifications() {
+        valueEventListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                List<String> titles = new ArrayList<>();
+                List<String> body = new ArrayList<>();
+                List<String> times = new ArrayList<>();
+
+                for (DataSnapshot dsp : snapshot.getChildren()) {
+                    titles.add(dsp.child("title").getValue(String.class));
+                    body.add(dsp.child("body").getValue(String.class));
+                    times.add(dsp.child("time").getValue(String.class));
+                }
+
+                String[] titleArr = new String[titles.size()];
+                String[] bodyArr = new String[body.size()];
+                String[] timesArr = new String[times.size()];
+                int reverseCounter = body.size() - 1;
+
+                for (int i = 0; i < bodyArr.length; i++) {
+                    titleArr[i] = titles.get(reverseCounter);
+                    bodyArr[i] = body.get(reverseCounter);
+                    timesArr[i] = times.get(reverseCounter);
+                    reverseCounter--;
+                }
+
+                ListView notificationList = (ListView) findViewById(R.id.notificationListView);
+                NotificationAdapter notificationAdapter = new NotificationAdapter(getApplicationContext(), titleArr, bodyArr, timesArr);
+                notificationList.setAdapter(notificationAdapter);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Log.d(TAG, error.getMessage());
+            }
+        };
+
         FirebaseDatabase.getInstance().getReference("teachers_data")
                 .child(user.getUid())
                 .child("notifications")
                 .orderByChild("timestamp")
-                .addValueEventListener(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        List<String> titles = new ArrayList<>();
-                        List<String> body = new ArrayList<>();
-                        List<String> times = new ArrayList<>();
-
-                        for (DataSnapshot dsp : snapshot.getChildren()) {
-                            titles.add(dsp.child("title").getValue(String.class));
-                            body.add(dsp.child("body").getValue(String.class));
-                            times.add(dsp.child("time").getValue(String.class));
-                        }
-
-                        String[] titleArr = new String[titles.size()];
-                        String[] bodyArr = new String[body.size()];
-                        String[] timesArr = new String[times.size()];
-                        int reverseCounter = body.size() - 1;
-
-                        for (int i = 0; i < bodyArr.length; i++) {
-                            titleArr[i] = titles.get(reverseCounter);
-                            bodyArr[i] = body.get(reverseCounter);
-                            timesArr[i] = times.get(reverseCounter);
-                            reverseCounter--;
-                        }
-
-                        ListView notificationList = (ListView) findViewById(R.id.notificationListView);
-                        NotificationAdapter notificationAdapter = new NotificationAdapter(getApplicationContext(), titleArr, bodyArr, timesArr);
-                        notificationList.setAdapter(notificationAdapter);
-                    }
-
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError error) {
-                        Log.d(TAG, error.getMessage());
-                    }
-                });
+                .addValueEventListener(valueEventListener);
     }
 
     private void sendNotification() {
@@ -218,6 +221,14 @@ public class NotificationActivity extends AppCompatActivity {
             divisionDialog.create().show();
         });
         semesterDialog.create().show();
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (valueEventListener != null) {
+            FirebaseDatabase.getInstance().getReference("teachers_data").removeEventListener(valueEventListener);
+        }
+        super.onDestroy();
     }
 
     @Override

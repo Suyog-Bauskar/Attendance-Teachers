@@ -48,6 +48,7 @@ public class LiveAttendanceActivity extends AppCompatActivity {
     private String studentUID, studentFirstname, studentLastname, attendanceOf;
     private Map<String, Object> studentData;
     private final ProgressDialog progressDialog = new ProgressDialog();
+    private ValueEventListener valueEventListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -159,6 +160,23 @@ public class LiveAttendanceActivity extends AppCompatActivity {
     private void checkForAttendance() {
         progressDialog.show(LiveAttendanceActivity.this);
 
+        valueEventListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                table.removeViews(1, table.getChildCount() - 1);
+                totalPresentStudentsView.setText("Total present students: " + snapshot.getChildrenCount());
+                for (DataSnapshot dsp : snapshot.getChildren()) {
+                    createTableRow(dsp.child("rollNo").getValue(Integer.class), dsp.child("firstname").getValue(String.class) + " " + dsp.child("lastname").getValue(String.class));
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                progressDialog.hide();
+                Log.d(TAG, error.getMessage());
+            }
+        };
+
         FirebaseDatabase.getInstance().getReference("attendance/active_attendance/" + department + semester + "-" + attendanceOf + "/subject_code")
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
@@ -171,23 +189,7 @@ public class LiveAttendanceActivity extends AppCompatActivity {
                             FirebaseDatabase.getInstance().getReference("attendance/" + department + semester + "-" + attendanceOf + "/" + subjectCode + "/" + year + "/" + monthStr)
                                     .child(date + "-" + count)
                                     .orderByChild("rollNo")
-                                    .addValueEventListener(new ValueEventListener() {
-                                        @Override
-                                        public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                            table.removeViews(1, table.getChildCount() - 1);
-                                            totalPresentStudentsView.setText("Total present students: " + snapshot.getChildrenCount());
-                                            for (DataSnapshot dsp : snapshot.getChildren()) {
-                                                createTableRow(dsp.child("rollNo").getValue(Integer.class), dsp.child("firstname").getValue(String.class) + " " + dsp.child("lastname").getValue(String.class));
-                                            }
-                                        }
-
-                                        @Override
-                                        public void onCancelled(@NonNull DatabaseError error) {
-                                            progressDialog.hide();
-                                            Log.d(TAG, error.getMessage());
-                                        }
-                                    });
-
+                                    .addValueEventListener(valueEventListener);
                         } else {
                             noAttendanceStartedView.setVisibility(View.VISIBLE);
                         }
@@ -346,6 +348,14 @@ public class LiveAttendanceActivity extends AppCompatActivity {
         tbRow.addView(tv2);
 
         table.addView(tbRow);
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (valueEventListener != null) {
+            FirebaseDatabase.getInstance().getReference("attendance/" + department + semester + "-" + attendanceOf + "/" + subjectCode + "/" + year + "/" + monthStr).removeEventListener(valueEventListener);
+        }
+        super.onDestroy();
     }
 
     @Override

@@ -379,7 +379,7 @@ public class StudentDataActivity extends AppCompatActivity {
                                             .addListenerForSingleValueEvent(new ValueEventListener() {
                                                 @Override
                                                 public void onDataChange(@NonNull DataSnapshot snapshot1) {
-                                                    for (DataSnapshot ds: snapshot1.getChildren()) {
+                                                    for (DataSnapshot ds : snapshot1.getChildren()) {
                                                         ds.getRef().child("rollNo").setValue(rollNoInt);
                                                         ds.getRef().child("firstname").setValue(firstnameStr);
                                                         ds.getRef().child("lastname").setValue(lastnameStr);
@@ -426,7 +426,7 @@ public class StudentDataActivity extends AppCompatActivity {
                                 .addListenerForSingleValueEvent(new ValueEventListener() {
                                     @Override
                                     public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                        for (DataSnapshot ds: snapshot.getChildren()) {
+                                        for (DataSnapshot ds : snapshot.getChildren()) {
                                             ds.getRef().removeValue();
                                         }
                                     }
@@ -455,11 +455,7 @@ public class StudentDataActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         if (valueEventListener != null) {
-            if (isFirstYear) {
-                FirebaseDatabase.getInstance().getReference("students_data").removeEventListener(valueEventListener);
-            } else {
-                FirebaseDatabase.getInstance().getReference("students_data").removeEventListener(valueEventListener);
-            }
+            FirebaseDatabase.getInstance().getReference("students_data").removeEventListener(valueEventListener);
         }
         super.onDestroy();
     }

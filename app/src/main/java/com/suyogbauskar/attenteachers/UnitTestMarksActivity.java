@@ -471,11 +471,7 @@ public class UnitTestMarksActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         if (valueEventListener != null) {
-            if (isFirstYear) {
-                FirebaseDatabase.getInstance().getReference("students_data").removeEventListener(valueEventListener);
-            } else {
-                FirebaseDatabase.getInstance().getReference("students_data").removeEventListener(valueEventListener);
-            }
+            FirebaseDatabase.getInstance().getReference("students_data").removeEventListener(valueEventListener);
         }
         super.onDestroy();
     }
