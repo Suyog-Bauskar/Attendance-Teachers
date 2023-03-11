@@ -1,94 +1,74 @@
 private void createTeachersAccount() {
-        String[] UIDs = new String[]{"V4QZXedx4wS2pqk8HwVkQ3y1AHE2", "dJluEhKISXMm1WyXgRKaF1m7WWi1", "KVEVHZ0EIXWHd1EMbYuZ65GYvaJ3"};
+        String[] UIDs = new String[]{"FglJLEVkm1hokgnn6zw9cvSophm1"};
 
         FirebaseDatabase.getInstance().getReference("teachers_data")
-                .child(UIDs[2])
+                .child(UIDs[0])
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        snapshot.getRef().child("firstname").setValue("Yash");
-                        snapshot.getRef().child("lastname").setValue("Rathod");
-                        snapshot.getRef().child("id").setValue("COYR1");
-                        snapshot.getRef().child("isAdmin").setValue(true);
+                        snapshot.getRef().child("department").setValue("CO");
+                        snapshot.getRef().child("firstname").setValue("Parag");
+                        snapshot.getRef().child("lastname").setValue("Agrawal");
+                        snapshot.getRef().child("id").setValue("COPA1");
+                        snapshot.getRef().child("isAdmin").setValue(false);
 
-                        Map<String, Object> sem1 = new HashMap<>();
-                        sem1.put("A_count", 0);
-                        sem1.put("A1_count", 0);
-                        sem1.put("A2_count", 0);
-                        sem1.put("A3_count", 0);
-                        sem1.put("B_count", 0);
-                        sem1.put("B1_count", 0);
-                        sem1.put("B2_count", 0);
-                        sem1.put("semester", 1);
-                        sem1.put("subject_name", "Yash 1");
-                        sem1.put("subject_short_name", "YR1");
+                        Map<String, Object> data1 = new HashMap<>();
+                        data1.put("A_count", 0);
+                        data1.put("A1_count", 0);
+                        data1.put("A2_count", 0);
+                        data1.put("A3_count", 0);
+                        data1.put("B_count", 0);
+                        data1.put("B1_count", 0);
+                        data1.put("B2_count", 0);
+                        data1.put("B3_count", 0);
+                        data1.put("C_count", 0);
+                        data1.put("C1_count", 0);
+                        data1.put("C2_count", 0);
+                        data1.put("C3_count", 0);
+                        data1.put("semester", 2);
+                        data1.put("subject_name", "Computer Peripheral And Hardware Maintenance");
+                        data1.put("subject_short_name", "CPH");
+                        String code1 = "22013";
 
-                        Map<String, Object> sem2 = new HashMap<>();
-                        sem2.put("A_count", 0);
-                        sem2.put("A1_count", 0);
-                        sem2.put("A2_count", 0);
-                        sem2.put("A3_count", 0);
-                        sem2.put("B_count", 0);
-                        sem2.put("B1_count", 0);
-                        sem2.put("B2_count", 0);
-                        sem2.put("semester", 2);
-                        sem2.put("subject_name", "Yash 2");
-                        sem2.put("subject_short_name", "YR2");
+                        Map<String, Object> data2 = new HashMap<>();
+                        data2.put("A_count", 0);
+                        data2.put("A1_count", 0);
+                        data2.put("A2_count", 0);
+                        data2.put("A3_count", 0);
+                        data2.put("B_count", 0);
+                        data2.put("B1_count", 0);
+                        data2.put("B2_count", 0);
+                        data2.put("B3_count", 0);
+                        data2.put("C_count", 0);
+                        data2.put("C1_count", 0);
+                        data2.put("C2_count", 0);
+                        data2.put("C3_count", 0);
+                        data2.put("semester", 4);
+                        data2.put("subject_name", "Microprocessors");
+                        data2.put("subject_short_name", "MIC");
+                        String code2 = "22415";
 
-                        Map<String, Object> sem3 = new HashMap<>();
-                        sem3.put("A_count", 0);
-                        sem3.put("A1_count", 0);
-                        sem3.put("A2_count", 0);
-                        sem3.put("A3_count", 0);
-                        sem3.put("B_count", 0);
-                        sem3.put("B1_count", 0);
-                        sem3.put("B2_count", 0);
-                        sem3.put("semester", 3);
-                        sem3.put("subject_name", "Yash 3");
-                        sem3.put("subject_short_name", "YR3");
+                        Map<String, Object> data3 = new HashMap<>();
+                        data3.put("A_count", 0);
+                        data3.put("A1_count", 0);
+                        data3.put("A2_count", 0);
+                        data3.put("A3_count", 0);
+                        data3.put("B_count", 0);
+                        data3.put("B1_count", 0);
+                        data3.put("B2_count", 0);
+                        data3.put("B3_count", 0);
+                        data3.put("C_count", 0);
+                        data3.put("C1_count", 0);
+                        data3.put("C2_count", 0);
+                        data3.put("C3_count", 0);
+                        data3.put("semester", 3);
+                        data3.put("subject_name", "Yash 3");
+                        data3.put("subject_short_name", "YR3");
+                        String code3 = "";
 
-                        Map<String, Object> sem4 = new HashMap<>();
-                        sem4.put("A_count", 0);
-                        sem4.put("A1_count", 0);
-                        sem4.put("A2_count", 0);
-                        sem4.put("A3_count", 0);
-                        sem4.put("B_count", 0);
-                        sem4.put("B1_count", 0);
-                        sem4.put("B2_count", 0);
-                        sem4.put("semester", 4);
-                        sem4.put("subject_name", "Yash 4");
-                        sem4.put("subject_short_name", "YR4");
-
-                        Map<String, Object> sem5 = new HashMap<>();
-                        sem5.put("A_count", 0);
-                        sem5.put("A1_count", 0);
-                        sem5.put("A2_count", 0);
-                        sem5.put("A3_count", 0);
-                        sem5.put("B_count", 0);
-                        sem5.put("B1_count", 0);
-                        sem5.put("B2_count", 0);
-                        sem5.put("semester", 5);
-                        sem5.put("subject_name", "Yash 5");
-                        sem5.put("subject_short_name", "YR5");
-
-                        Map<String, Object> sem6 = new HashMap<>();
-                        sem6.put("A_count", 0);
-                        sem6.put("A1_count", 0);
-                        sem6.put("A2_count", 0);
-                        sem6.put("A3_count", 0);
-                        sem6.put("B_count", 0);
-                        sem6.put("B1_count", 0);
-                        sem6.put("B2_count", 0);
-                        sem6.put("semester", 6);
-                        sem6.put("subject_name", "Yash 6");
-                        sem6.put("subject_short_name", "YR6");
-
-                        snapshot.getRef().child("subjects").child("10001").setValue(sem1);
-                        snapshot.getRef().child("subjects").child("10002").setValue(sem2);
-                        snapshot.getRef().child("subjects").child("10003").setValue(sem3);
-                        snapshot.getRef().child("subjects").child("10004").setValue(sem4);
-                        snapshot.getRef().child("subjects").child("10005").setValue(sem5);
-                        snapshot.getRef().child("subjects").child("10006").setValue(sem6);
+                        snapshot.getRef().child("subjects").child(code1).setValue(data1);
+                        snapshot.getRef().child("subjects").child(code2).setValue(data2);
+                        snapshot.getRef().child("subjects").child(code3).setValue(data3);
                     }
 
                     @Override
