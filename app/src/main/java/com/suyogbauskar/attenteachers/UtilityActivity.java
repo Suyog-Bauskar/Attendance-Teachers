@@ -116,6 +116,9 @@ public class UtilityActivity extends AppCompatActivity {
                                 public void onDataChange(@NonNull DataSnapshot snapshot) {
                                     for (DataSnapshot dsp : snapshot.getChildren()) {
                                         dsp.child("semester").getRef().setValue(LocalDate.now().getYear());
+                                        dsp.child("queryStringDivision").getRef().setValue(department + LocalDate.now().getYear());
+                                        dsp.child("queryStringRollNo").getRef().setValue(department + LocalDate.now().getYear());
+                                        dsp.child("queryStringSemester").getRef().setValue(department + LocalDate.now().getYear());
                                     }
                                     Toast.makeText(UtilityActivity.this, "Last semester students removed successfully", Toast.LENGTH_SHORT).show();
                                 }
@@ -201,7 +204,7 @@ public class UtilityActivity extends AppCompatActivity {
                                     ds.child("queryStringDivision").getRef().setValue(department + studentsDetailsList.get(ds.child("enrollNo").getValue(Long.class)).getSemester() + studentsDetailsList.get(ds.child("enrollNo").getValue(Long.class)).getDivision());
                                 }
                             }
-                            Toast.makeText(UtilityActivity.this, "Students details updated", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(UtilityActivity.this, "Students details updated successfully", Toast.LENGTH_SHORT).show();
                         }
 
                         @Override
