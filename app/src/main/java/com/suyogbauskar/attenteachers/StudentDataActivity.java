@@ -387,7 +387,7 @@ public class StudentDataActivity extends AppCompatActivity {
                                                         ds.getRef().child("division").setValue(divisionStr);
                                                         ds.getRef().child("batch").setValue(batchInt);
                                                         ds.getRef().child("queryStringRollNo").setValue(department + selectedSemester + divisionStr + rollNoInt);
-                                                        ds.getRef().child("queryStringDivision").setValue(department + divisionStr);
+                                                        ds.getRef().child("queryStringDivision").setValue(department + selectedSemester + divisionStr);
                                                     }
                                                 }
 

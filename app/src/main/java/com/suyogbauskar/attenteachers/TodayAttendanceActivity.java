@@ -106,7 +106,7 @@ public class TodayAttendanceActivity extends AppCompatActivity {
             FirebaseDatabase.getInstance().getReference("students_data")
                     .orderByChild("queryStringDivision")
                     .equalTo(department + selectedSemester + attendanceOf.charAt(0))
-                    .addValueEventListener(valueEventListener);
+                    .addListenerForSingleValueEvent(valueEventListener);
         } else {
             FirebaseDatabase.getInstance().getReference("students_data")
                     .orderByChild("queryStringSemester")
