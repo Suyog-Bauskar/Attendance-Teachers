@@ -7,9 +7,11 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
@@ -28,7 +30,19 @@ import com.google.firebase.database.ValueEventListener;
 import com.suyogbauskar.attenteachers.pojos.StudentData;
 import com.suyogbauskar.attenteachers.pojos.Subject;
 
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFCell;
+import org.apache.poi.xssf.usermodel.XSSFRow;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -39,9 +53,11 @@ public class SubmissionActivity extends AppCompatActivity {
     private TableLayout table;
     private boolean isFirstRow, isFirstYear;
     private TextView noStudentsFoundView;
+    private Button createDetentionListBtn;
     private String subjectCodeTeacher, department, selectedDivision;
     private int selectedSemester;
     private ValueEventListener valueEventListener;
+    private Map<Integer, StudentData> tempMap;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,12 +67,143 @@ public class SubmissionActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         user = FirebaseAuth.getInstance().getCurrentUser();
+        tempMap = new TreeMap<>();
         SharedPreferences sharedPreferences2 = getSharedPreferences("teacherDataPref", MODE_PRIVATE);
         department = sharedPreferences2.getString("department", "");
         isFirstYear = false;
 
         findAllViews();
+        createDetentionListBtn.setOnClickListener(v -> createDetentionList());
         selectSemester();
+    }
+
+    private void createDetentionList() {
+        Toast.makeText(this, "Creating Detention List...", Toast.LENGTH_SHORT).show();
+        int rowNo = 0, columnNo = 0;
+        String filename;
+        if (selectedSemester == 1 || selectedSemester == 2) {
+            filename = department + selectedSemester + "-" + selectedDivision + " Detention List";
+        } else {
+            filename = department + selectedSemester + " Detention List";
+        }
+        XSSFWorkbook xssfWorkbook = new XSSFWorkbook();
+        XSSFSheet xssfSheet;
+        XSSFRow xssfRow;
+        XSSFCell xssfCell;
+
+        try {
+            xssfSheet = xssfWorkbook.createSheet("Detention List");
+        } catch (IllegalArgumentException e) {
+            Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        xssfRow = xssfSheet.createRow(rowNo);
+
+        xssfCell = xssfRow.createCell(columnNo);
+        xssfCell.setCellValue("Roll No");
+
+        columnNo++;
+
+        xssfCell = xssfRow.createCell(columnNo);
+        xssfCell.setCellValue("Name");
+
+        columnNo++;
+
+        xssfCell = xssfRow.createCell(columnNo);
+        xssfCell.setCellValue("Manual");
+
+        columnNo++;
+
+        xssfCell = xssfRow.createCell(columnNo);
+        xssfCell.setCellValue("Micro Project");
+
+        rowNo++;
+
+        if (tempMap.size() > 0) {
+            for (Map.Entry<Integer, StudentData> entry1 : tempMap.entrySet()) {
+                columnNo = 0;
+
+                if (!entry1.getValue().isManual() || !entry1.getValue().isMicroProject()) {
+                    xssfRow = xssfSheet.createRow(rowNo);
+
+                    xssfCell = xssfRow.createCell(columnNo);
+                    xssfCell.setCellValue(entry1.getValue().getRollNo() + "");
+
+                    columnNo++;
+
+                    xssfCell = xssfRow.createCell(columnNo);
+                    xssfCell.setCellValue(entry1.getValue().getFirstname() + " " + entry1.getValue().getLastname());
+
+                    columnNo++;
+
+                    xssfCell = xssfRow.createCell(columnNo);
+
+                    if (entry1.getValue().isManual()) {
+                        xssfCell.setCellValue("Yes");
+                    } else {
+                        xssfCell.setCellValue("No");
+                    }
+
+                    columnNo++;
+
+                    xssfCell = xssfRow.createCell(columnNo);
+
+                    if (entry1.getValue().isMicroProject()) {
+                        xssfCell.setCellValue("Yes");
+                    } else {
+                        xssfCell.setCellValue("No");
+                    }
+
+                    rowNo++;
+                }
+            }
+
+            autoSizeAllColumns(xssfWorkbook);
+
+            try {
+                File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/Atten Teachers");
+                dir.mkdir();
+                dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/Atten Teachers/Detention List");
+                dir.mkdir();
+
+                File filePath = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/Atten Teachers/Detention List/" + filename + ".xlsx");
+
+                filePath.createNewFile();
+
+                FileOutputStream outputStream = new FileOutputStream(filePath);
+                xssfWorkbook.write(outputStream);
+                outputStream.flush();
+                outputStream.close();
+                Toast.makeText(this, "Detention List saved in Downloads folder", Toast.LENGTH_SHORT).show();
+            } catch (Exception e) {
+                Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            Toast.makeText(this, "No students found!", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void autoSizeAllColumns(Workbook workbook) {
+        int numberOfSheets = workbook.getNumberOfSheets();
+        for (int i = 0; i < numberOfSheets; i++) {
+            Sheet sheet = workbook.getSheetAt(i);
+            if (sheet.getPhysicalNumberOfRows() > 0) {
+                Row row = sheet.getRow(sheet.getFirstRowNum());
+                Iterator<Cell> cellIterator = row.cellIterator();
+                while (cellIterator.hasNext()) {
+                    Cell cell = cellIterator.next();
+                    int columnIndex = cell.getColumnIndex();
+                    if (columnIndex == 0) {
+                        sheet.setColumnWidth(columnIndex, 2000);
+                    } else if (columnIndex == 1) {
+                        sheet.setColumnWidth(columnIndex, 5500);
+                    } else if (columnIndex == 3) {
+                        sheet.setColumnWidth(columnIndex, 3500);
+                    }
+                }
+            }
+        }
     }
 
     private void selectSemester() {
@@ -169,15 +316,15 @@ public class SubmissionActivity extends AppCompatActivity {
     }
 
     private void showStudentsData(DataSnapshot snapshot) {
-        Map<Integer, StudentData> tempMap = new TreeMap<>();
         isFirstRow = true;
-
         table.removeAllViews();
         if (snapshot.getChildrenCount() == 0) {
             noStudentsFoundView.setVisibility(View.VISIBLE);
+            createDetentionListBtn.setVisibility(View.GONE);
             return;
         }
         drawTableHeader();
+        createDetentionListBtn.setVisibility(View.VISIBLE);
         noStudentsFoundView.setVisibility(View.GONE);
         try {
             for (DataSnapshot ds : snapshot.getChildren()) {
@@ -212,6 +359,7 @@ public class SubmissionActivity extends AppCompatActivity {
     private void findAllViews() {
         table = findViewById(R.id.table);
         noStudentsFoundView = findViewById(R.id.noStudentsFoundView);
+        createDetentionListBtn = findViewById(R.id.createDetentionListBtn);
     }
 
     private void drawTableHeader() {

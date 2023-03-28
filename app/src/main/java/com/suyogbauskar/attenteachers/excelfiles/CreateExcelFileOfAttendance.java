@@ -165,7 +165,6 @@ public class CreateExcelFileOfAttendance extends Service {
                             Map<String, Map<String, List<StudentData>>> requiredPresentData = new HashMap<>();
 
                             if (!snapshot.exists()) {
-                                sendErrorNotification("No attendance found of " + department + semester + "-" + className + " " + year, errorCode + 1);
                                 return;
                             }
                             int counter = 0;
@@ -440,7 +439,7 @@ public class CreateExcelFileOfAttendance extends Service {
                     if (columnIndex == 0) {
                         sheet.setColumnWidth(columnIndex, 2000);
                     } else if (columnIndex == 1) {
-                        sheet.setColumnWidth(columnIndex, 5000);
+                        sheet.setColumnWidth(columnIndex, 5500);
                     } else {
                         sheet.setColumnWidth(columnIndex, 3000);
                     }
