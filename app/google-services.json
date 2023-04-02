@@ -15,6 +15,22 @@
       },
       "oauth_client": [
         {
+          "client_id": "773498850587-1mes14vuc9v01d0s0jrr2m2nn08lc8qb.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.suyogbauskar.atten",
+            "certificate_hash": "8089cf11b2a77f91f6f75b8a6edff2b61812fecf"
+          }
+        },
+        {
+          "client_id": "773498850587-au4g2avspupkj35drv6mt9m2ecvq63dj.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.suyogbauskar.atten",
+            "certificate_hash": "6a5357adfdcec87e77c7a2ad8bfb0403e5372e1d"
+          }
+        },
+        {
           "client_id": "773498850587-f5cgo1iublguodji76nt3e8ql8jdpjm0.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
@@ -53,7 +69,7 @@
     },
     {
       "client_info": {
-        "mobilesdk_app_id": "1:773498850587:android:e1d93d81758c56717e97be",
+        "mobilesdk_app_id": "1:773498850587:android:6c305318f84050977e97be",
         "android_client_info": {
           "package_name": "com.suyogbauskar.attenteachers"
         }
@@ -83,6 +99,43 @@
             "certificate_hash": "9f55e441df791a222df2210bfa31f191b91227b9"
           }
         },
+        {
+          "client_id": "773498850587-ta2svirs4r4sn0un5eb46qbf69j6f0a1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.suyogbauskar.attenteachers",
+            "certificate_hash": "7c2c849d81f25bd30eb681178ad24805fdae603b"
+          }
+        },
+        {
+          "client_id": "773498850587-0sk1h1u54j0jjkquo4r868r3s2o5qk4a.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCCaPj_OUy9yKJPm6CGrOJiJrbiror_D7M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "773498850587-0sk1h1u54j0jjkquo4r868r3s2o5qk4a.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:773498850587:android:38bd4d5dc2689ba17e97be",
+        "android_client_info": {
+          "package_name": "com.suyogbauskar.attenteachers.two"
+        }
+      },
+      "oauth_client": [
         {
           "client_id": "773498850587-0sk1h1u54j0jjkquo4r868r3s2o5qk4a.apps.googleusercontent.com",
           "client_type": 3
