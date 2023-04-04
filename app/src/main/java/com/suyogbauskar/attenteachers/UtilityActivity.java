@@ -30,6 +30,7 @@ import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageMetadata;
 import com.suyogbauskar.attenteachers.excelfiles.CreateExcelFileOfAttendance;
+import com.suyogbauskar.attenteachers.excelfiles.CreateExcelFileOfFeedbackResponses;
 import com.suyogbauskar.attenteachers.pojos.StudentData;
 import com.suyogbauskar.attenteachers.pojos.Subject;
 
@@ -42,9 +43,11 @@ import java.io.OutputStream;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import cn.pedant.SweetAlert.SweetAlertDialog;
@@ -52,7 +55,7 @@ import cn.pedant.SweetAlert.SweetAlertDialog;
 public class UtilityActivity extends AppCompatActivity {
 
     private final FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-    private CardView excelBtn, attendanceBelow75Btn, subjectsBtn, uploadTimetableBtn, removeLastSemesterStudentsBtn, updateAllStudentsDetailsBtn, modifySubjectsBtn;
+    private CardView excelBtn, attendanceBelow75Btn, subjectsBtn, uploadTimetableBtn, removeLastSemesterStudentsBtn, updateAllStudentsDetailsBtn, modifySubjectsBtn, feedbackBtn;
     private boolean subjectFound, isAdmin;
     private String department;
     private LinearLayout layout;
@@ -69,12 +72,13 @@ public class UtilityActivity extends AppCompatActivity {
     }
 
     private void init() {
-        findAllViews();
-        setOnClickListeners();
-
         SharedPreferences sp = getSharedPreferences("teacherDataPref", MODE_PRIVATE);
         isAdmin = sp.getBoolean("isAdmin", false);
         department = sp.getString("department", "");
+
+        findAllViews();
+        setOnClickListeners();
+
         if (isAdmin) {
             layout.setVisibility(View.VISIBLE);
         }
@@ -89,6 +93,7 @@ public class UtilityActivity extends AppCompatActivity {
         updateAllStudentsDetailsBtn = findViewById(R.id.updateAllStudentsDetailsBtn);
         layout = findViewById(R.id.layout);
         modifySubjectsBtn = findViewById(R.id.modifySubjectsBtn);
+        feedbackBtn = findViewById(R.id.feedbackBtn);
     }
 
     private void setOnClickListeners() {
@@ -99,6 +104,119 @@ public class UtilityActivity extends AppCompatActivity {
         removeLastSemesterStudentsBtn.setOnClickListener(view -> removeLastSemesterStudents());
         updateAllStudentsDetailsBtn.setOnClickListener(view -> selectFileForUpdatingAllStudents());
         modifySubjectsBtn.setOnClickListener(view -> startActivity(new Intent(UtilityActivity.this, ModifySubjectsActivity.class)));
+        feedbackBtn.setOnClickListener(v -> {
+            selectSemester();
+        });
+    }
+
+    private void selectSemester() {
+        AlertDialog.Builder semesterDialog = new AlertDialog.Builder(UtilityActivity.this);
+        semesterDialog.setTitle("Semester");
+        String[] items = {"Semester 1", "Semester 2", "Semester 3", "Semester 4", "Semester 5", "Semester 6"};
+        semesterDialog.setSingleChoiceItems(items, -1, (dialog, which) -> {
+            SharedPreferences sharedPreferences = getSharedPreferences("FeedbackPref", MODE_PRIVATE);
+            SharedPreferences.Editor myEdit = sharedPreferences.edit();
+            which++;
+            selectedSemester = which;
+            myEdit.putInt("semester", selectedSemester);
+            myEdit.commit();
+            getAllSubjectsOfThatSemester();
+            dialog.dismiss();
+        });
+        semesterDialog.create().show();
+    }
+
+    private void getAllSubjectsOfThatSemester() {
+        if (isAdmin) {
+            FirebaseDatabase.getInstance().getReference("students_data/")
+                    .orderByChild("queryStringSemester")
+                    .equalTo(department + selectedSemester)
+                    .limitToFirst(1)
+                    .addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot snapshot) {
+                            SharedPreferences sharedPreferences = getSharedPreferences("FeedbackPref", MODE_PRIVATE);
+                            SharedPreferences.Editor myEdit = sharedPreferences.edit();
+                            Set<String> subjectCodes = new HashSet<>();
+
+                            for (DataSnapshot dsp: snapshot.getChildren()) {
+                                for (DataSnapshot dsp2: dsp.child("subjects").getChildren()) {
+                                    subjectCodes.add(dsp2.getKey());
+                                }
+                            }
+
+                            myEdit.putStringSet("subjectCodes", subjectCodes);
+                            myEdit.commit();
+                            feedbackForAdmin();
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError error) {
+                            Toast.makeText(UtilityActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+        } else {
+            FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects")
+                    .addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot snapshot) {
+                            SharedPreferences sharedPreferences = getSharedPreferences("FeedbackPref", MODE_PRIVATE);
+                            SharedPreferences.Editor myEdit = sharedPreferences.edit();
+                            Set<String> subjectCodes = new HashSet<>();
+                            boolean rightSemester = false;
+
+                            for (DataSnapshot dsp : snapshot.getChildren()) {
+                                if (selectedSemester == dsp.child("semester").getValue(Integer.class)) {
+                                    rightSemester = true;
+                                    subjectCodes.add(dsp.getKey());
+                                }
+                            }
+
+                            if (!rightSemester) {
+                                Toast.makeText(UtilityActivity.this, "You don't teach this semester", Toast.LENGTH_SHORT).show();
+                                return;
+                            }
+
+                            myEdit.putStringSet("subjectCodes", subjectCodes);
+                            myEdit.commit();
+                            feedbackForTeacher();
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError error) {
+                            Toast.makeText(UtilityActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+        }
+    }
+
+    private void feedbackForTeacher() {
+        FirebaseDatabase.getInstance().getReference("feedback")
+                .child(department + selectedSemester + "_feedback_started")
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        if (!snapshot.getValue(Boolean.class)) {
+                            new SweetAlertDialog(UtilityActivity.this, SweetAlertDialog.ERROR_TYPE)
+                                    .setContentText("Feedback form is not started!")
+                                    .show();
+                            return;
+                        }
+
+                        Toast.makeText(UtilityActivity.this, "Creating Excel File...", Toast.LENGTH_SHORT).show();
+                        startService(new Intent(UtilityActivity.this, CreateExcelFileOfFeedbackResponses.class));
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        Toast.makeText(UtilityActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+    private void feedbackForAdmin() {
+        Toast.makeText(UtilityActivity.this, "Creating Excel File...", Toast.LENGTH_SHORT).show();
+        startService(new Intent(UtilityActivity.this, CreateExcelFileOfFeedbackResponses.class));
     }
 
     private void removeLastSemesterStudents() {

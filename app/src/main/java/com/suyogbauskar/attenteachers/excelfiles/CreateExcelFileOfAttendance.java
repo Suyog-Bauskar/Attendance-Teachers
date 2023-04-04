@@ -202,7 +202,6 @@ public class CreateExcelFileOfAttendance extends Service {
                                                 tempStudentList.add(new StudentData(rollNo, firstname, lastname));
                                             }
                                         }
-
                                     }
                                     tempMap.put(dayName, tempStudentList);
                                     tempStudentList = new ArrayList<>();
@@ -457,9 +456,9 @@ public class CreateExcelFileOfAttendance extends Service {
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "File")
                 .setSmallIcon(R.drawable.raw_logo)
-                .setContentText("Excel file of " + subjectName + " " + year + " " + department + semester + "-" + className + " saved in downloads folder")
+                .setContentText(subjectName + " " + year + " " + department + semester + "-" + className + " attendance saved in downloads folder")
                 .setStyle(new NotificationCompat.BigTextStyle()
-                        .bigText("Excel file of " + subjectName + " " + year + " " + department + semester + "-" + className + " saved in downloads folder"))
+                        .bigText(subjectName + " " + year + " " + department + semester + "-" + className + " attendance saved in downloads folder"))
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setContentIntent(pendingIntent)
                 .setAutoCancel(true);

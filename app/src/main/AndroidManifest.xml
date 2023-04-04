@@ -82,6 +82,8 @@
         </activity>
 
         <service android:name=".excelfiles.CreateExcelFileOfAttendance" />
+        <service android:name=".excelfiles.CreateExcelFileOfFeedbackResponses" />
+
         <service
             android:name=".services.MyFirebaseMessagingService"
             android:exported="false">
@@ -89,6 +91,7 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
+
     </application>
 
 </manifest>
