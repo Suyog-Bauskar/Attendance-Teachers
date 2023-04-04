@@ -11,6 +11,7 @@ import android.os.Environment;
 import android.provider.OpenableColumns;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
@@ -21,6 +22,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 
+import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -147,7 +149,7 @@ public class UtilityActivity extends AppCompatActivity {
 
                             myEdit.putStringSet("subjectCodes", subjectCodes);
                             myEdit.commit();
-                            feedbackForAdmin();
+                            showDialogForFeedback();
                         }
 
                         @Override
@@ -179,7 +181,7 @@ public class UtilityActivity extends AppCompatActivity {
 
                             myEdit.putStringSet("subjectCodes", subjectCodes);
                             myEdit.commit();
-                            feedbackForTeacher();
+                            downloadFeedbackResponses();
                         }
 
                         @Override
@@ -190,7 +192,7 @@ public class UtilityActivity extends AppCompatActivity {
         }
     }
 
-    private void feedbackForTeacher() {
+    private void downloadFeedbackResponses() {
         FirebaseDatabase.getInstance().getReference("feedback")
                 .child(department + selectedSemester + "_feedback_started")
                 .addListenerForSingleValueEvent(new ValueEventListener() {
@@ -214,9 +216,60 @@ public class UtilityActivity extends AppCompatActivity {
                 });
     }
 
-    private void feedbackForAdmin() {
-        Toast.makeText(UtilityActivity.this, "Creating Excel File...", Toast.LENGTH_SHORT).show();
-        startService(new Intent(UtilityActivity.this, CreateExcelFileOfFeedbackResponses.class));
+    private void showDialogForFeedback() {
+        FirebaseDatabase.getInstance().getReference("feedback").child(department + selectedSemester + "_feedback_started")
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                        params.setMargins((int) (15 * getResources().getDisplayMetrics().density + 0.5f), (int) (15 * getResources().getDisplayMetrics().density + 0.5f), (int) (15 * getResources().getDisplayMetrics().density + 0.5f), 0);
+
+                        AlertDialog.Builder alert = new AlertDialog.Builder(UtilityActivity.this);
+                        alert.setTitle("Feedback");
+
+                        LinearLayout layout = new LinearLayout(UtilityActivity.this);
+                        layout.setOrientation(LinearLayout.VERTICAL);
+
+                        final SwitchMaterial switchMaterial = new SwitchMaterial(UtilityActivity.this);
+                        switchMaterial.setText("Feedback Start/Stop ");
+                        switchMaterial.setTextSize(18);
+                        switchMaterial.setLayoutParams(params);
+                        switchMaterial.setChecked(snapshot.getValue(Boolean.class));
+                        switchMaterial.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                            if (isChecked) {
+                                FirebaseDatabase.getInstance().getReference("feedback")
+                                        .child(department + selectedSemester + "_feedback_started")
+                                        .setValue(true)
+                                        .addOnSuccessListener(unused -> Toast.makeText(UtilityActivity.this, department + selectedSemester + " feedback started", Toast.LENGTH_SHORT).show())
+                                        .addOnFailureListener(e -> Toast.makeText(UtilityActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show());
+                            } else {
+                                FirebaseDatabase.getInstance().getReference("feedback")
+                                        .child(department + selectedSemester + "_feedback_started")
+                                        .setValue(false)
+                                        .addOnSuccessListener(unused -> Toast.makeText(UtilityActivity.this, department + selectedSemester + " feedback stopped", Toast.LENGTH_SHORT).show())
+                                        .addOnFailureListener(e -> Toast.makeText(UtilityActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show());
+                            }
+                        });
+                        layout.addView(switchMaterial);
+
+                        final Button downloadResponsesBtn = new Button(UtilityActivity.this);
+                        downloadResponsesBtn.setText("Download Responses");
+                        downloadResponsesBtn.setLayoutParams(params);
+                        downloadResponsesBtn.setTextSize(15);
+                        downloadResponsesBtn.setOnClickListener(v -> downloadFeedbackResponses());
+                        layout.addView(downloadResponsesBtn);
+
+                        alert.setView(layout);
+                        alert.setNegativeButton("Cancel", (dialog, whichButton) -> dialog.dismiss());
+
+                        alert.show();
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        Toast.makeText(UtilityActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     private void removeLastSemesterStudents() {
