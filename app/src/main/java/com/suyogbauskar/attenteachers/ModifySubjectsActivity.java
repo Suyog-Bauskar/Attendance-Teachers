@@ -99,7 +99,7 @@ public class ModifySubjectsActivity extends AppCompatActivity {
         alert.setView(layout);
 
         alert.setPositiveButton("Add", (dialog, whichButton) -> {
-            String id = idEditText.getText().toString().trim();
+            String id = idEditText.getText().toString().trim().toUpperCase();
             String shortNameStr = shortNameEditText.getText().toString().trim().toUpperCase();
             String nameStr = capitalizeWord(nameEditText.getText().toString().trim().toLowerCase());
             String codeStr = codeEditText.getText().toString().trim();
