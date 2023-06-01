@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -15,6 +16,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBarDrawerToggle;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
@@ -33,8 +35,12 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.suyogbauskar.attenteachers.fragments.HomeFragment;
 import com.suyogbauskar.attenteachers.fragments.SettingsFragment;
+import com.suyogbauskar.attenteachers.pojos.Subject;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class HomeActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
 
@@ -124,6 +130,98 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         }
     }
 
+    private void selectSemesterAndDivision() {
+        AlertDialog.Builder semesterDialog = new AlertDialog.Builder(HomeActivity.this);
+        semesterDialog.setTitle("Semester");
+        String[] items = {"Semester 1", "Semester 2", "Semester 3", "Semester 4", "Semester 5", "Semester 6"};
+        semesterDialog.setSingleChoiceItems(items, -1, (dialog, which) -> {
+            SharedPreferences sharedPreferences = getSharedPreferences("unitTestSemesterAndDivisionPref",MODE_PRIVATE);
+            SharedPreferences.Editor myEdit = sharedPreferences.edit();
+
+            which++;
+            int selectedSemester = which;
+            AtomicReference<String> selectedDivision = new AtomicReference<>("");
+            myEdit.putInt("semester", selectedSemester);
+            if (selectedSemester == 1 || selectedSemester == 2) {
+                AlertDialog.Builder divisionDialog = new AlertDialog.Builder(HomeActivity.this);
+                divisionDialog.setTitle("Division");
+                String[] items2 = {"Division A", "Division B", "Division C"};
+                divisionDialog.setSingleChoiceItems(items2, -1, (dialog2, which2) -> {
+                    switch (which2) {
+                        case 0:
+                            selectedDivision.set("A");
+                            break;
+                        case 1:
+                            selectedDivision.set("B");
+                            break;
+                        case 2:
+                            selectedDivision.set("C");
+                            break;
+                    }
+                    myEdit.putString("division", selectedDivision.get());
+                    myEdit.putBoolean("isFirstYear", true);
+                    getAllSubjectsOfThatSemester(selectedSemester, myEdit);
+                    dialog2.dismiss();
+                });
+                divisionDialog.create().show();
+            } else {
+                myEdit.putBoolean("isFirstYear", false);
+                getAllSubjectsOfThatSemester(selectedSemester, myEdit);
+            }
+            dialog.dismiss();
+        });
+        semesterDialog.create().show();
+    }
+
+    private void getAllSubjectsOfThatSemester(int selectedSemester, SharedPreferences.Editor myEdit) {
+        FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects")
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        List<Subject> currentSemesterSubjectList = new ArrayList<>();
+                        boolean rightSemester = false;
+
+                        for (DataSnapshot dsp : snapshot.getChildren()) {
+                            if (selectedSemester == dsp.child("semester").getValue(Integer.class)) {
+                                rightSemester = true;
+                                currentSemesterSubjectList.add(new Subject(dsp.getKey(), dsp.child("subject_short_name").getValue(String.class)));
+                            }
+                        }
+
+                        if (!rightSemester) {
+                            Toast.makeText(HomeActivity.this, "You don't teach this semester", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+                        if (currentSemesterSubjectList.size() > 1) {
+                            AlertDialog.Builder subjectDialog = new AlertDialog.Builder(HomeActivity.this);
+                            subjectDialog.setTitle("Subjects");
+                            String[] items3 = new String[currentSemesterSubjectList.size()];
+                            for (int i = 0; i < currentSemesterSubjectList.size(); i++) {
+                                items3[i] = currentSemesterSubjectList.get(i).getShortName();
+                            }
+
+                            subjectDialog.setSingleChoiceItems(items3, -1, (dialog3, which3) -> {
+                                dialog3.dismiss();
+                                myEdit.putString("subjectCodeTeacher", currentSemesterSubjectList.get(which3).getCode());
+                                myEdit.commit();
+                                startActivity(new Intent(HomeActivity.this, UnitTestMarksActivity.class));
+                            });
+                            subjectDialog.create().show();
+                        } else {
+                            myEdit.putString("subjectCodeTeacher", currentSemesterSubjectList.get(0).getCode());
+                            myEdit.commit();
+                            startActivity(new Intent(HomeActivity.this, UnitTestMarksActivity.class));
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        Toast.makeText(HomeActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -200,7 +298,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                 break;
 
             case R.id.unitTestMarks:
-                startActivity(new Intent(HomeActivity.this, UnitTestMarksActivity.class));
+                selectSemesterAndDivision();
                 break;
 
             case R.id.submission:

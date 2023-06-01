@@ -22,17 +22,13 @@ import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.suyogbauskar.attenteachers.pojos.StudentData;
-import com.suyogbauskar.attenteachers.pojos.Subject;
 import com.suyogbauskar.attenteachers.pojos.UnitTestMarks;
 
 import java.io.InputStreamReader;
@@ -48,7 +44,6 @@ import cn.pedant.SweetAlert.SweetAlertDialog;
 public class UnitTestMarksActivity extends AppCompatActivity {
 
     private Button uploadBtn, deleteBtn;
-    private FirebaseUser user;
     private TableLayout table;
     private boolean isFirstRow, isFirstYear;
     private String subjectCodeTeacher, department, selectedDivision;
@@ -63,15 +58,18 @@ public class UnitTestMarksActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         init();
-        selectSemesterAndDivision();
+        whichDataToShow();
     }
 
     private void init() {
-        user = FirebaseAuth.getInstance().getCurrentUser();
         isFirstRow = true;
-        isFirstYear = false;
         SharedPreferences sharedPreferences2 = getSharedPreferences("teacherDataPref", MODE_PRIVATE);
         department = sharedPreferences2.getString("department", "");
+        SharedPreferences sharedPreferences = getSharedPreferences("unitTestSemesterAndDivisionPref",MODE_PRIVATE);
+        selectedSemester = sharedPreferences.getInt("semester", 0);
+        selectedDivision = sharedPreferences.getString("division", "");
+        isFirstYear = sharedPreferences.getBoolean("isFirstYear", false);
+        subjectCodeTeacher = sharedPreferences.getString("subjectCodeTeacher", "");
         findAllViews();
         uploadBtn.setOnClickListener(view -> uploadFile());
         deleteBtn.setOnClickListener(view -> deleteMarks());
@@ -81,42 +79,6 @@ public class UnitTestMarksActivity extends AppCompatActivity {
         table = findViewById(R.id.table);
         uploadBtn = findViewById(R.id.uploadBtn);
         deleteBtn = findViewById(R.id.deleteBtn);
-    }
-
-    private void selectSemesterAndDivision() {
-        AlertDialog.Builder semesterDialog = new AlertDialog.Builder(UnitTestMarksActivity.this);
-        semesterDialog.setTitle("Semester");
-        String[] items = {"Semester 1", "Semester 2", "Semester 3", "Semester 4", "Semester 5", "Semester 6"};
-        semesterDialog.setSingleChoiceItems(items, -1, (dialog, which) -> {
-            which++;
-            selectedSemester = which;
-            if (selectedSemester == 1 || selectedSemester == 2) {
-                AlertDialog.Builder divisionDialog = new AlertDialog.Builder(UnitTestMarksActivity.this);
-                divisionDialog.setTitle("Division");
-                String[] items2 = {"Division A", "Division B", "Division C"};
-                divisionDialog.setSingleChoiceItems(items2, -1, (dialog2, which2) -> {
-                    switch (which2) {
-                        case 0:
-                            selectedDivision = "A";
-                            break;
-                        case 1:
-                            selectedDivision = "B";
-                            break;
-                        case 2:
-                            selectedDivision = "C";
-                            break;
-                    }
-                    isFirstYear = true;
-                    getAllSubjectsOfThatSemester();
-                    dialog2.dismiss();
-                });
-                divisionDialog.create().show();
-            } else {
-                getAllSubjectsOfThatSemester();
-            }
-            dialog.dismiss();
-        });
-        semesterDialog.create().show();
     }
 
     private void whichDataToShow() {
@@ -131,7 +93,7 @@ public class UnitTestMarksActivity extends AppCompatActivity {
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                Log.d(TAG, error.getMessage());
+                Toast.makeText(UnitTestMarksActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
             }
         };
 
@@ -139,60 +101,13 @@ public class UnitTestMarksActivity extends AppCompatActivity {
             FirebaseDatabase.getInstance().getReference("students_data")
                     .orderByChild("queryStringDivision")
                     .equalTo(department + selectedSemester + selectedDivision)
-                    .addValueEventListener(valueEventListener);
+                    .addListenerForSingleValueEvent(valueEventListener);
         } else {
             FirebaseDatabase.getInstance().getReference("students_data")
                     .orderByChild("queryStringSemester")
                     .equalTo(department + selectedSemester)
-                    .addValueEventListener(valueEventListener);
+                    .addListenerForSingleValueEvent(valueEventListener);
         }
-    }
-
-    private void getAllSubjectsOfThatSemester() {
-        FirebaseDatabase.getInstance().getReference("teachers_data/" + user.getUid() + "/subjects")
-                .addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        List<Subject> currentSemesterSubjectList = new ArrayList<>();
-                        boolean rightSemester = false;
-
-                        for (DataSnapshot dsp : snapshot.getChildren()) {
-                            if (selectedSemester == dsp.child("semester").getValue(Integer.class)) {
-                                rightSemester = true;
-                                currentSemesterSubjectList.add(new Subject(dsp.getKey(), dsp.child("subject_short_name").getValue(String.class)));
-                            }
-                        }
-
-                        if (!rightSemester) {
-                            Toast.makeText(UnitTestMarksActivity.this, "You don't teach this semester", Toast.LENGTH_SHORT).show();
-                            return;
-                        }
-
-                        if (currentSemesterSubjectList.size() > 1) {
-                            AlertDialog.Builder subjectDialog = new AlertDialog.Builder(UnitTestMarksActivity.this);
-                            subjectDialog.setTitle("Subjects");
-                            String[] items3 = new String[currentSemesterSubjectList.size()];
-                            for (int i = 0; i < currentSemesterSubjectList.size(); i++) {
-                                items3[i] = currentSemesterSubjectList.get(i).getShortName();
-                            }
-
-                            subjectDialog.setSingleChoiceItems(items3, -1, (dialog3, which3) -> {
-                                dialog3.dismiss();
-                                subjectCodeTeacher = currentSemesterSubjectList.get(which3).getCode();
-                                whichDataToShow();
-                            });
-                            subjectDialog.create().show();
-                        } else {
-                            subjectCodeTeacher = currentSemesterSubjectList.get(0).getCode();
-                            whichDataToShow();
-                        }
-                    }
-
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError error) {
-                        Toast.makeText(UnitTestMarksActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
-                    }
-                });
     }
 
     private void showStudentsData(DataSnapshot snapshot) {
@@ -242,11 +157,7 @@ public class UnitTestMarksActivity extends AppCompatActivity {
                                 .addListenerForSingleValueEvent(new ValueEventListener() {
                                     @Override
                                     public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                        for (DataSnapshot ds : snapshot.getChildren()) {
-                                            ds.child("subjects").child(subjectCodeTeacher).child("unitTest1Marks").getRef().setValue(-1);
-                                            ds.child("subjects").child(subjectCodeTeacher).child("unitTest2Marks").getRef().setValue(-1);
-                                        }
-                                        Toast.makeText(UnitTestMarksActivity.this, "All students marks deleted successfully", Toast.LENGTH_SHORT).show();
+                                        deleteMarksAfterClickingOk(snapshot);
                                     }
 
                                     @Override
@@ -261,11 +172,7 @@ public class UnitTestMarksActivity extends AppCompatActivity {
                                 .addListenerForSingleValueEvent(new ValueEventListener() {
                                     @Override
                                     public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                        for (DataSnapshot ds : snapshot.getChildren()) {
-                                            ds.child("subjects").child(subjectCodeTeacher).child("unitTest1Marks").getRef().setValue(-1);
-                                            ds.child("subjects").child(subjectCodeTeacher).child("unitTest2Marks").getRef().setValue(-1);
-                                        }
-                                        Toast.makeText(UnitTestMarksActivity.this, "All students marks deleted successfully", Toast.LENGTH_SHORT).show();
+                                        deleteMarksAfterClickingOk(snapshot);
                                     }
 
                                     @Override
@@ -276,6 +183,15 @@ public class UnitTestMarksActivity extends AppCompatActivity {
                     }
                 })
                 .show();
+    }
+
+    private void deleteMarksAfterClickingOk(DataSnapshot snapshot) {
+        for (DataSnapshot ds : snapshot.getChildren()) {
+            ds.child("subjects").child(subjectCodeTeacher).child("unitTest1Marks").getRef().setValue(-1);
+            ds.child("subjects").child(subjectCodeTeacher).child("unitTest2Marks").getRef().setValue(-1);
+        }
+        Toast.makeText(UnitTestMarksActivity.this, "All students marks deleted successfully", Toast.LENGTH_SHORT).show();
+        recreate();
     }
 
     private void drawTableHeader() {
@@ -417,14 +333,7 @@ public class UnitTestMarksActivity extends AppCompatActivity {
                         .addListenerForSingleValueEvent(new ValueEventListener() {
                             @Override
                             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                try {
-                                    for (DataSnapshot ds : snapshot.getChildren()) {
-                                        ds.child("subjects").child(subjectCodeTeacher).child("unitTest1Marks").getRef().setValue(Integer.parseInt(unitTestMarksList.get(ds.child("rollNo").getValue(Integer.class)).getUnitTest1Marks()));
-                                        ds.child("subjects").child(subjectCodeTeacher).child("unitTest2Marks").getRef().setValue(Integer.parseInt(unitTestMarksList.get(ds.child("rollNo").getValue(Integer.class)).getUnitTest2Marks()));
-                                    }
-                                } catch (Exception e) {
-                                    Toast.makeText(UnitTestMarksActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
-                                }
+                                setUnitTestMarksAfterSelectingFile(snapshot, unitTestMarksList);
                             }
 
                             @Override
@@ -439,14 +348,7 @@ public class UnitTestMarksActivity extends AppCompatActivity {
                         .addListenerForSingleValueEvent(new ValueEventListener() {
                             @Override
                             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                try {
-                                    for (DataSnapshot ds : snapshot.getChildren()) {
-                                        ds.child("subjects").child(subjectCodeTeacher).child("unitTest1Marks").getRef().setValue(Integer.parseInt(unitTestMarksList.get(ds.child("rollNo").getValue(Integer.class)).getUnitTest1Marks()));
-                                        ds.child("subjects").child(subjectCodeTeacher).child("unitTest2Marks").getRef().setValue(Integer.parseInt(unitTestMarksList.get(ds.child("rollNo").getValue(Integer.class)).getUnitTest2Marks()));
-                                    }
-                                } catch (Exception e) {
-                                    Toast.makeText(UnitTestMarksActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
-                                }
+                                setUnitTestMarksAfterSelectingFile(snapshot, unitTestMarksList);
                             }
 
                             @Override
@@ -457,6 +359,18 @@ public class UnitTestMarksActivity extends AppCompatActivity {
             }
         } catch (Exception e) {
             Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void setUnitTestMarksAfterSelectingFile(DataSnapshot snapshot, Map<Integer, UnitTestMarks> unitTestMarksList) {
+        try {
+            for (DataSnapshot ds : snapshot.getChildren()) {
+                ds.child("subjects").child(subjectCodeTeacher).child("unitTest1Marks").getRef().setValue(Integer.parseInt(unitTestMarksList.get(ds.child("rollNo").getValue(Integer.class)).getUnitTest1Marks()));
+                ds.child("subjects").child(subjectCodeTeacher).child("unitTest2Marks").getRef().setValue(Integer.parseInt(unitTestMarksList.get(ds.child("rollNo").getValue(Integer.class)).getUnitTest2Marks()));
+            }
+            recreate();
+        } catch (Exception e) {
+            Toast.makeText(UnitTestMarksActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
 
