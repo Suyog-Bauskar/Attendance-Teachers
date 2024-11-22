@@ -45,7 +45,7 @@ Follow these steps to set up and run the ClassSync Teacher App on your local mac
 1. **Clone this repository**:  
    Open your terminal and run:  
    ```bash
-   git clone https://github.com/yourusername/ClassSync-Teacher-App.git
+   git clone https://github.com/Suyog-Bauskar/Attendance-Teachers.git
 2. **Open the project**:
    Open the cloned project in **Android Studio**.
 3. **Set up Firebase**:
@@ -63,8 +63,8 @@ Click the "Fork" button on the top right of this repository to create a copy und
 2. **Clone Your Fork**:
 Clone your fork to your local system:
    ```
-   git clone https://github.com/yourusername/ClassSync-Teacher-App.git
-   cd ClassSync-Teacher-App
+   git clone https://github.com/Suyog-Bauskar/Attendance-Teachers.git
+   cd Attendance-Teachers
    ```
 3. **Create a Branch**:
    Create a branch for your feature or bug fix:
